@@ -29,7 +29,7 @@ export async function GET() {
     const productsWithRatings = products.map(product => ({
       ...product,
       averageRating: product.reviews.length > 0
-        ? product.reviews.reduce((acc, review) => acc + review.rating, 0) / product.reviews.length
+        ? product.reviews.reduce((acc: number, review) => acc + review.rating, 0) / product.reviews.length
         : 0,
       reviewCount: product.reviews.length
     }))
