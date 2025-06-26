@@ -1,8 +1,7 @@
 // The House Plant Store Database Schema
 generator client {
     provider = "prisma-client-js"
-    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
-    output = "/home/ubuntu/houseplant-store/app/node_modules/.prisma/client"
+    binaryTargets = ["native", "windows"]
 }
 
 datasource db {

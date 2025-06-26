@@ -1,79 +1,56 @@
-
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { slug: string } }
-) {
+// Define interfaces for type safety
+interface ReviewWithRating {
+  rating: number;
+  [key: string]: any;
+}
+
+interface ProductWithReviews {
+  reviews: ReviewWithRating[];
+  [key: string]: any;
+}
+
+export async function GET(request: NextRequest) {
   try {
-    const product = await prisma.product.findUnique({
+    const products = await prisma.product.findMany({
       where: {
-        slug: params.slug,
+        isFeatured: true,
         isActive: true,
       },
       include: {
         category: true,
         images: {
-          orderBy: { sortOrder: 'asc' }
-        },
-        reviews: {
-          where: { isApproved: true },
-          include: {
-            user: {
-              select: {
-                name: true,
-                image: true
-              }
-            }
-          },
-          orderBy: { createdAt: 'desc' }
-        }
-      }
-    })
-
-    if (!product) {
-      return NextResponse.json(
-        { error: 'Product not found' },
-        { status: 404 }
-      )
-    }
-
-    // Calculate average rating
-    const averageRating = product.reviews.length > 0
-      ? product.reviews.reduce((acc: number, review) => acc + review.rating, 0) / product.reviews.length
-      : 0
-
-    // Get related products
-    const relatedProducts = await prisma.product.findMany({
-      where: {
-        categoryId: product.categoryId,
-        id: { not: product.id },
-        isActive: true,
-      },
-      include: {
-        images: {
           where: { isPrimary: true },
           take: 1
+        },
+        reviews: {
+          where: { isApproved: true }
         }
       },
-      take: 4
+      take: 8,
+      orderBy: { createdAt: 'desc' }
     })
 
+    // Calculate average ratings
+const productsWithRatings = products.map((product: any) => ({
+  ...product,
+  averageRating: product.reviews.length > 0
+    ? product.reviews.reduce((acc: number, review: ReviewWithRating) => acc + review.rating, 0) / product.reviews.length
+    : 0,
+  reviewCount: product.reviews.length
+}))
+
     return NextResponse.json({
-      product: {
-        ...product,
-        averageRating,
-        reviewCount: product.reviews.length
-      },
-      relatedProducts
+      products: productsWithRatings
     })
-  } catch (error) {
-    console.error('Product fetch error:', error)
+  } catch (error: any) {
+    console.error('Featured products fetch error:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch product' },
+      { error: 'Failed to fetch featured products' },
       { status: 500 }
     )
   }

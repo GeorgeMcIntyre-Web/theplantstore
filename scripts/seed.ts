@@ -1,4 +1,3 @@
-
 import { PrismaClient, CareLevel, LightRequirement, WateringFrequency, PlantSize, GrowthRate } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
