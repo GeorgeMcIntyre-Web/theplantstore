@@ -1,1 +1,1 @@
-git add . && git commit -m "Fix NextAuth route" && git push
+git add . && git commit -m "Fix Package.json" && git push
