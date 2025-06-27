@@ -9,6 +9,8 @@ import {
   Warehouse,
   LineChart,
 } from 'lucide-react';
+// Import the OrderStatus enum from the Prisma client
+import { prisma, OrderStatus } from '@/lib/db';
 
 import {
   Card,
@@ -20,7 +22,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { getServerSession } from 'next-auth';
-import { prisma } from '@/lib/db';
 
 // This tells Next.js to render the page dynamically at request time
 export const dynamic = 'force-dynamic';
@@ -36,7 +37,8 @@ async function getAdminDashboardData() {
           totalAmount: true,
         },
         where: {
-          status: 'COMPLETED', // Or whichever status indicates a successful sale
+          // THIS IS THE CORRECTED LINE - Using the enum instead of a string
+          status: OrderStatus.COMPLETED,
         },
       }),
     ]);
@@ -90,7 +92,6 @@ export default async function AdminDashboard() {
       description:
         'Monitor stock levels and manage inventory. Track low stock alerts and reorder points.',
       icon: <Warehouse className="h-4 w-4 text-muted-foreground" />,
-      // THIS IS THE CORRECTED LINK
       link: '/admin/products',
       buttonText: 'Manage Inventory',
       value: data.productCount, // Inventory is tied to products
