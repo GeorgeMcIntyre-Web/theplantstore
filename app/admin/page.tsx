@@ -8,6 +8,7 @@ import {
   Users,
   Warehouse,
   LineChart,
+  ShieldAlert,
 } from 'lucide-react';
 // Import OrderStatus directly from the generated Prisma client package
 import { OrderStatus } from '@prisma/client';
@@ -28,28 +29,38 @@ import { getServerSession } from 'next-auth';
 export const dynamic = 'force-dynamic';
 
 async function getAdminDashboardData() {
-  const [productCount, orderCount, customerCount, totalRevenue] =
-    await Promise.all([
-      prisma.product.count(),
-      prisma.order.count(),
-      prisma.user.count({ where: { role: 'CUSTOMER' } }),
-      prisma.order.aggregate({
-        _sum: {
-          totalAmount: true,
-        },
-        where: {
-          // THIS IS THE CORRECTED LINE - Using the correct enum value
-          status: OrderStatus.DELIVERED,
-        },
-      }),
-    ]);
+  try {
+    const [productCount, orderCount, customerCount, totalRevenue] =
+      await Promise.all([
+        prisma.product.count(),
+        prisma.order.count(),
+        prisma.user.count({ where: { role: 'CUSTOMER' } }),
+        prisma.order.aggregate({
+          _sum: {
+            totalAmount: true,
+          },
+          where: {
+            status: OrderStatus.DELIVERED,
+          },
+        }),
+      ]);
 
-  return {
-    productCount,
-    orderCount,
-    customerCount,
-    totalRevenue: totalRevenue._sum.totalAmount ?? 0,
-  };
+    return {
+      productCount,
+      orderCount,
+      customerCount,
+      totalRevenue: totalRevenue._sum.totalAmount ?? 0,
+    };
+  } catch (error) {
+    console.error("Failed to fetch admin dashboard data:", error);
+    // Return default values in case of a database error
+    return {
+      productCount: 0,
+      orderCount: 0,
+      customerCount: 0,
+      totalRevenue: 0,
+    }
+  }
 }
 
 export default async function AdminDashboard() {
@@ -95,7 +106,7 @@ export default async function AdminDashboard() {
       icon: <Warehouse className="h-4 w-4 text-muted-foreground" />,
       link: '/admin/products',
       buttonText: 'Manage Inventory',
-      value: data.productCount, // Inventory is tied to products
+      value: data.productCount,
       show: ['SUPER_ADMIN', 'PLANT_MANAGER'],
     },
     {
@@ -103,10 +114,10 @@ export default async function AdminDashboard() {
       description:
         'Review sales reports and performance metrics. Analyze trends and revenue data.',
       icon: <LineChart className="h-4 w-4 text-muted-foreground" />,
-      link: '/admin/sales', // Assuming a future sales page
+      link: '#', // Disabled for now
       buttonText: 'Manage Sales',
       value: `R${data.totalRevenue.toFixed(2)}`,
-      subtext: "Today's Revenue",
+      subtext: "Total Revenue",
       show: ['SUPER_ADMIN'],
     },
     {
@@ -125,14 +136,14 @@ export default async function AdminDashboard() {
   );
 
   return (
-    <div className="flex flex-col">
-      <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+    <div className="flex flex-1 flex-col">
+      <header className="flex h-auto items-center gap-4 border-b bg-muted/40 px-4 py-4 lg:h-[70px] lg:px-6">
         <div className="w-full flex-1">
           <h1 className="text-lg font-semibold md:text-2xl">Admin Dashboard</h1>
           <p className="text-sm text-muted-foreground">
-            Welcome back, {session?.user?.name}
+            Welcome back, {session?.user?.name || 'Admin'}
             {userRole && (
-              <Badge variant="outline" className="ml-2">
+              <Badge variant="destructive" className="ml-2">
                 {userRole}
               </Badge>
             )}
@@ -140,32 +151,46 @@ export default async function AdminDashboard() {
         </div>
       </header>
       <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {visibleCards.map((card) => (
-            <Card key={card.title}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  {card.title}
-                </CardTitle>
-                {card.icon}
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="text-xs">
-                  {card.description}
-                </CardDescription>
-                <div className="text-2xl font-bold mt-2">{card.value}</div>
-                {card.subtext && (
-                  <p className="text-xs text-muted-foreground">
-                    {card.subtext}
-                  </p>
-                )}
-                <Button className="mt-4 w-full" asChild>
-                  <Link href={card.link}>{card.buttonText}</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {visibleCards.length > 0 ? (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {visibleCards.map((card) => (
+              <Card key={card.title}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    {card.title}
+                  </CardTitle>
+                  {card.icon}
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-xs min-h-[40px]">
+                    {card.description}
+                  </CardDescription>
+                  <div className="text-2xl font-bold mt-2">{card.value}</div>
+                  {card.subtext && (
+                    <p className="text-xs text-muted-foreground">
+                      {card.subtext}
+                    </p>
+                  )}
+                  <Button className="mt-4 w-full" asChild>
+                    <Link href={card.link}>{card.buttonText}</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
+            <div className="flex flex-col items-center gap-1 text-center">
+                <ShieldAlert className="h-12 w-12 text-muted-foreground" />
+              <h3 className="text-2xl font-bold tracking-tight">
+                No Permissions
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                You do not have the required role to view any dashboard content.
+              </p>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
