@@ -5,7 +5,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { prisma } from '@/lib/db';
 import bcrypt from 'bcryptjs';
-import { Role } from '@prisma/client';
+// The problematic 'Role' import has been removed.
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -60,7 +60,9 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.role = token.role as Role;
+        // The type casting 'as Role' has been removed to fix the build error.
+        // The functionality remains the same.
+        session.user.role = token.role;
         session.user.id = token.id as string;
       }
       return session;
