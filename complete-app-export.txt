@@ -1,7 +1,7 @@
 ﻿================================================================================
 ðŸŒ± THE PLANT STORE - COMPLETE CODE EXPORT FOR DEPLOYMENT
 ================================================================================
-Generated: 06/27/2025 07:09:38
+Generated: 06/27/2025 09:22:29
 
 ================================================================================
 ðŸ“¦ PACKAGE.JSON
@@ -9,8 +9,13 @@ Generated: 06/27/2025 07:09:38
 {
   "name": "app",
   "private": true,
+  "engines": {
+    "node": "18.x"
+  },
+
   "scripts": {
     "dev": "next dev",
+    "db:deploy": "prisma db push",
     "build": "prisma generate && next build",
     "postinstall": "prisma generate",
     "start": "next start",
@@ -159,7 +164,7 @@ module.exports = nextConfig;
 // The House Plant Store Database Schema
 generator client {
     provider = "prisma-client-js"
-    binaryTargets = ["native", "windows"]
+    binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -600,7 +605,7 @@ export default function HomePage() {
 ================================================================================
 ðŸŒ ENVIRONMENT VARIABLES (.env)
 ================================================================================
-# Showing structure only (sensitive data hidden) DATABASE_URL=***HIDDEN*** NEXTAUTH_=***HIDDEN*** NEXTAUTH_URL=***HIDDEN***
+# Showing structure only (sensitive data hidden) NODE_ENV =***HIDDEN*** NEXTAUTH_SECRET =***HIDDEN*** NEXTAUTH_URL =***HIDDEN*** DATABASE_URL =***HIDDEN***
 
 ================================================================================
 âš¡ TYPESCRIPT CONFIG (tsconfig.json)
