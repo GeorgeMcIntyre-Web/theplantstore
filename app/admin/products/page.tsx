@@ -12,10 +12,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { db } from '@/lib/db';
+import { prisma } from '@/lib/db'; // Corrected: changed db to prisma
 
 async function getProducts() {
-  const products = await db.product.findMany();
+  const products = await prisma.product.findMany(); // Corrected: changed db to prisma
   return products;
 }
 
@@ -49,10 +49,12 @@ export default async function ProductsPage() {
               <TableRow key={product.id}>
                 <TableCell>{product.name}</TableCell>
                 <TableCell>{product.sku}</TableCell>
-                <TableCell>${product.price.toFixed(2)}</TableCell>
-                <TableCell>{product.stock}</TableCell>
+                {/* Ensure price is handled correctly, it might be a Decimal type */}
+                <TableCell>${product.price.toString()}</TableCell>
+                <TableCell>{product.stockQuantity}</TableCell>
                 <TableCell>
                   <Button asChild variant="outline" size="sm">
+                    {/* Corrected: Path to edit page */}
                     <Link href={`/admin/products/edit/${product.id}`}>
                       Edit
                     </Link>

@@ -1,9 +1,9 @@
-// app/admin/products/edit/[id]/page.tsx
+// app/admin/edit/[id]/page.tsx
 
 import { notFound } from 'next/navigation';
 
 import { ProductForm } from '@/components/admin/ProductForm';
-import { db } from '@/lib/db';
+import { prisma } from '@/lib/db'; // Corrected: changed db to prisma
 
 interface EditProductPageProps {
   params: {
@@ -12,7 +12,7 @@ interface EditProductPageProps {
 }
 
 async function getProduct(id: string) {
-  const product = await db.product.findUnique({
+  const product = await prisma.product.findUnique({ // Corrected: changed db to prisma
     where: { id },
   });
   return product;

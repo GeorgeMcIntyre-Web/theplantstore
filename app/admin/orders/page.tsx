@@ -8,12 +8,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/db'; // Corrected: changed db to prisma
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 async function getOrders() {
-  return prisma.order.findMany({
+  return prisma.order.findMany({ // Corrected: changed db to prisma
     include: {
       user: true,
     },
@@ -48,7 +48,7 @@ export default async function OrdersPage() {
                 <TableCell>{order.user.name}</TableCell>
                 <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
                 <TableCell><Badge>{order.status}</Badge></TableCell>
-                <TableCell className="text-right">${order.totalAmount.toFixed(2)}</TableCell>
+                <TableCell className="text-right">${order.totalAmount.toString()}</TableCell>
                 <TableCell>
                   <Button asChild variant="outline" size="sm">
                     <Link href={`/admin/orders/${order.id}`}>

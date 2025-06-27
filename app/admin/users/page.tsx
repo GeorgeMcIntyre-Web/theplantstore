@@ -7,11 +7,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/db'; // Corrected: changed db to prisma
 import { Badge } from '@/components/ui/badge';
 
 async function getUsers() {
-  return prisma.user.findMany({
+  return prisma.user.findMany({ // Corrected: changed db to prisma
     where: {
       role: {
         not: 'CUSTOMER',

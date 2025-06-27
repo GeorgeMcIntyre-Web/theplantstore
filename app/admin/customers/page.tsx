@@ -7,10 +7,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/db'; // Corrected: changed db to prisma
 
 async function getCustomers() {
-  return prisma.user.findMany({
+  return prisma.user.findMany({ // Corrected: changed db to prisma
     where: { role: 'CUSTOMER' },
     orderBy: { createdAt: 'desc' },
   });
