@@ -38,8 +38,8 @@ async function getAdminDashboardData() {
           totalAmount: true,
         },
         where: {
-          // This line is now correct because we're importing from the right place
-          status: OrderStatus.COMPLETED,
+          // THIS IS THE CORRECTED LINE - Using the correct enum value
+          status: OrderStatus.DELIVERED,
         },
       }),
     ]);
