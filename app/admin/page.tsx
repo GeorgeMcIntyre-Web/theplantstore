@@ -9,8 +9,9 @@ import {
   Warehouse,
   LineChart,
 } from 'lucide-react';
-// Import the OrderStatus enum from the Prisma client
-import { prisma, OrderStatus } from '@/lib/db';
+// Import OrderStatus directly from the generated Prisma client package
+import { OrderStatus } from '@prisma/client';
+import { prisma } from '@/lib/db';
 
 import {
   Card,
@@ -37,7 +38,7 @@ async function getAdminDashboardData() {
           totalAmount: true,
         },
         where: {
-          // THIS IS THE CORRECTED LINE - Using the enum instead of a string
+          // This line is now correct because we're importing from the right place
           status: OrderStatus.COMPLETED,
         },
       }),
