@@ -21,8 +21,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/components/ui/use-toast';
 import { Product } from '@prisma/client';
 
-// This schema should match all the fields you want to edit in the form.
-// It's based on your more detailed `route.ts` file.
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
@@ -32,8 +30,6 @@ const formSchema = z.object({
   sku: z.string().min(1, 'SKU is required'),
   stockQuantity: z.coerce.number().int().min(0, 'Stock must be a positive integer'),
   isFeatured: z.boolean().default(false),
-  // You can continue to add other fields from your Prisma schema here
-  // e.g., careLevel, lightRequirement, etc.
 });
 
 interface ProductFormProps {
@@ -48,12 +44,18 @@ export function ProductForm({ product }: ProductFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: product
       ? {
-          ...product,
-          // Convert Prisma's Decimal type to a number for the form
+          // Explicitly map each value to handle potential nulls from the database
+          name: product.name,
+          description: product.description ?? '', // Use empty string if null
+          shortDescription: product.shortDescription ?? '', // Use empty string if null
           price: product.price.toNumber(),
-          compareAtPrice: product.compareAtPrice?.toNumber(),
+          compareAtPrice: product.compareAtPrice?.toNumber() ?? 0,
+          sku: product.sku ?? '', // Use empty string if null
+          stockQuantity: product.stockQuantity,
+          isFeatured: product.isFeatured,
         }
       : {
+          // Default values for a new product
           name: '',
           description: '',
           shortDescription: '',
