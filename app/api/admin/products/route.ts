@@ -4,8 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/db';
 import { Decimal } from '@prisma/client/runtime/library';
-// Import the centralized authOptions
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 
 // This forces the route to be dynamic, which is good practice for admin routes
 export const dynamic = 'force-dynamic';

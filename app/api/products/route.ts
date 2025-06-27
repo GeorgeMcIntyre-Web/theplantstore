@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { authOptions } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
