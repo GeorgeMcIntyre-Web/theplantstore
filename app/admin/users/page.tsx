@@ -1,4 +1,8 @@
 // app/admin/users/page.tsx
+
+// This line tells Next.js to render this page dynamically
+export const dynamic = 'force-dynamic';
+
 import {
   Table,
   TableBody,
@@ -7,11 +11,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { prisma } from '@/lib/db'; // Corrected: changed db to prisma
+import { prisma } from '@/lib/db';
 import { Badge } from '@/components/ui/badge';
 
 async function getUsers() {
-  return prisma.user.findMany({ // Corrected: changed db to prisma
+  return prisma.user.findMany({
     where: {
       role: {
         not: 'CUSTOMER',

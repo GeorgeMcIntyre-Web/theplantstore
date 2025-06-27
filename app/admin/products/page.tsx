@@ -1,5 +1,8 @@
 // app/admin/products/page.tsx
 
+// This line tells Next.js to render this page dynamically
+export const dynamic = 'force-dynamic';
+
 import { PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 
@@ -12,10 +15,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { prisma } from '@/lib/db'; // Corrected: changed db to prisma
+import { prisma } from '@/lib/db';
 
 async function getProducts() {
-  const products = await prisma.product.findMany(); // Corrected: changed db to prisma
+  const products = await prisma.product.findMany({
+    orderBy: {
+        createdAt: 'desc'
+    }
+  });
   return products;
 }
 
@@ -40,22 +47,20 @@ export default async function ProductsPage() {
               <TableHead>Name</TableHead>
               <TableHead>SKU</TableHead>
               <TableHead>Price</TableHead>
-              <TableHead>Stock Quantity</TableHead>
+              <TableHead>Stock</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {products.map((product) => (
               <TableRow key={product.id}>
-                <TableCell>{product.name}</TableCell>
+                <TableCell className="font-medium">{product.name}</TableCell>
                 <TableCell>{product.sku}</TableCell>
-                {/* Ensure price is handled correctly, it might be a Decimal type */}
                 <TableCell>${product.price.toString()}</TableCell>
                 <TableCell>{product.stockQuantity}</TableCell>
                 <TableCell>
                   <Button asChild variant="outline" size="sm">
-                    {/* Corrected: Path to edit page */}
-                    <Link href={`/admin/products/edit/${product.id}`}>
+                    <Link href={`/admin/products/${product.id}`}>
                       Edit
                     </Link>
                   </Button>

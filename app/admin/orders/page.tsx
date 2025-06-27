@@ -1,4 +1,8 @@
 // app/admin/orders/page.tsx
+
+// This line tells Next.js to render this page dynamically
+export const dynamic = 'force-dynamic';
+
 import Link from 'next/link';
 import {
   Table,
@@ -8,12 +12,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { prisma } from '@/lib/db'; // Corrected: changed db to prisma
+import { prisma } from '@/lib/db';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 async function getOrders() {
-  return prisma.order.findMany({ // Corrected: changed db to prisma
+  return prisma.order.findMany({
     include: {
       user: true,
     },
@@ -51,6 +55,7 @@ export default async function OrdersPage() {
                 <TableCell className="text-right">${order.totalAmount.toString()}</TableCell>
                 <TableCell>
                   <Button asChild variant="outline" size="sm">
+                    {/* Assuming you will create this page next */}
                     <Link href={`/admin/orders/${order.id}`}>
                       View Details
                     </Link>
