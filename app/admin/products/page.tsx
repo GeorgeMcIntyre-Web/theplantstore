@@ -1,13 +1,33 @@
+// app/admin/products/page.tsx - COMPLETE FIXED VERSION
 'use client'
 import { useState, useEffect } from 'react'
-import { PlusCircle, Trash2 } from 'lucide-react'
+import { PlusCircle, Trash2, Edit } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean
+    productId: string
+    productName: string
+  }>({
+    isOpen: false,
+    productId: '',
+    productName: ''
+  })
 
   const fetchProducts = async () => {
     try {
@@ -23,65 +43,149 @@ export default function ProductsPage() {
     }
   }
 
-  const deleteProduct = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) return
+  const handleDeleteClick = (product: any) => {
+    setDeleteDialog({
+      isOpen: true,
+      productId: product.id,
+      productName: product.name
+    })
+  }
+
+  const handleDeleteConfirm = async () => {
     try {
-      const response = await fetch(`/api/admin/products/${id}`, { method: 'DELETE' })
+      const response = await fetch(`/api/admin/products/${deleteDialog.productId}`, {
+        method: 'DELETE'
+      })
+      
       if (response.ok) {
-        setProducts(products.filter(p => p.id !== id))
+        // Remove the deleted product from the local state
+        setProducts(products.filter(p => p.id !== deleteDialog.productId))
         alert('Product deleted successfully')
+      } else {
+        const error = await response.json()
+        alert(`Failed to delete product: ${error.error || 'Unknown error'}`)
       }
     } catch (error) {
       alert('Failed to delete product')
+    } finally {
+      setDeleteDialog({ isOpen: false, productId: '', productName: '' })
     }
   }
 
-  useEffect(() => { fetchProducts() }, [])
-  if (isLoading) return <div>Loading...</div>
+  const handleDeleteCancel = () => {
+    setDeleteDialog({ isOpen: false, productId: '', productName: '' })
+  }
+
+  useEffect(() => { 
+    fetchProducts() 
+  }, [])
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg">Loading products...</div>
+      </div>
+    )
+  }
 
   return (
     <div>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-8">
         <h1 className="text-2xl font-bold">Products</h1>
         <Button asChild>
           <Link href="/admin/products/new">
-            <PlusCircle className="mr-2 h-4 w-4" />Create New Product
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Create New Product
           </Link>
         </Button>
       </div>
-      <div className="mt-8">
+
+      <div className="bg-white rounded-lg shadow">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>SKU</TableHead>
+              <TableHead>Category</TableHead>
               <TableHead>Price</TableHead>
               <TableHead>Stock</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {products.map((product) => (
-              <TableRow key={product.id}>
-                <TableCell className="font-medium">{product.name}</TableCell>
-                <TableCell>{product.sku || '-'}</TableCell>
-                <TableCell>R{Number(product.price).toFixed(2)}</TableCell>
-                <TableCell>{product.stockQuantity}</TableCell>
-                <TableCell>
-                  <div className="flex space-x-2">
-                    <Button asChild variant="outline" size="sm">
-                      <Link href={`/admin/products/${product.id}`}>Edit</Link>
-                    </Button>
-                    <Button variant="destructive" size="sm" onClick={() => deleteProduct(product.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+            {products.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  No products found. Create your first product to get started.
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              products.map((product) => (
+                <TableRow key={product.id}>
+                  <TableCell className="font-medium">{product.name}</TableCell>
+                  <TableCell>{product.sku || '-'}</TableCell>
+                  <TableCell>{product.category?.name || '-'}</TableCell>
+                  <TableCell>R{Number(product.price).toFixed(2)}</TableCell>
+                  <TableCell>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      product.stockQuantity <= (product.lowStockThreshold || 10)
+                        ? 'bg-red-100 text-red-800'
+                        : product.stockQuantity <= (product.lowStockThreshold || 10) * 2
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-green-100 text-green-800'
+                    }`}>
+                      {product.stockQuantity}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      product.isActive
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {product.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end space-x-2">
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={`/admin/products/${product.id}`}>
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit
+                        </Link>
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        onClick={() => handleDeleteClick(product)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
-    </div>
-  )
-}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialog.isOpen} onOpenChange={handleDeleteCancel}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete "<strong>{deleteDialog.productName}</strong>" and all associated data. 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleDeleteCancel}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Product
+            </AlertDialogAction>

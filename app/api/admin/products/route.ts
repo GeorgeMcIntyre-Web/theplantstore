@@ -1,5 +1,4 @@
-// app/api/admin/products/route.ts
-
+// app/api/admin/products/route.ts - FIXED VERSION
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/db';
@@ -30,7 +29,6 @@ export async function GET() {
     }
 }
 
-
 // POST handler to create a new product
 export async function POST(request: NextRequest) {
   try {
@@ -52,8 +50,6 @@ export async function POST(request: NextRequest) {
         { status: 403 }
       );
     }
-
-    // --- The rest of your detailed logic remains the same ---
 
     const body = await request.json();
     const {
@@ -81,7 +77,7 @@ export async function POST(request: NextRequest) {
       metaDescription,
     } = body;
 
-    if (!name || !price || !categoryId || !stockQuantity) {
+    if (!name || !price || !categoryId || stockQuantity === undefined) {
       return NextResponse.json(
         { error: 'Missing required fields: name, price, categoryId, stockQuantity' },
         { status: 400 }
