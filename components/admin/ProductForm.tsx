@@ -1,218 +1,453 @@
-'use client';
+'use client'
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
-
-import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useToast } from '@/components/ui/use-toast';
-import { Product } from '@prisma/client';
-
-const formSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  description: z.string().optional(),
-  shortDescription: z.string().optional(),
-  price: z.coerce.number().min(0, 'Price must be a positive number'),
-  compareAtPrice: z.coerce.number().optional(),
-  sku: z.string().min(1, 'SKU is required'),
-  stockQuantity: z.coerce.number().int().min(0, 'Stock must be a positive integer'),
-  isFeatured: z.boolean().default(false),
-});
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { toast } from '@/hooks/use-toast'
+import { Product } from '@/lib/types'
 
 interface ProductFormProps {
-  product?: Product;
+  product?: Product
 }
 
+const CARE_LEVELS = [
+  { value: 'EASY', label: 'Easy' },
+  { value: 'MODERATE', label: 'Moderate' },
+  { value: 'ADVANCED', label: 'Advanced' }
+]
+
+const LIGHT_REQUIREMENTS = [
+  { value: 'LOW', label: 'Low Light' },
+  { value: 'MEDIUM', label: 'Medium Light' },
+  { value: 'BRIGHT', label: 'Bright Light' },
+  { value: 'DIRECT_SUN', label: 'Direct Sun' }
+]
+
+const WATERING_FREQUENCIES = [
+  { value: 'WEEKLY', label: 'Weekly' },
+  { value: 'BI_WEEKLY', label: 'Bi-weekly' },
+  { value: 'MONTHLY', label: 'Monthly' }
+]
+
+const PLANT_SIZES = [
+  { value: 'SMALL', label: 'Small' },
+  { value: 'MEDIUM', label: 'Medium' },
+  { value: 'LARGE', label: 'Large' }
+]
+
+const GROWTH_RATES = [
+  { value: 'SLOW', label: 'Slow' },
+  { value: 'MODERATE', label: 'Moderate' },
+  { value: 'FAST', label: 'Fast' }
+]
+
 export function ProductForm({ product }: ProductFormProps) {
-  const router = useRouter();
-  const { toast } = useToast();
+  const router = useRouter()
+  const [isLoading, setIsLoading] = useState(false)
+  const [categories, setCategories] = useState<any[]>([])
+  
+  const [formData, setFormData] = useState({
+    name: product?.name || '',
+    description: product?.description || '',
+    shortDescription: product?.shortDescription || '',
+    price: product?.price?.toString() || '',
+    compareAtPrice: product?.compareAtPrice?.toString() || '',
+    sku: product?.sku || '',
+    stockQuantity: product?.stockQuantity?.toString() || '',
+    lowStockThreshold: product?.lowStockThreshold?.toString() || '10',
+    weight: product?.weight?.toString() || '',
+    dimensions: product?.dimensions || '',
+    categoryId: product?.categoryId || '',
+    isFeatured: product?.isFeatured || false,
+    careLevel: product?.careLevel || '',
+    lightRequirement: product?.lightRequirement || '',
+    wateringFrequency: product?.wateringFrequency || '',
+    isPetSafe: product?.isPetSafe || false,
+    plantSize: product?.plantSize || '',
+    growthRate: product?.growthRate || '',
+    careInstructions: product?.careInstructions || '',
+    metaTitle: product?.metaTitle || '',
+    metaDescription: product?.metaDescription || ''
+  })
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: product
-      ? {
-          // Explicitly map each value to handle potential nulls from the database
-          name: product.name,
-          description: product.description ?? '', // Use empty string if null
-          shortDescription: product.shortDescription ?? '', // Use empty string if null
-          price: product.price.toNumber(),
-          compareAtPrice: product.compareAtPrice?.toNumber() ?? 0,
-          sku: product.sku ?? '', // Use empty string if null
-          stockQuantity: product.stockQuantity,
-          isFeatured: product.isFeatured,
+  // Load categories on component mount
+  useState(() => {
+    async function loadCategories() {
+      try {
+        const response = await fetch('/api/categories')
+        if (response.ok) {
+          const data = await response.json()
+          setCategories(data.categories || [])
         }
-      : {
-          // Default values for a new product
-          name: '',
-          description: '',
-          shortDescription: '',
-          price: 0,
-          compareAtPrice: 0,
-          sku: '',
-          stockQuantity: 0,
-          isFeatured: false,
-        },
-  });
-
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    try {
-      const endpoint = product
-        ? `/api/admin/products/${product.id}`
-        : '/api/admin/products';
-      const method = product ? 'PUT' : 'POST';
-
-      const response = await fetch(endpoint, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(values),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Failed to ${product ? 'update' : 'create'} product`);
+      } catch (error) {
+        console.error('Failed to load categories:', error)
       }
+    }
+    loadCategories()
+  })
 
-      toast({
-        title: `Product ${product ? 'updated' : 'created'}`,
-        description: `The product has been saved successfully.`,
-      });
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
 
-      router.push('/admin/products');
-      router.refresh();
-    } catch (error: any) {
+    try {
+      const url = product 
+        ? `/api/admin/products/${product.id}` 
+        : '/api/admin/products'
+      
+      const method = product ? 'PUT' : 'POST'
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      })
+
+      if (response.ok) {
+        toast({
+          title: 'Success',
+          description: `Product ${product ? 'updated' : 'created'} successfully`
+        })
+        router.push('/admin/products')
+      } else {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to save product')
+      }
+    } catch (error) {
       toast({
         title: 'Error',
-        description: error.message || 'Something went wrong. Please try again.',
-        variant: 'destructive',
-      });
+        description: error instanceof Error ? error.message : 'Failed to save product',
+        variant: 'destructive'
+      })
+    } finally {
+      setIsLoading(false)
     }
-  };
+  }
+
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Product Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Monstera Deliciosa" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="sku"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>SKU</FormLabel>
-              <FormControl>
-                <Input placeholder="PLNT-001" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <FormField
-              control={form.control}
-              name="price"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Price</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="0.01" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="stockQuantity"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Stock Quantity</FormLabel>
-                  <FormControl>
-                    <Input type="number" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-        </div>
-        <FormField
-          control={form.control}
-          name="shortDescription"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Short Description</FormLabel>
-              <FormControl>
-                <Textarea placeholder="A brief, catchy description for product cards." {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Full Description</FormLabel>
-              <FormControl>
-                <Textarea placeholder="Detailed description for the product page." className="min-h-[150px]" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="isFeatured"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-              <div className="space-y-1 leading-none">
-                <FormLabel>
-                  Feature on homepage
-                </FormLabel>
-                <FormDescription>
-                  Check this box to display this product in the "Featured Plants" section on the homepage.
-                </FormDescription>
-              </div>
-            </FormItem>
-          )}
-        />
+    <form onSubmit={handleSubmit} className="space-y-8">
+      {/* Basic Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Basic Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="name">Product Name*</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="sku">SKU</Label>
+              <Input
+                id="sku"
+                value={formData.sku}
+                onChange={(e) => handleInputChange('sku', e.target.value)}
+                placeholder="e.g., MON-001"
+              />
+            </div>
+          </div>
 
-        <Button type="submit" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? 'Saving...' : (product ? 'Update Product' : 'Create Product')}
+          <div>
+            <Label htmlFor="shortDescription">Short Description</Label>
+            <Input
+              id="shortDescription"
+              value={formData.shortDescription}
+              onChange={(e) => handleInputChange('shortDescription', e.target.value)}
+              placeholder="Brief description for product cards"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="description">Full Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => handleInputChange('description', e.target.value)}
+              rows={4}
+              placeholder="Detailed product description"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="categoryId">Category*</Label>
+            <Select value={formData.categoryId} onValueChange={(value) => handleInputChange('categoryId', value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Pricing & Inventory */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Pricing & Inventory</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="price">Price (R)*</Label>
+              <Input
+                id="price"
+                type="number"
+                step="0.01"
+                value={formData.price}
+                onChange={(e) => handleInputChange('price', e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="compareAtPrice">Compare At Price (R)</Label>
+              <Input
+                id="compareAtPrice"
+                type="number"
+                step="0.01"
+                value={formData.compareAtPrice}
+                onChange={(e) => handleInputChange('compareAtPrice', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="stockQuantity">Stock Quantity*</Label>
+              <Input
+                id="stockQuantity"
+                type="number"
+                value={formData.stockQuantity}
+                onChange={(e) => handleInputChange('stockQuantity', e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="lowStockThreshold">Low Stock Threshold</Label>
+              <Input
+                id="lowStockThreshold"
+                type="number"
+                value={formData.lowStockThreshold}
+                onChange={(e) => handleInputChange('lowStockThreshold', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="weight">Weight (kg)</Label>
+              <Input
+                id="weight"
+                type="number"
+                step="0.01"
+                value={formData.weight}
+                onChange={(e) => handleInputChange('weight', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="dimensions">Dimensions</Label>
+              <Input
+                id="dimensions"
+                value={formData.dimensions}
+                onChange={(e) => handleInputChange('dimensions', e.target.value)}
+                placeholder="e.g., 30cm H x 20cm W"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Plant Care Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Plant Care Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="careLevel">Care Level</Label>
+              <Select value={formData.careLevel} onValueChange={(value) => handleInputChange('careLevel', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select care level" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CARE_LEVELS.map((level) => (
+                    <SelectItem key={level.value} value={level.value}>
+                      {level.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="lightRequirement">Light Requirement</Label>
+              <Select value={formData.lightRequirement} onValueChange={(value) => handleInputChange('lightRequirement', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select light requirement" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LIGHT_REQUIREMENTS.map((req) => (
+                    <SelectItem key={req.value} value={req.value}>
+                      {req.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="wateringFrequency">Watering Frequency</Label>
+              <Select value={formData.wateringFrequency} onValueChange={(value) => handleInputChange('wateringFrequency', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select watering frequency" />
+                </SelectTrigger>
+                <SelectContent>
+                  {WATERING_FREQUENCIES.map((freq) => (
+                    <SelectItem key={freq.value} value={freq.value}>
+                      {freq.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="plantSize">Plant Size</Label>
+              <Select value={formData.plantSize} onValueChange={(value) => handleInputChange('plantSize', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select plant size" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PLANT_SIZES.map((size) => (
+                    <SelectItem key={size.value} value={size.value}>
+                      {size.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="growthRate">Growth Rate</Label>
+              <Select value={formData.growthRate} onValueChange={(value) => handleInputChange('growthRate', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select growth rate" />
+                </SelectTrigger>
+                <SelectContent>
+                  {GROWTH_RATES.map((rate) => (
+                    <SelectItem key={rate.value} value={rate.value}>
+                      {rate.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="isPetSafe"
+                checked={formData.isPetSafe}
+                onCheckedChange={(checked) => handleInputChange('isPetSafe', checked)}
+              />
+              <Label htmlFor="isPetSafe">Pet Safe</Label>
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="careInstructions">Care Instructions</Label>
+            <Textarea
+              id="careInstructions"
+              value={formData.careInstructions}
+              onChange={(e) => handleInputChange('careInstructions', e.target.value)}
+              rows={3}
+              placeholder="Detailed care instructions for customers"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Settings</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="isFeatured"
+              checked={formData.isFeatured}
+              onCheckedChange={(checked) => handleInputChange('isFeatured', checked)}
+            />
+            <Label htmlFor="isFeatured">Featured Product</Label>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* SEO */}
+      <Card>
+        <CardHeader>
+          <CardTitle>SEO</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="metaTitle">Meta Title</Label>
+            <Input
+              id="metaTitle"
+              value={formData.metaTitle}
+              onChange={(e) => handleInputChange('metaTitle', e.target.value)}
+              placeholder="SEO title for search engines"
+            />
+          </div>
+          <div>
+            <Label htmlFor="metaDescription">Meta Description</Label>
+            <Textarea
+              id="metaDescription"
+              value={formData.metaDescription}
+              onChange={(e) => handleInputChange('metaDescription', e.target.value)}
+              rows={2}
+              placeholder="SEO description for search engines"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Submit Buttons */}
+      <div className="flex justify-end space-x-4">
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={() => router.push('/admin/products')}
+        >
+          Cancel
         </Button>
-      </form>
-    </Form>
-  );
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? 'Saving...' : (product ? 'Update Product' : 'Create Product')}
+        </Button>
+      </div>
+    </form>
+  )
 }

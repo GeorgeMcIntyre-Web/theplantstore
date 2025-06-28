@@ -16,6 +16,11 @@ interface EditProductPageProps {
 async function getProduct(id: string) {
   const product = await prisma.product.findUnique({
     where: { id },
+    include: {
+      category: true,
+      images: true,
+      reviews: true,
+    },
   });
   return product;
 }
@@ -31,7 +36,7 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
     <div>
       <h1 className="text-2xl font-bold">Edit Product</h1>
       <div className="mt-8">
-        <ProductForm product={product} />
+        <ProductForm product={product as any} />
       </div>
     </div>
   );
