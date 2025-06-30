@@ -1,7 +1,7 @@
-'use client'
+"use client";
 
-import { useSession, signOut } from 'next-auth/react'
-import Link from 'next/link'
+import { useSession, signOut } from "next-auth/react";
+import Link from "next/link";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,27 +9,30 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { User, Package, Settings, LogOut } from 'lucide-react'
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { User, Package, Settings, LogOut } from "lucide-react";
 
 export function UserMenu() {
-  const { data: session } = useSession()
+  const { data: session } = useSession();
 
-  if (!session?.user) return null
+  if (!session?.user) return null;
 
-  const userRole = (session.user as any)?.role
-  const isAdmin = userRole && userRole !== 'CUSTOMER'
+  const userRole = (session.user as any)?.role;
+  const isAdmin = userRole && userRole !== "CUSTOMER";
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={(session.user as any).image || ''} alt={session.user.name || ''} />
+            <AvatarImage
+              src={(session.user as any).image || ""}
+              alt={session.user.name || ""}
+            />
             <AvatarFallback>
-              {session.user.name?.charAt(0)?.toUpperCase() || 'U'}
+              {session.user.name?.charAt(0)?.toUpperCase() || "U"}
             </AvatarFallback>
           </Avatar>
         </Button>
@@ -69,12 +72,12 @@ export function UserMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="cursor-pointer"
-          onSelect={() => signOut({ callbackUrl: '/' })}
+          onSelect={() => signOut({ callbackUrl: "/" })}
         >
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }

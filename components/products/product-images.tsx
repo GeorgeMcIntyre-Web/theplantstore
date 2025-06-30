@@ -1,20 +1,19 @@
+"use client";
 
-'use client'
-
-import { useState } from 'react'
-import Image from 'next/image'
-import { Button } from '@/components/ui/button'
-import { ProductImage } from '@/lib/types'
-import { ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react'
+import { useState } from "react";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { ProductImage } from "@/lib/types";
+import { ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
 
 interface ProductImagesProps {
-  images: ProductImage[]
-  productName: string
+  images: ProductImage[];
+  productName: string;
 }
 
 export function ProductImages({ images, productName }: ProductImagesProps) {
-  const [selectedImage, setSelectedImage] = useState(0)
-  const [isZoomed, setIsZoomed] = useState(false)
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [isZoomed, setIsZoomed] = useState(false);
 
   if (!images || images.length === 0) {
     return (
@@ -23,18 +22,18 @@ export function ProductImages({ images, productName }: ProductImagesProps) {
           <span className="text-muted-foreground">No images available</span>
         </div>
       </div>
-    )
+    );
   }
 
-  const currentImage = images[selectedImage]
+  const currentImage = images[selectedImage];
 
   const nextImage = () => {
-    setSelectedImage((prev) => (prev + 1) % images.length)
-  }
+    setSelectedImage((prev) => (prev + 1) % images.length);
+  };
 
   const prevImage = () => {
-    setSelectedImage((prev) => (prev - 1 + images.length) % images.length)
-  }
+    setSelectedImage((prev) => (prev - 1 + images.length) % images.length);
+  };
 
   return (
     <div className="space-y-4">
@@ -45,11 +44,11 @@ export function ProductImages({ images, productName }: ProductImagesProps) {
           alt={currentImage.altText || productName}
           fill
           className={`object-cover transition-transform duration-500 ${
-            isZoomed ? 'scale-150' : 'scale-100'
+            isZoomed ? "scale-150" : "scale-100"
           }`}
           priority
         />
-        
+
         {/* Navigation Arrows */}
         {images.length > 1 && (
           <>
@@ -99,8 +98,8 @@ export function ProductImages({ images, productName }: ProductImagesProps) {
               onClick={() => setSelectedImage(index)}
               className={`relative aspect-square rounded-md overflow-hidden border-2 transition-colors ${
                 index === selectedImage
-                  ? 'border-primary'
-                  : 'border-transparent hover:border-muted-foreground/30'
+                  ? "border-primary"
+                  : "border-transparent hover:border-muted-foreground/30"
               }`}
             >
               <Image
@@ -114,5 +113,5 @@ export function ProductImages({ images, productName }: ProductImagesProps) {
         </div>
       )}
     </div>
-  )
+  );
 }

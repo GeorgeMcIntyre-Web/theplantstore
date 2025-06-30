@@ -1,7 +1,7 @@
 // app/admin/customers/page.tsx
 
 // This line tells Next.js to render this page dynamically
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 import {
   Table,
@@ -10,13 +10,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { prisma } from '@/lib/db';
+} from "@/components/ui/table";
+import { prisma } from "@/lib/db";
 
 async function getCustomers() {
   return prisma.user.findMany({
-    where: { role: 'CUSTOMER' },
-    orderBy: { createdAt: 'desc' },
+    where: { role: "CUSTOMER" },
+    orderBy: { createdAt: "desc" },
   });
 }
 
@@ -26,7 +26,7 @@ export default async function CustomersPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold">Customers</h1>
-       <div className="mt-8">
+      <div className="mt-8">
         <Table>
           <TableHeader>
             <TableRow>
@@ -40,7 +40,9 @@ export default async function CustomersPage() {
               <TableRow key={customer.id}>
                 <TableCell>{customer.name}</TableCell>
                 <TableCell>{customer.email}</TableCell>
-                <TableCell>{new Date(customer.createdAt).toLocaleDateString()}</TableCell>
+                <TableCell>
+                  {new Date(customer.createdAt).toLocaleDateString()}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

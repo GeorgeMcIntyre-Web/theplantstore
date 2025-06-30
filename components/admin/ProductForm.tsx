@@ -1,131 +1,142 @@
 // components/admin/ProductForm.tsx - UPDATED WITH DYNAMIC CATEGORIES
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { toast } from '@/hooks/use-toast'
-import { Product } from '@/lib/types'
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "@/hooks/use-toast";
+import { Product } from "@/lib/types";
 
 interface ProductFormProps {
-  product?: Partial<Product>
+  product?: Partial<Product>;
 }
 
 interface Category {
-  id: string
-  name: string
+  id: string;
+  name: string;
 }
 
 export function ProductForm({ product }: ProductFormProps) {
-  const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-  const [categories, setCategories] = useState<Category[]>([])
-  const [categoriesLoading, setCategoriesLoading] = useState(true)
-  
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+
   const [formData, setFormData] = useState({
-    name: product?.name || '',
-    description: product?.description || '',
-    shortDescription: product?.shortDescription || '',
+    name: product?.name || "",
+    description: product?.description || "",
+    shortDescription: product?.shortDescription || "",
     price: product?.price ? Number(product.price) : 0,
-    compareAtPrice: product?.compareAtPrice ? Number(product.compareAtPrice) : 0,
-    sku: product?.sku || '',
+    compareAtPrice: product?.compareAtPrice
+      ? Number(product.compareAtPrice)
+      : 0,
+    sku: product?.sku || "",
     stockQuantity: product?.stockQuantity || 0,
     lowStockThreshold: product?.lowStockThreshold || 10,
     weight: product?.weight ? Number(product.weight) : 0,
-    dimensions: product?.dimensions || '',
-    categoryId: product?.categoryId || '',
+    dimensions: product?.dimensions || "",
+    categoryId: product?.categoryId || "",
     isFeatured: product?.isFeatured || false,
-    careLevel: product?.careLevel || '',
-    lightRequirement: product?.lightRequirement || '',
-    wateringFrequency: product?.wateringFrequency || '',
+    careLevel: product?.careLevel || "",
+    lightRequirement: product?.lightRequirement || "",
+    wateringFrequency: product?.wateringFrequency || "",
     isPetSafe: product?.isPetSafe || false,
-    plantSize: product?.plantSize || '',
-    growthRate: product?.growthRate || '',
-    careInstructions: product?.careInstructions || '',
-    metaTitle: product?.metaTitle || '',
-    metaDescription: product?.metaDescription || '',
-  })
+    plantSize: product?.plantSize || "",
+    growthRate: product?.growthRate || "",
+    careInstructions: product?.careInstructions || "",
+    metaTitle: product?.metaTitle || "",
+    metaDescription: product?.metaDescription || "",
+  });
 
   // Fetch categories from API
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        setCategoriesLoading(true)
-        const response = await fetch('/api/categories')
+        setCategoriesLoading(true);
+        const response = await fetch("/api/categories");
         if (response.ok) {
-          const data = await response.json()
-          setCategories(data.categories || [])
+          const data = await response.json();
+          setCategories(data.categories || []);
         } else {
-          console.error('Failed to fetch categories')
+          console.error("Failed to fetch categories");
           // Fallback to mock data if API fails
           setCategories([
-            { id: 'cat1', name: 'Indoor Plants' },
-            { id: 'cat2', name: 'Outdoor Plants' },
-            { id: 'cat3', name: 'Succulents' },
-            { id: 'cat4', name: 'Accessories' },
-          ])
+            { id: "cat1", name: "Indoor Plants" },
+            { id: "cat2", name: "Outdoor Plants" },
+            { id: "cat3", name: "Succulents" },
+            { id: "cat4", name: "Accessories" },
+          ]);
         }
       } catch (error) {
-        console.error('Error fetching categories:', error)
+        console.error("Error fetching categories:", error);
         // Fallback to mock data
         setCategories([
-          { id: 'cat1', name: 'Indoor Plants' },
-          { id: 'cat2', name: 'Outdoor Plants' },
-          { id: 'cat3', name: 'Succulents' },
-          { id: 'cat4', name: 'Accessories' },
-        ])
+          { id: "cat1", name: "Indoor Plants" },
+          { id: "cat2", name: "Outdoor Plants" },
+          { id: "cat3", name: "Succulents" },
+          { id: "cat4", name: "Accessories" },
+        ]);
       } finally {
-        setCategoriesLoading(false)
+        setCategoriesLoading(false);
       }
-    }
+    };
 
-    fetchCategories()
-  }, [])
+    fetchCategories();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+    e.preventDefault();
+    setIsLoading(true);
 
     try {
-      const url = product?.id ? `/api/admin/products/${product.id}` : '/api/admin/products'
-      const method = product?.id ? 'PUT' : 'POST'
+      const url = product?.id
+        ? `/api/admin/products/${product.id}`
+        : "/api/admin/products";
+      const method = product?.id ? "PUT" : "POST";
 
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
-      })
+      });
 
       if (response.ok) {
         toast({
-          title: product?.id ? 'Product updated' : 'Product created',
-          description: 'Product has been saved successfully.',
-        })
-        router.push('/admin/products')
+          title: product?.id ? "Product updated" : "Product created",
+          description: "Product has been saved successfully.",
+        });
+        router.push("/admin/products");
       } else {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to save product')
+        const error = await response.json();
+        throw new Error(error.error || "Failed to save product");
       }
     } catch (error) {
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to save product',
-        variant: 'destructive',
-      })
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to save product",
+        variant: "destructive",
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
@@ -142,7 +153,7 @@ export function ProductForm({ product }: ProductFormProps) {
                 <Input
                   id="name"
                   value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
                   required
                 />
               </div>
@@ -152,7 +163,9 @@ export function ProductForm({ product }: ProductFormProps) {
                 <Input
                   id="shortDescription"
                   value={formData.shortDescription}
-                  onChange={(e) => handleInputChange('shortDescription', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("shortDescription", e.target.value)
+                  }
                 />
               </div>
 
@@ -161,7 +174,9 @@ export function ProductForm({ product }: ProductFormProps) {
                 <Textarea
                   id="description"
                   value={formData.description}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("description", e.target.value)
+                  }
                   rows={4}
                 />
               </div>
@@ -174,7 +189,9 @@ export function ProductForm({ product }: ProductFormProps) {
                     type="number"
                     step="0.01"
                     value={formData.price}
-                    onChange={(e) => handleInputChange('price', parseFloat(e.target.value))}
+                    onChange={(e) =>
+                      handleInputChange("price", parseFloat(e.target.value))
+                    }
                     required
                   />
                 </div>
@@ -185,7 +202,12 @@ export function ProductForm({ product }: ProductFormProps) {
                     type="number"
                     step="0.01"
                     value={formData.compareAtPrice}
-                    onChange={(e) => handleInputChange('compareAtPrice', parseFloat(e.target.value))}
+                    onChange={(e) =>
+                      handleInputChange(
+                        "compareAtPrice",
+                        parseFloat(e.target.value),
+                      )
+                    }
                   />
                 </div>
               </div>
@@ -196,18 +218,26 @@ export function ProductForm({ product }: ProductFormProps) {
                   <Input
                     id="sku"
                     value={formData.sku}
-                    onChange={(e) => handleInputChange('sku', e.target.value)}
+                    onChange={(e) => handleInputChange("sku", e.target.value)}
                   />
                 </div>
                 <div>
                   <Label htmlFor="categoryId">Category *</Label>
-                  <Select 
-                    value={formData.categoryId} 
-                    onValueChange={(value) => handleInputChange('categoryId', value)}
+                  <Select
+                    value={formData.categoryId}
+                    onValueChange={(value) =>
+                      handleInputChange("categoryId", value)
+                    }
                     disabled={categoriesLoading}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={categoriesLoading ? "Loading categories..." : "Select category"} />
+                      <SelectValue
+                        placeholder={
+                          categoriesLoading
+                            ? "Loading categories..."
+                            : "Select category"
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {categories.map((category) => (
@@ -231,7 +261,12 @@ export function ProductForm({ product }: ProductFormProps) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="careLevel">Care Level</Label>
-                  <Select value={formData.careLevel} onValueChange={(value) => handleInputChange('careLevel', value)}>
+                  <Select
+                    value={formData.careLevel}
+                    onValueChange={(value) =>
+                      handleInputChange("careLevel", value)
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select care level" />
                     </SelectTrigger>
@@ -244,7 +279,12 @@ export function ProductForm({ product }: ProductFormProps) {
                 </div>
                 <div>
                   <Label htmlFor="lightRequirement">Light Requirement</Label>
-                  <Select value={formData.lightRequirement} onValueChange={(value) => handleInputChange('lightRequirement', value)}>
+                  <Select
+                    value={formData.lightRequirement}
+                    onValueChange={(value) =>
+                      handleInputChange("lightRequirement", value)
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select light requirement" />
                     </SelectTrigger>
@@ -261,7 +301,12 @@ export function ProductForm({ product }: ProductFormProps) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="wateringFrequency">Watering Frequency</Label>
-                  <Select value={formData.wateringFrequency} onValueChange={(value) => handleInputChange('wateringFrequency', value)}>
+                  <Select
+                    value={formData.wateringFrequency}
+                    onValueChange={(value) =>
+                      handleInputChange("wateringFrequency", value)
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select watering frequency" />
                     </SelectTrigger>
@@ -274,7 +319,12 @@ export function ProductForm({ product }: ProductFormProps) {
                 </div>
                 <div>
                   <Label htmlFor="plantSize">Plant Size</Label>
-                  <Select value={formData.plantSize} onValueChange={(value) => handleInputChange('plantSize', value)}>
+                  <Select
+                    value={formData.plantSize}
+                    onValueChange={(value) =>
+                      handleInputChange("plantSize", value)
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select plant size" />
                     </SelectTrigger>
@@ -292,7 +342,9 @@ export function ProductForm({ product }: ProductFormProps) {
                 <Textarea
                   id="careInstructions"
                   value={formData.careInstructions}
-                  onChange={(e) => handleInputChange('careInstructions', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("careInstructions", e.target.value)
+                  }
                   rows={3}
                 />
               </div>
@@ -301,7 +353,9 @@ export function ProductForm({ product }: ProductFormProps) {
                 <Checkbox
                   id="isPetSafe"
                   checked={formData.isPetSafe}
-                  onCheckedChange={(checked) => handleInputChange('isPetSafe', checked)}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("isPetSafe", checked)
+                  }
                 />
                 <Label htmlFor="isPetSafe">Pet Safe</Label>
               </div>
@@ -322,7 +376,9 @@ export function ProductForm({ product }: ProductFormProps) {
                   id="stockQuantity"
                   type="number"
                   value={formData.stockQuantity}
-                  onChange={(e) => handleInputChange('stockQuantity', parseInt(e.target.value))}
+                  onChange={(e) =>
+                    handleInputChange("stockQuantity", parseInt(e.target.value))
+                  }
                   required
                 />
               </div>
@@ -332,7 +388,12 @@ export function ProductForm({ product }: ProductFormProps) {
                   id="lowStockThreshold"
                   type="number"
                   value={formData.lowStockThreshold}
-                  onChange={(e) => handleInputChange('lowStockThreshold', parseInt(e.target.value))}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "lowStockThreshold",
+                      parseInt(e.target.value),
+                    )
+                  }
                 />
               </div>
             </CardContent>
@@ -347,7 +408,9 @@ export function ProductForm({ product }: ProductFormProps) {
                 <Checkbox
                   id="isFeatured"
                   checked={formData.isFeatured}
-                  onCheckedChange={(checked) => handleInputChange('isFeatured', checked)}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("isFeatured", checked)
+                  }
                 />
                 <Label htmlFor="isFeatured">Featured Product</Label>
               </div>
@@ -364,7 +427,9 @@ export function ProductForm({ product }: ProductFormProps) {
                 <Input
                   id="metaTitle"
                   value={formData.metaTitle}
-                  onChange={(e) => handleInputChange('metaTitle', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("metaTitle", e.target.value)
+                  }
                 />
               </div>
               <div>
@@ -372,7 +437,9 @@ export function ProductForm({ product }: ProductFormProps) {
                 <Textarea
                   id="metaDescription"
                   value={formData.metaDescription}
-                  onChange={(e) => handleInputChange('metaDescription', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("metaDescription", e.target.value)
+                  }
                   rows={3}
                 />
               </div>
@@ -385,15 +452,19 @@ export function ProductForm({ product }: ProductFormProps) {
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.push('/admin/products')}
+          onClick={() => router.push("/admin/products")}
           disabled={isLoading}
         >
           Cancel
         </Button>
         <Button type="submit" disabled={isLoading}>
-          {isLoading ? 'Saving...' : product?.id ? 'Update Product' : 'Create Product'}
+          {isLoading
+            ? "Saving..."
+            : product?.id
+              ? "Update Product"
+              : "Create Product"}
         </Button>
       </div>
     </form>
-  )
+  );
 }

@@ -1,7 +1,7 @@
 // app/admin/users/page.tsx
 
 // This line tells Next.js to render this page dynamically
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 import {
   Table,
@@ -10,19 +10,19 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { prisma } from '@/lib/db';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/table";
+import { prisma } from "@/lib/db";
+import { Badge } from "@/components/ui/badge";
 
 async function getUsers() {
   return prisma.user.findMany({
     where: {
       role: {
-        not: 'CUSTOMER',
+        not: "CUSTOMER",
       },
     },
     orderBy: {
-      role: 'asc',
+      role: "asc",
     },
   });
 }
@@ -33,7 +33,7 @@ export default async function UsersPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold">Admin Users</h1>
-       <div className="mt-8">
+      <div className="mt-8">
         <Table>
           <TableHeader>
             <TableRow>
@@ -47,7 +47,9 @@ export default async function UsersPage() {
               <TableRow key={user.id}>
                 <TableCell>{user.name}</TableCell>
                 <TableCell>{user.email}</TableCell>
-                <TableCell><Badge variant="secondary">{user.role}</Badge></TableCell>
+                <TableCell>
+                  <Badge variant="secondary">{user.role}</Badge>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

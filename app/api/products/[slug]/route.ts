@@ -1,7 +1,7 @@
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic";
 
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
 
 // Define interfaces for type safety
 interface ReviewWithRating {
@@ -25,33 +25,37 @@ export async function GET(request: NextRequest) {
         category: true,
         images: {
           where: { isPrimary: true },
-          take: 1
+          take: 1,
         },
         reviews: {
-          where: { isApproved: true }
-        }
+          where: { isApproved: true },
+        },
       },
       take: 8,
-      orderBy: { createdAt: 'desc' }
-    })
+      orderBy: { createdAt: "desc" },
+    });
 
     // Calculate average ratings
-const productsWithRatings = products.map((product: any) => ({
-  ...product,
-  averageRating: product.reviews.length > 0
-    ? product.reviews.reduce((acc: number, review: ReviewWithRating) => acc + review.rating, 0) / product.reviews.length
-    : 0,
-  reviewCount: product.reviews.length
-}))
+    const productsWithRatings = products.map((product: any) => ({
+      ...product,
+      averageRating:
+        product.reviews.length > 0
+          ? product.reviews.reduce(
+              (acc: number, review: ReviewWithRating) => acc + review.rating,
+              0,
+            ) / product.reviews.length
+          : 0,
+      reviewCount: product.reviews.length,
+    }));
 
     return NextResponse.json({
-      products: productsWithRatings
-    })
+      products: productsWithRatings,
+    });
   } catch (error: any) {
-    console.error('Featured products fetch error:', error)
+    console.error("Featured products fetch error:", error);
     return NextResponse.json(
-      { error: 'Failed to fetch featured products' },
-      { status: 500 }
-    )
+      { error: "Failed to fetch featured products" },
+      { status: 500 },
+    );
   }
 }

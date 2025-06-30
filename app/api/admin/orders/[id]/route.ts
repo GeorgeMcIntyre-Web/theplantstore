@@ -1,26 +1,25 @@
 // app/api/admin/orders/[id]/route.ts
 
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { prisma } from '@/lib/db';
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { prisma } from "@/lib/db";
 
 // Import NextAuth configuration to get session
 async function getAuthOptions() {
-  const { default: NextAuth } = await import('next-auth');
-  const CredentialsProvider = (
-    await import('next-auth/providers/credentials')
-  ).default;
-  const { PrismaAdapter } = await import('@next-auth/prisma-adapter');
-  const bcrypt = await import('bcryptjs');
+  const { default: NextAuth } = await import("next-auth");
+  const CredentialsProvider = (await import("next-auth/providers/credentials"))
+    .default;
+  const { PrismaAdapter } = await import("@next-auth/prisma-adapter");
+  const bcrypt = await import("bcryptjs");
 
   return {
     adapter: PrismaAdapter(prisma),
     providers: [
       CredentialsProvider({
-        name: 'credentials',
+        name: "credentials",
         credentials: {
-          email: { label: 'Email', type: 'email' },
-          password: { label: 'Password', type: 'password' },
+          email: { label: "Email", type: "email" },
+          password: { label: "Password", type: "password" },
         },
         async authorize(credentials) {
           if (!credentials?.email || !credentials?.password) {
@@ -34,7 +33,7 @@ async function getAuthOptions() {
           }
           const isPasswordValid = await bcrypt.compare(
             credentials.password,
-            user.password
+            user.password,
           );
           if (!isPasswordValid) {
             return null;
@@ -42,14 +41,14 @@ async function getAuthOptions() {
           return {
             id: user.id,
             email: user.email,
-            name: user.name || '',
+            name: user.name || "",
             role: user.role,
           };
         },
       }),
     ],
     session: {
-      strategy: 'jwt' as const,
+      strategy: "jwt" as const,
     },
     callbacks: {
       async jwt({ token, user }: any) {
@@ -67,24 +66,24 @@ async function getAuthOptions() {
       },
     },
     pages: {
-      signIn: '/auth/signin',
+      signIn: "/auth/signin",
     },
   };
 }
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const authOptions = await getAuthOptions();
     const session = await getServerSession(authOptions);
 
     const userRole = (session?.user as any)?.role;
-    if (userRole !== 'SUPER_ADMIN' && userRole !== 'PLANT_MANAGER') {
+    if (userRole !== "SUPER_ADMIN" && userRole !== "PLANT_MANAGER") {
       return NextResponse.json(
-        { error: 'Forbidden - Insufficient permissions' },
-        { status: 403 }
+        { error: "Forbidden - Insufficient permissions" },
+        { status: 403 },
       );
     }
 
@@ -101,32 +100,32 @@ export async function GET(
     });
 
     if (!order) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
     return NextResponse.json(order);
   } catch (error) {
-    console.error('Admin order fetch error:', error);
+    console.error("Admin order fetch error:", error);
     return NextResponse.json(
-      { error: 'Internal server error while fetching order' },
-      { status: 500 }
+      { error: "Internal server error while fetching order" },
+      { status: 500 },
     );
   }
 }
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const authOptions = await getAuthOptions();
     const session = await getServerSession(authOptions);
 
     const userRole = (session?.user as any)?.role;
-    if (userRole !== 'SUPER_ADMIN' && userRole !== 'PLANT_MANAGER') {
+    if (userRole !== "SUPER_ADMIN" && userRole !== "PLANT_MANAGER") {
       return NextResponse.json(
-        { error: 'Forbidden - Insufficient permissions' },
-        { status: 403 }
+        { error: "Forbidden - Insufficient permissions" },
+        { status: 403 },
       );
     }
 
@@ -142,14 +141,14 @@ export async function PUT(
     });
 
     return NextResponse.json({
-      message: 'Order updated successfully',
+      message: "Order updated successfully",
       order: updatedOrder,
     });
   } catch (error) {
-    console.error('Admin order update error:', error);
+    console.error("Admin order update error:", error);
     return NextResponse.json(
-      { error: 'Internal server error while updating order' },
-      { status: 500 }
+      { error: "Internal server error while updating order" },
+      { status: 500 },
     );
   }
 }

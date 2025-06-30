@@ -1,85 +1,86 @@
+"use client";
 
-'use client'
-
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Badge } from '@/components/ui/badge'
-import { Product } from '@/lib/types'
-import { Search, Loader2 } from 'lucide-react'
-import Link from 'next/link'
-import Image from 'next/image'
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Product } from "@/lib/types";
+import { Search, Loader2 } from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
 
 interface SearchDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
-  const [query, setQuery] = useState('')
-  const [results, setResults] = useState<Product[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-ZA', {
-      style: 'currency',
-      currency: 'ZAR',
-    }).format(price)
-  }
+    return new Intl.NumberFormat("en-ZA", {
+      style: "currency",
+      currency: "ZAR",
+    }).format(price);
+  };
 
   const handleSearch = async (searchQuery: string) => {
     if (searchQuery.trim().length < 2) {
-      setResults([])
-      return
+      setResults([]);
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`)
+      const response = await fetch(
+        `/api/search?q=${encodeURIComponent(searchQuery)}`,
+      );
       if (response.ok) {
-        const data = await response.json()
-        setResults(data.products || [])
+        const data = await response.json();
+        setResults(data.products || []);
       }
     } catch (error) {
-      console.error('Search failed:', error)
+      console.error("Search failed:", error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (query.trim()) {
-      router.push(`/search?q=${encodeURIComponent(query)}`)
-      onOpenChange(false)
-      setQuery('')
-      setResults([])
+      router.push(`/search?q=${encodeURIComponent(query)}`);
+      onOpenChange(false);
+      setQuery("");
+      setResults([]);
     }
-  }
+  };
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      handleSearch(query)
-    }, 300)
+      handleSearch(query);
+    }, 300);
 
-    return () => clearTimeout(timeoutId)
-  }, [query])
+    return () => clearTimeout(timeoutId);
+  }, [query]);
 
   useEffect(() => {
     if (!open) {
-      setQuery('')
-      setResults([])
+      setQuery("");
+      setResults([]);
     }
-  }, [open])
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -117,7 +118,9 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
               {results.length > 0 ? (
                 <div className="space-y-2">
                   {results.map((product) => {
-                    const primaryImage = product.images.find(img => img.isPrimary) || product.images[0]
+                    const primaryImage =
+                      product.images.find((img) => img.isPrimary) ||
+                      product.images[0];
                     return (
                       <Link
                         key={product.id}
@@ -139,9 +142,11 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
                             </div>
                           )}
                         </div>
-                        
+
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-medium truncate">{product.name}</h4>
+                          <h4 className="font-medium truncate">
+                            {product.name}
+                          </h4>
                           <div className="flex items-center space-x-2 mt-1">
                             <span className="font-semibold currency">
                               {formatPrice(product.price)}
@@ -152,7 +157,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
                           </div>
                         </div>
                       </Link>
-                    )
+                    );
                   })}
                 </div>
               ) : (
@@ -172,8 +177,8 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
                   variant="outline"
                   className="w-full"
                   onClick={() => {
-                    router.push(`/search?q=${encodeURIComponent(query)}`)
-                    onOpenChange(false)
+                    router.push(`/search?q=${encodeURIComponent(query)}`);
+                    onOpenChange(false);
                   }}
                 >
                   View all results for "{query}"
@@ -184,5 +189,5 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
         )}
       </DialogContent>
     </Dialog>
-  )
+  );
 }

@@ -1,40 +1,40 @@
+"use client";
 
-'use client'
-
-import Image from 'next/image'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card } from '@/components/ui/card'
-import { CartItemWithProduct } from '@/lib/types'
-import { useCart } from '@/hooks/use-cart'
-import { Minus, Plus, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import Image from "next/image";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { CartItemWithProduct } from "@/lib/types";
+import { useCart } from "@/hooks/use-cart";
+import { Minus, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 
 interface CartItemCardProps {
-  item: CartItemWithProduct
+  item: CartItemWithProduct;
 }
 
 export function CartItemCard({ item }: CartItemCardProps) {
-  const { updateQuantity, removeItem, isLoading } = useCart()
-  const [quantity, setQuantity] = useState(item.quantity)
+  const { updateQuantity, removeItem, isLoading } = useCart();
+  const [quantity, setQuantity] = useState(item.quantity);
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-ZA', {
-      style: 'currency',
-      currency: 'ZAR',
-    }).format(price)
-  }
+    return new Intl.NumberFormat("en-ZA", {
+      style: "currency",
+      currency: "ZAR",
+    }).format(price);
+  };
 
   const handleQuantityChange = async (newQuantity: number) => {
-    if (newQuantity < 1) return
-    if (newQuantity > item.product.stockQuantity) return
-    
-    setQuantity(newQuantity)
-    await updateQuantity(item.id, newQuantity)
-  }
+    if (newQuantity < 1) return;
+    if (newQuantity > item.product.stockQuantity) return;
 
-  const primaryImage = item.product.images.find(img => img.isPrimary) || item.product.images[0]
+    setQuantity(newQuantity);
+    await updateQuantity(item.id, newQuantity);
+  };
+
+  const primaryImage =
+    item.product.images.find((img) => img.isPrimary) || item.product.images[0];
 
   return (
     <Card className="p-4">
@@ -57,13 +57,13 @@ export function CartItemCard({ item }: CartItemCardProps) {
 
         {/* Product Details */}
         <div className="flex-1 min-w-0">
-          <Link 
+          <Link
             href={`/products/${item.product.slug}`}
             className="text-sm font-medium hover:text-primary"
           >
             {item.product.name}
           </Link>
-          
+
           <div className="mt-1 flex items-center space-x-2">
             <span className="text-sm font-semibold currency">
               {formatPrice(item.product.price)}
@@ -86,14 +86,14 @@ export function CartItemCard({ item }: CartItemCardProps) {
             >
               <Minus className="h-3 w-3" />
             </Button>
-            
+
             <Input
               type="number"
               value={quantity}
               onChange={(e) => {
-                const newQuantity = parseInt(e.target.value)
+                const newQuantity = parseInt(e.target.value);
                 if (!isNaN(newQuantity)) {
-                  handleQuantityChange(newQuantity)
+                  handleQuantityChange(newQuantity);
                 }
               }}
               className="h-8 w-16 text-center"
@@ -101,7 +101,7 @@ export function CartItemCard({ item }: CartItemCardProps) {
               max={item.product.stockQuantity}
               disabled={isLoading}
             />
-            
+
             <Button
               variant="outline"
               size="sm"
@@ -132,5 +132,5 @@ export function CartItemCard({ item }: CartItemCardProps) {
         </div>
       </div>
     </Card>
-  )
+  );
 }

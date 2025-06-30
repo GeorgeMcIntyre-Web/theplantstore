@@ -1,8 +1,15 @@
-
-import Link from 'next/link'
-import { Leaf, Facebook, Instagram, Twitter, Mail, Phone, MapPin } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import Link from "next/link";
+import {
+  Leaf,
+  Facebook,
+  Instagram,
+  Twitter,
+  Mail,
+  Phone,
+  MapPin,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export function Footer() {
   return (
@@ -16,8 +23,8 @@ export function Footer() {
               <span className="font-bold text-lg">The House Plant Store</span>
             </Link>
             <p className="text-sm text-muted-foreground">
-              South Africa's premier destination for beautiful indoor plants, outdoor plants, 
-              and succulents. Bringing nature to your home.
+              South Africa's premier destination for beautiful indoor plants,
+              outdoor plants, and succulents. Bringing nature to your home.
             </p>
             <div className="flex space-x-2">
               <Button variant="ghost" size="sm">
@@ -36,16 +43,28 @@ export function Footer() {
           <div className="space-y-4">
             <h4 className="font-semibold">Shop</h4>
             <div className="space-y-2 text-sm">
-              <Link href="/collections/indoor-plants" className="block hover:text-primary">
+              <Link
+                href="/collections/indoor-plants"
+                className="block hover:text-primary"
+              >
                 Indoor Plants
               </Link>
-              <Link href="/collections/outdoor-plants" className="block hover:text-primary">
+              <Link
+                href="/collections/outdoor-plants"
+                className="block hover:text-primary"
+              >
                 Outdoor Plants
               </Link>
-              <Link href="/collections/succulents" className="block hover:text-primary">
+              <Link
+                href="/collections/succulents"
+                className="block hover:text-primary"
+              >
                 Succulents
               </Link>
-              <Link href="/collections/accessories" className="block hover:text-primary">
+              <Link
+                href="/collections/accessories"
+                className="block hover:text-primary"
+              >
                 Accessories
               </Link>
             </div>
@@ -95,5 +114,5 @@ export function Footer() {
         </div>
       </div>
     </footer>
-  )
+  );
 }

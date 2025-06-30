@@ -1,11 +1,11 @@
 // app/admin/products/[id]/page.tsx
 
 // This line tells Next.js to render this page dynamically
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-import { notFound } from 'next/navigation';
-import { ProductForm } from '@/components/admin/ProductForm';
-import { prisma } from '@/lib/db';
+import { notFound } from "next/navigation";
+import { ProductForm } from "@/components/admin/ProductForm";
+import { prisma } from "@/lib/db";
 
 interface EditProductPageProps {
   params: {
@@ -25,7 +25,9 @@ async function getProduct(id: string) {
   return product;
 }
 
-export default async function EditProductPage({ params }: EditProductPageProps) {
+export default async function EditProductPage({
+  params,
+}: EditProductPageProps) {
   const product = await getProduct(params.id);
 
   if (!product) {

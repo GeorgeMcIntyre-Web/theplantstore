@@ -1,63 +1,62 @@
+"use client";
 
-'use client'
-
-import Link from 'next/link'
-import { useSession } from 'next-auth/react'
+import Link from "next/link";
+import { useSession } from "next-auth/react";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import { 
-  Leaf, 
-  Home, 
-  TreePine, 
-  Flower, 
+} from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import {
+  Leaf,
+  Home,
+  TreePine,
+  Flower,
   Wrench,
   BookOpen,
   User,
   LogIn,
-  Settings
-} from 'lucide-react'
+  Settings,
+} from "lucide-react";
 
 interface MobileMenuProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 export function MobileMenu({ open, onOpenChange }: MobileMenuProps) {
-  const { data: session } = useSession()
+  const { data: session } = useSession();
 
   const menuItems = [
     {
-      title: 'Indoor Plants',
-      href: '/collections/indoor-plants',
+      title: "Indoor Plants",
+      href: "/collections/indoor-plants",
       icon: Leaf,
     },
     {
-      title: 'Outdoor Plants',
-      href: '/collections/outdoor-plants',
+      title: "Outdoor Plants",
+      href: "/collections/outdoor-plants",
       icon: TreePine,
     },
     {
-      title: 'Succulents',
-      href: '/collections/succulents',
+      title: "Succulents",
+      href: "/collections/succulents",
       icon: Flower,
     },
     {
-      title: 'Accessories',
-      href: '/collections/accessories',
+      title: "Accessories",
+      href: "/collections/accessories",
       icon: Wrench,
     },
     {
-      title: 'Plant Care',
-      href: '/plant-care',
+      title: "Plant Care",
+      href: "/plant-care",
       icon: BookOpen,
     },
-  ]
+  ];
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -68,7 +67,7 @@ export function MobileMenu({ open, onOpenChange }: MobileMenuProps) {
             The House Plant Store
           </SheetTitle>
         </SheetHeader>
-        
+
         <div className="mt-6 space-y-4">
           <Link href="/" onClick={() => onOpenChange(false)}>
             <Button variant="ghost" className="w-full justify-start">
@@ -84,7 +83,11 @@ export function MobileMenu({ open, onOpenChange }: MobileMenuProps) {
               Shop
             </h3>
             {menuItems.map((item) => (
-              <Link key={item.href} href={item.href} onClick={() => onOpenChange(false)}>
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => onOpenChange(false)}
+              >
                 <Button variant="ghost" className="w-full justify-start">
                   <item.icon className="mr-2 h-4 w-4" />
                   {item.title}
@@ -107,7 +110,7 @@ export function MobileMenu({ open, onOpenChange }: MobileMenuProps) {
                     My Account
                   </Button>
                 </Link>
-                {(session.user as any)?.role !== 'CUSTOMER' && (
+                {(session.user as any)?.role !== "CUSTOMER" && (
                   <Link href="/admin" onClick={() => onOpenChange(false)}>
                     <Button variant="ghost" className="w-full justify-start">
                       <Settings className="mr-2 h-4 w-4" />
@@ -128,5 +131,5 @@ export function MobileMenu({ open, onOpenChange }: MobileMenuProps) {
         </div>
       </SheetContent>
     </Sheet>
-  )
+  );
 }

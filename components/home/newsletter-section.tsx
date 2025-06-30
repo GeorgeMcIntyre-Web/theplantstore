@@ -1,43 +1,42 @@
+"use client";
 
-'use client'
-
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent } from '@/components/ui/card'
-import { Mail, CheckCircle } from 'lucide-react'
-import { motion } from 'framer-motion'
-import { toast } from '@/hooks/use-toast'
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { Mail, CheckCircle } from "lucide-react";
+import { motion } from "framer-motion";
+import { toast } from "@/hooks/use-toast";
 
 export function NewsletterSection() {
-  const [email, setEmail] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSubscribed, setIsSubscribed] = useState(false)
+  const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!email) return
+    e.preventDefault();
+    if (!email) return;
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       // Simulate newsletter signup
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      setIsSubscribed(true)
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      setIsSubscribed(true);
       toast({
-        title: 'Subscribed!',
-        description: 'Thank you for subscribing to our newsletter.',
-      })
-      setEmail('')
+        title: "Subscribed!",
+        description: "Thank you for subscribing to our newsletter.",
+      });
+      setEmail("");
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to subscribe. Please try again.',
-        variant: 'destructive',
-      })
+        title: "Error",
+        description: "Failed to subscribe. Please try again.",
+        variant: "destructive",
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <section className="py-16">
@@ -64,7 +63,8 @@ export function NewsletterSection() {
                   Stay in the Loop
                 </h2>
                 <p className="text-white/90 text-lg">
-                  Get plant care tips, new arrivals, and exclusive offers delivered to your inbox
+                  Get plant care tips, new arrivals, and exclusive offers
+                  delivered to your inbox
                 </p>
               </motion.div>
 
@@ -107,7 +107,9 @@ export function NewsletterSection() {
                   className="flex items-center justify-center gap-3 text-green-200"
                 >
                   <CheckCircle className="h-6 w-6" />
-                  <span className="font-semibold">Successfully subscribed!</span>
+                  <span className="font-semibold">
+                    Successfully subscribed!
+                  </span>
                 </motion.div>
               )}
 
@@ -119,5 +121,5 @@ export function NewsletterSection() {
         </motion.div>
       </div>
     </section>
-  )
+  );
 }

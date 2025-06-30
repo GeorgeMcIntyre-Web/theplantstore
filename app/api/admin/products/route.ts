@@ -1,32 +1,32 @@
 // app/api/admin/products/route.ts - FIXED VERSION
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { prisma } from '@/lib/db';
-import { Decimal } from '@prisma/client/runtime/library';
-import { authOptions } from '@/lib/auth';
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { prisma } from "@/lib/db";
+import { Decimal } from "@prisma/client/runtime/library";
+import { authOptions } from "@/lib/auth";
 
 // This forces the route to be dynamic, which is good practice for admin routes
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 // GET handler to fetch all products
 export async function GET() {
-    try {
-        const products = await prisma.product.findMany({
-            include: {
-                category: true, // Include category data
-            },
-            orderBy: {
-                createdAt: 'desc',
-            },
-        });
-        return NextResponse.json(products);
-    } catch (error) {
-        console.error('Admin product fetch error:', error);
-        return NextResponse.json(
-            { error: 'Internal server error while fetching products' },
-            { status: 500 }
-        );
-    }
+  try {
+    const products = await prisma.product.findMany({
+      include: {
+        category: true, // Include category data
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+    return NextResponse.json(products);
+  } catch (error) {
+    console.error("Admin product fetch error:", error);
+    return NextResponse.json(
+      { error: "Internal server error while fetching products" },
+      { status: 500 },
+    );
+  }
 }
 
 // POST handler to create a new product
@@ -38,16 +38,16 @@ export async function POST(request: NextRequest) {
     // Check if user is authenticated and has the correct role
     if (!session?.user) {
       return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
-        { status: 401 }
+        { error: "Unauthorized - Please log in" },
+        { status: 401 },
       );
     }
 
     const userRole = (session.user as any).role;
-    if (userRole !== 'SUPER_ADMIN' && userRole !== 'PLANT_MANAGER') {
+    if (userRole !== "SUPER_ADMIN" && userRole !== "PLANT_MANAGER") {
       return NextResponse.json(
-        { error: 'Forbidden - Insufficient permissions' },
-        { status: 403 }
+        { error: "Forbidden - Insufficient permissions" },
+        { status: 403 },
       );
     }
 
@@ -79,50 +79,63 @@ export async function POST(request: NextRequest) {
 
     if (!name || !price || !categoryId || stockQuantity === undefined) {
       return NextResponse.json(
-        { error: 'Missing required fields: name, price, categoryId, stockQuantity' },
-        { status: 400 }
+        {
+          error:
+            "Missing required fields: name, price, categoryId, stockQuantity",
+        },
+        { status: 400 },
       );
     }
 
     // Data type validation and conversion
     const convertedPrice = new Decimal(parseFloat(price.toString()));
     const convertedCompareAtPrice =
-      compareAtPrice != null && compareAtPrice !== ''
+      compareAtPrice != null && compareAtPrice !== ""
         ? new Decimal(parseFloat(compareAtPrice.toString()))
         : undefined;
     const convertedStockQuantity = parseInt(stockQuantity.toString());
     const convertedLowStockThreshold =
-      lowStockThreshold != null
-        ? parseInt(lowStockThreshold.toString())
-        : 10;
+      lowStockThreshold != null ? parseInt(lowStockThreshold.toString()) : 10;
     const convertedWeight =
-      weight != null && weight !== ''
+      weight != null && weight !== ""
         ? new Decimal(parseFloat(weight.toString()))
         : undefined;
 
     // Check if category exists
-    const category = await prisma.category.findUnique({ where: { id: categoryId } });
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId },
+    });
     if (!category) {
-      return NextResponse.json({ error: 'Category not found' }, { status: 400 });
+      return NextResponse.json(
+        { error: "Category not found" },
+        { status: 400 },
+      );
     }
 
     // Slug generation and uniqueness check
-    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    const existingProductBySlug = await prisma.product.findUnique({ where: { slug } });
+    const slug = name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+    const existingProductBySlug = await prisma.product.findUnique({
+      where: { slug },
+    });
     if (existingProductBySlug) {
       return NextResponse.json(
-        { error: 'Product with this name already exists (slug conflict)' },
-        { status: 400 }
+        { error: "Product with this name already exists (slug conflict)" },
+        { status: 400 },
       );
     }
 
     // SKU uniqueness check
     if (sku) {
-      const existingProductBySku = await prisma.product.findUnique({ where: { sku } });
+      const existingProductBySku = await prisma.product.findUnique({
+        where: { sku },
+      });
       if (existingProductBySku) {
         return NextResponse.json(
-          { error: 'Product with this SKU already exists' },
-          { status: 400 }
+          { error: "Product with this SKU already exists" },
+          { status: 400 },
         );
       }
     }
@@ -166,20 +179,20 @@ export async function POST(request: NextRequest) {
       include: {
         category: true,
         images: {
-          orderBy: { sortOrder: 'asc' },
+          orderBy: { sortOrder: "asc" },
         },
       },
     });
 
     return NextResponse.json(
-      { message: 'Product created successfully', product: newProduct },
-      { status: 201 }
+      { message: "Product created successfully", product: newProduct },
+      { status: 201 },
     );
   } catch (error) {
-    console.error('Admin product creation error:', error);
+    console.error("Admin product creation error:", error);
     return NextResponse.json(
-      { error: 'Internal server error while creating product' },
-      { status: 500 }
+      { error: "Internal server error while creating product" },
+      { status: 500 },
     );
   }
 }

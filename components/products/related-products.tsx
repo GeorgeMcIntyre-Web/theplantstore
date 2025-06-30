@@ -1,45 +1,49 @@
+"use client";
 
-'use client'
-
-import Image from 'next/image'
-import Link from 'next/link'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Product } from '@/lib/types'
-import { ShoppingCart, Star } from 'lucide-react'
-import { useCart } from '@/hooks/use-cart'
+import Image from "next/image";
+import Link from "next/link";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Product } from "@/lib/types";
+import { ShoppingCart, Star } from "lucide-react";
+import { useCart } from "@/hooks/use-cart";
 
 interface RelatedProductsProps {
   products: (Product & {
-    images: { url: string; altText?: string | null; isPrimary: boolean }[]
-  })[]
+    images: { url: string; altText?: string | null; isPrimary: boolean }[];
+  })[];
 }
 
 export function RelatedProducts({ products }: RelatedProductsProps) {
-  const { addItem } = useCart()
+  const { addItem } = useCart();
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-ZA', {
-      style: 'currency',
-      currency: 'ZAR',
-    }).format(price)
-  }
+    return new Intl.NumberFormat("en-ZA", {
+      style: "currency",
+      currency: "ZAR",
+    }).format(price);
+  };
 
   if (products.length === 0) {
-    return null
+    return null;
   }
 
   return (
     <div className="mt-16">
       <h2 className="text-2xl font-bold mb-6">You might also like</h2>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {products.map((product) => {
-          const primaryImage = product.images.find(img => img.isPrimary) || product.images[0]
-          const discountPercent = product.compareAtPrice 
-            ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)
-            : 0
+          const primaryImage =
+            product.images.find((img) => img.isPrimary) || product.images[0];
+          const discountPercent = product.compareAtPrice
+            ? Math.round(
+                ((product.compareAtPrice - product.price) /
+                  product.compareAtPrice) *
+                  100,
+              )
+            : 0;
 
           return (
             <Card key={product.id} className="group cursor-pointer card-hover">
@@ -56,12 +60,14 @@ export function RelatedProducts({ products }: RelatedProductsProps) {
                         />
                       ) : (
                         <div className="h-full w-full bg-muted flex items-center justify-center">
-                          <span className="text-muted-foreground">No image</span>
+                          <span className="text-muted-foreground">
+                            No image
+                          </span>
                         </div>
                       )}
                     </div>
                   </Link>
-                  
+
                   {/* Badges */}
                   <div className="absolute top-3 left-3 flex flex-col gap-2">
                     {discountPercent > 0 && (
@@ -105,7 +111,7 @@ export function RelatedProducts({ products }: RelatedProductsProps) {
                         </span>
                       )}
                     </div>
-                    
+
                     {/* Rating */}
                     <div className="flex items-center gap-1">
                       <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
@@ -114,21 +120,23 @@ export function RelatedProducts({ products }: RelatedProductsProps) {
                   </div>
 
                   {/* Add to Cart */}
-                  <Button 
+                  <Button
                     size="sm"
                     className="w-full"
                     onClick={() => addItem(product.id)}
                     disabled={product.stockQuantity === 0}
                   >
                     <ShoppingCart className="mr-2 h-4 w-4" />
-                    {product.stockQuantity === 0 ? 'Out of Stock' : 'Add to Cart'}
+                    {product.stockQuantity === 0
+                      ? "Out of Stock"
+                      : "Add to Cart"}
                   </Button>
                 </div>
               </CardContent>
             </Card>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }

@@ -1,42 +1,49 @@
+"use client";
 
-'use client'
-
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Droplets, Sun, Scissors, Heart } from 'lucide-react'
-import { motion } from 'framer-motion'
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Droplets, Sun, Scissors, Heart } from "lucide-react";
+import { motion } from "framer-motion";
 
 const careGuides = [
   {
     icon: Droplets,
-    title: 'Watering Guide',
-    description: 'Learn the perfect watering schedule for each type of plant',
-    tips: ['Check soil moisture', 'Water deeply but less frequently', 'Use room temperature water'],
-    color: 'text-blue-600'
+    title: "Watering Guide",
+    description: "Learn the perfect watering schedule for each type of plant",
+    tips: [
+      "Check soil moisture",
+      "Water deeply but less frequently",
+      "Use room temperature water",
+    ],
+    color: "text-blue-600",
   },
   {
     icon: Sun,
-    title: 'Light Requirements',
-    description: 'Understanding light needs for healthy plant growth',
-    tips: ['Identify light levels', 'Rotate plants regularly', 'Use grow lights if needed'],
-    color: 'text-yellow-600'
+    title: "Light Requirements",
+    description: "Understanding light needs for healthy plant growth",
+    tips: [
+      "Identify light levels",
+      "Rotate plants regularly",
+      "Use grow lights if needed",
+    ],
+    color: "text-yellow-600",
   },
   {
     icon: Scissors,
-    title: 'Pruning & Care',
-    description: 'Keep your plants healthy with proper maintenance',
-    tips: ['Remove dead leaves', 'Prune for shape', 'Clean leaves regularly'],
-    color: 'text-green-600'
+    title: "Pruning & Care",
+    description: "Keep your plants healthy with proper maintenance",
+    tips: ["Remove dead leaves", "Prune for shape", "Clean leaves regularly"],
+    color: "text-green-600",
   },
   {
     icon: Heart,
-    title: 'Troubleshooting',
-    description: 'Common problems and how to solve them',
-    tips: ['Yellowing leaves', 'Pest management', 'Root rot prevention'],
-    color: 'text-red-600'
-  }
-]
+    title: "Troubleshooting",
+    description: "Common problems and how to solve them",
+    tips: ["Yellowing leaves", "Pest management", "Root rot prevention"],
+    color: "text-red-600",
+  },
+];
 
 export function PlantCareSection() {
   return (
@@ -49,10 +56,12 @@ export function PlantCareSection() {
           viewport={{ once: true }}
           className="text-center mb-12"
         >
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Plant Care Made Simple</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Plant Care Made Simple
+          </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Expert tips and guides to help you keep your plants thriving. 
-            From beginners to plant enthusiasts, we've got you covered.
+            Expert tips and guides to help you keep your plants thriving. From
+            beginners to plant enthusiasts, we've got you covered.
           </p>
         </motion.div>
 
@@ -67,7 +76,9 @@ export function PlantCareSection() {
             >
               <Card className="h-full card-hover">
                 <CardHeader className="text-center">
-                  <div className={`mx-auto p-3 rounded-full bg-muted mb-4 w-fit`}>
+                  <div
+                    className={`mx-auto p-3 rounded-full bg-muted mb-4 w-fit`}
+                  >
                     <guide.icon className={`h-8 w-8 ${guide.color}`} />
                   </div>
                   <CardTitle className="text-lg">{guide.title}</CardTitle>
@@ -98,12 +109,10 @@ export function PlantCareSection() {
           className="text-center"
         >
           <Button asChild size="lg" variant="outline">
-            <Link href="/plant-care">
-              View Complete Care Guide
-            </Link>
+            <Link href="/plant-care">View Complete Care Guide</Link>
           </Button>
         </motion.div>
       </div>
     </section>
-  )
+  );
 }

@@ -33,7 +33,7 @@ export default [
       ...pluginReact.configs.recommended.rules,
       ...hooksPlugin.configs.recommended.rules,
       ...nextPlugin.configs.recommended.rules,
-      
+
       // You can add your own custom rules here if needed
       // For example:
       "react/react-in-jsx-scope": "off",
@@ -43,5 +43,5 @@ export default [
         version: "detect", // Automatically detect the React version
       },
     },
-  }
+  },
 ];

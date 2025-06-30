@@ -1,28 +1,27 @@
-
-import { Metadata } from 'next'
-import { notFound } from 'next/navigation'
-import { Header } from '@/components/layout/header'
-import { Footer } from '@/components/layout/footer'
-import { ProductGrid } from '@/components/products/product-grid'
-import { ProductFilters } from '@/components/products/product-filters'
-import { Breadcrumb } from '@/components/ui/breadcrumb'
-import { prisma } from '@/lib/db'
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { Header } from "@/components/layout/header";
+import { Footer } from "@/components/layout/footer";
+import { ProductGrid } from "@/components/products/product-grid";
+import { ProductFilters } from "@/components/products/product-filters";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { prisma } from "@/lib/db";
 
 interface CategoryPageProps {
   params: {
-    category: string
-  }
+    category: string;
+  };
   searchParams: {
-    page?: string
-    careLevel?: string
-    lightRequirement?: string
-    isPetSafe?: string
-    plantSize?: string
-    sortBy?: string
-    sortOrder?: string
-    minPrice?: string
-    maxPrice?: string
-  }
+    page?: string;
+    careLevel?: string;
+    lightRequirement?: string;
+    isPetSafe?: string;
+    plantSize?: string;
+    sortBy?: string;
+    sortOrder?: string;
+    minPrice?: string;
+    maxPrice?: string;
+  };
 }
 
 async function getCategory(slug: string) {
@@ -34,39 +33,46 @@ async function getCategory(slug: string) {
     include: {
       parent: true,
       children: true,
-    }
-  })
+    },
+  });
 
-  return category
+  return category;
 }
 
-export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
-  const category = await getCategory(params.category)
+export async function generateMetadata({
+  params,
+}: CategoryPageProps): Promise<Metadata> {
+  const category = await getCategory(params.category);
 
   if (!category) {
     return {
-      title: 'Category Not Found',
-    }
+      title: "Category Not Found",
+    };
   }
 
   return {
     title: `${category.name} - The House Plant Store`,
-    description: category.description || `Shop ${category.name.toLowerCase()} at The House Plant Store. Premium plants delivered across South Africa.`,
-  }
+    description:
+      category.description ||
+      `Shop ${category.name.toLowerCase()} at The House Plant Store. Premium plants delivered across South Africa.`,
+  };
 }
 
-export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
-  const category = await getCategory(params.category)
+export default async function CategoryPage({
+  params,
+  searchParams,
+}: CategoryPageProps) {
+  const category = await getCategory(params.category);
 
   if (!category) {
-    notFound()
+    notFound();
   }
 
   const breadcrumbItems = [
-    { name: 'Home', href: '/' },
-    { name: 'Shop', href: '/collections' },
+    { name: "Home", href: "/" },
+    { name: "Shop", href: "/collections" },
     { name: category.name, href: `/collections/${category.slug}` },
-  ]
+  ];
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -78,7 +84,9 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
 
           {/* Category Header */}
           <div className="mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">{category.name}</h1>
+            <h1 className="text-3xl md:text-4xl font-bold mb-4">
+              {category.name}
+            </h1>
             {category.description && (
               <p className="text-lg text-muted-foreground max-w-3xl">
                 {category.description}
@@ -95,7 +103,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
 
             {/* Products Grid */}
             <div className="lg:col-span-3">
-              <ProductGrid 
+              <ProductGrid
                 category={category.slug}
                 searchParams={searchParams}
               />
@@ -105,5 +113,5 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       </main>
       <Footer />
     </div>
-  )
+  );
 }

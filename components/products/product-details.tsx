@@ -1,103 +1,106 @@
+"use client";
 
-'use client'
-
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-import { Product } from '@/lib/types'
-import { useCart } from '@/hooks/use-cart'
-import { 
-  Star, 
-  ShoppingCart, 
-  Heart, 
-  Share2, 
-  Truck, 
-  Shield, 
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Product } from "@/lib/types";
+import { useCart } from "@/hooks/use-cart";
+import {
+  Star,
+  ShoppingCart,
+  Heart,
+  Share2,
+  Truck,
+  Shield,
   RotateCcw,
   Droplets,
   Sun,
   PawPrint,
   Ruler,
-  TrendingUp
-} from 'lucide-react'
-import { toast } from '@/hooks/use-toast'
+  TrendingUp,
+} from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 interface ProductDetailsProps {
   product: Product & {
-    averageRating: number
-    reviewCount: number
-  }
+    averageRating: number;
+    reviewCount: number;
+  };
 }
 
 export function ProductDetails({ product }: ProductDetailsProps) {
-  const [quantity, setQuantity] = useState(1)
-  const [isWishlisted, setIsWishlisted] = useState(false)
-  const { addItem, isLoading } = useCart()
+  const [quantity, setQuantity] = useState(1);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const { addItem, isLoading } = useCart();
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-ZA', {
-      style: 'currency',
-      currency: 'ZAR',
-    }).format(price)
-  }
+    return new Intl.NumberFormat("en-ZA", {
+      style: "currency",
+      currency: "ZAR",
+    }).format(price);
+  };
 
-  const discountPercent = product.compareAtPrice 
-    ? Math.round(((Number(product.compareAtPrice) - Number(product.price)) / Number(product.compareAtPrice)) * 100)
-    : 0
+  const discountPercent = product.compareAtPrice
+    ? Math.round(
+        ((Number(product.compareAtPrice) - Number(product.price)) /
+          Number(product.compareAtPrice)) *
+          100,
+      )
+    : 0;
 
   const handleAddToCart = async () => {
-    await addItem(product.id, quantity)
-  }
+    await addItem(product.id, quantity);
+  };
 
   const handleWishlist = () => {
-    setIsWishlisted(!isWishlisted)
+    setIsWishlisted(!isWishlisted);
     toast({
-      title: isWishlisted ? 'Removed from wishlist' : 'Added to wishlist',
-      description: isWishlisted 
-        ? 'Item removed from your wishlist' 
-        : 'Item added to your wishlist',
-    })
-  }
+      title: isWishlisted ? "Removed from wishlist" : "Added to wishlist",
+      description: isWishlisted
+        ? "Item removed from your wishlist"
+        : "Item added to your wishlist",
+    });
+  };
 
   const handleShare = async () => {
     if (navigator.share) {
       try {
         await navigator.share({
           title: product.name,
-          text: product.shortDescription || product.description || '',
+          text: product.shortDescription || product.description || "",
           url: window.location.href,
-        })
+        });
       } catch (error) {
         // Handle share error
       }
     } else {
       // Fallback to copying URL
-      navigator.clipboard.writeText(window.location.href)
+      navigator.clipboard.writeText(window.location.href);
       toast({
-        title: 'Link copied',
-        description: 'Product link copied to clipboard',
-      })
+        title: "Link copied",
+        description: "Product link copied to clipboard",
+      });
     }
-  }
+  };
 
   const getCareIcon = (type: string) => {
     switch (type) {
-      case 'watering':
-        return <Droplets className="h-4 w-4 text-blue-600" />
-      case 'light':
-        return <Sun className="h-4 w-4 text-yellow-600" />
-      case 'pet':
-        return <PawPrint className="h-4 w-4 text-green-600" />
-      case 'size':
-        return <Ruler className="h-4 w-4 text-purple-600" />
-      case 'growth':
-        return <TrendingUp className="h-4 w-4 text-orange-600" />
+      case "watering":
+        return <Droplets className="h-4 w-4 text-blue-600" />;
+      case "light":
+        return <Sun className="h-4 w-4 text-yellow-600" />;
+      case "pet":
+        return <PawPrint className="h-4 w-4 text-green-600" />;
+      case "size":
+        return <Ruler className="h-4 w-4 text-purple-600" />;
+      case "growth":
+        return <TrendingUp className="h-4 w-4 text-orange-600" />;
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -105,13 +108,11 @@ export function ProductDetails({ product }: ProductDetailsProps) {
       <div>
         <div className="flex items-center gap-2 mb-2">
           <Badge variant="outline">{product.category.name}</Badge>
-          {product.isFeatured && (
-            <Badge variant="secondary">Featured</Badge>
-          )}
+          {product.isFeatured && <Badge variant="secondary">Featured</Badge>}
         </div>
-        
+
         <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
-        
+
         {/* Rating */}
         <div className="flex items-center gap-4 mb-4">
           <div className="flex items-center gap-2">
@@ -120,8 +121,8 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                 key={i}
                 className={`h-5 w-5 ${
                   i < Math.floor(product.averageRating)
-                    ? 'fill-yellow-400 text-yellow-400'
-                    : 'text-gray-300'
+                    ? "fill-yellow-400 text-yellow-400"
+                    : "text-gray-300"
                 }`}
               />
             ))}
@@ -129,15 +130,17 @@ export function ProductDetails({ product }: ProductDetailsProps) {
               {product.averageRating.toFixed(1)} ({product.reviewCount} reviews)
             </span>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={handleWishlist}
-              className={isWishlisted ? 'text-red-500' : ''}
+              className={isWishlisted ? "text-red-500" : ""}
             >
-              <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-current' : ''}`} />
+              <Heart
+                className={`h-4 w-4 ${isWishlisted ? "fill-current" : ""}`}
+              />
             </Button>
             <Button variant="ghost" size="sm" onClick={handleShare}>
               <Share2 className="h-4 w-4" />
@@ -163,55 +166,84 @@ export function ProductDetails({ product }: ProductDetailsProps) {
             </>
           )}
         </div>
-        
+
         {product.shortDescription && (
           <p className="text-muted-foreground">{product.shortDescription}</p>
         )}
       </div>
 
       {/* Plant Care Information */}
-      {(product.careLevel || product.lightRequirement || product.wateringFrequency || 
-        product.isPetSafe !== null || product.plantSize || product.growthRate) && (
+      {(product.careLevel ||
+        product.lightRequirement ||
+        product.wateringFrequency ||
+        product.isPetSafe !== null ||
+        product.plantSize ||
+        product.growthRate) && (
         <Card>
           <CardContent className="p-4">
             <h3 className="font-semibold mb-3">Plant Care Information</h3>
             <div className="grid grid-cols-2 gap-3 text-sm">
               {product.careLevel && (
                 <div className="flex items-center gap-2">
-                  {getCareIcon('care')}
-                  <span>Care Level: <strong>{product.careLevel.toLowerCase()}</strong></span>
+                  {getCareIcon("care")}
+                  <span>
+                    Care Level:{" "}
+                    <strong>{product.careLevel.toLowerCase()}</strong>
+                  </span>
                 </div>
               )}
               {product.lightRequirement && (
                 <div className="flex items-center gap-2">
-                  {getCareIcon('light')}
-                  <span>Light: <strong>{product.lightRequirement.replace('_', ' ').toLowerCase()}</strong></span>
+                  {getCareIcon("light")}
+                  <span>
+                    Light:{" "}
+                    <strong>
+                      {product.lightRequirement.replace("_", " ").toLowerCase()}
+                    </strong>
+                  </span>
                 </div>
               )}
               {product.wateringFrequency && (
                 <div className="flex items-center gap-2">
-                  {getCareIcon('watering')}
-                  <span>Water: <strong>{product.wateringFrequency.replace('_', ' ').toLowerCase()}</strong></span>
+                  {getCareIcon("watering")}
+                  <span>
+                    Water:{" "}
+                    <strong>
+                      {product.wateringFrequency
+                        .replace("_", " ")
+                        .toLowerCase()}
+                    </strong>
+                  </span>
                 </div>
               )}
               {product.isPetSafe !== null && (
                 <div className="flex items-center gap-2">
-                  {getCareIcon('pet')}
-                  <span className={product.isPetSafe ? 'text-green-600' : 'text-red-600'}>
-                    <strong>{product.isPetSafe ? 'Pet Safe' : 'Not Pet Safe'}</strong>
+                  {getCareIcon("pet")}
+                  <span
+                    className={
+                      product.isPetSafe ? "text-green-600" : "text-red-600"
+                    }
+                  >
+                    <strong>
+                      {product.isPetSafe ? "Pet Safe" : "Not Pet Safe"}
+                    </strong>
                   </span>
                 </div>
               )}
               {product.plantSize && (
                 <div className="flex items-center gap-2">
-                  {getCareIcon('size')}
-                  <span>Size: <strong>{product.plantSize.toLowerCase()}</strong></span>
+                  {getCareIcon("size")}
+                  <span>
+                    Size: <strong>{product.plantSize.toLowerCase()}</strong>
+                  </span>
                 </div>
               )}
               {product.growthRate && (
                 <div className="flex items-center gap-2">
-                  {getCareIcon('growth')}
-                  <span>Growth: <strong>{product.growthRate.toLowerCase()}</strong></span>
+                  {getCareIcon("growth")}
+                  <span>
+                    Growth: <strong>{product.growthRate.toLowerCase()}</strong>
+                  </span>
                 </div>
               )}
             </div>
@@ -234,10 +266,12 @@ export function ProductDetails({ product }: ProductDetailsProps) {
         ) : (
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-            <span className="text-sm text-red-600 font-medium">Out of Stock</span>
+            <span className="text-sm text-red-600 font-medium">
+              Out of Stock
+            </span>
           </div>
         )}
-        
+
         {product.sku && (
           <p className="text-sm text-muted-foreground">SKU: {product.sku}</p>
         )}
@@ -256,18 +290,22 @@ export function ProductDetails({ product }: ProductDetailsProps) {
             >
               -
             </Button>
-            <span className="px-4 py-2 text-center min-w-[3rem]">{quantity}</span>
+            <span className="px-4 py-2 text-center min-w-[3rem]">
+              {quantity}
+            </span>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setQuantity(Math.min(product.stockQuantity, quantity + 1))}
+              onClick={() =>
+                setQuantity(Math.min(product.stockQuantity, quantity + 1))
+              }
               disabled={quantity >= product.stockQuantity}
               className="px-3"
             >
               +
             </Button>
           </div>
-          
+
           <Button
             onClick={handleAddToCart}
             disabled={product.stockQuantity === 0 || isLoading}
@@ -275,12 +313,11 @@ export function ProductDetails({ product }: ProductDetailsProps) {
             size="lg"
           >
             <ShoppingCart className="mr-2 h-5 w-5" />
-            {product.stockQuantity === 0 
-              ? 'Out of Stock' 
-              : isLoading 
-              ? 'Adding...' 
-              : 'Add to Cart'
-            }
+            {product.stockQuantity === 0
+              ? "Out of Stock"
+              : isLoading
+                ? "Adding..."
+                : "Add to Cart"}
           </Button>
         </div>
       </div>
@@ -303,5 +340,5 @@ export function ProductDetails({ product }: ProductDetailsProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }

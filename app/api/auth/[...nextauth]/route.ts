@@ -1,8 +1,8 @@
 // app/api/auth/[...nextauth]/route.ts
 
-import NextAuth from 'next-auth';
+import NextAuth from "next-auth";
 // Import the centralized authOptions from our new file
-import { authOptions } from '@/lib/auth';
+import { authOptions } from "@/lib/auth";
 
 const handler = NextAuth(authOptions);
 

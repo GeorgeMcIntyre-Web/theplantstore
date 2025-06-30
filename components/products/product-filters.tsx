@@ -1,116 +1,122 @@
+"use client";
 
-'use client'
-
-import { useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Label } from '@/components/ui/label'
-import { Slider } from '@/components/ui/slider'
-import { Separator } from '@/components/ui/separator'
-import { X } from 'lucide-react'
+import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Separator } from "@/components/ui/separator";
+import { X } from "lucide-react";
 
 interface ProductFiltersProps {
-  category?: string
+  category?: string;
 }
 
 const careOptions = [
-  { value: 'EASY', label: 'Easy' },
-  { value: 'MODERATE', label: 'Moderate' },
-  { value: 'ADVANCED', label: 'Advanced' },
-]
+  { value: "EASY", label: "Easy" },
+  { value: "MODERATE", label: "Moderate" },
+  { value: "ADVANCED", label: "Advanced" },
+];
 
 const lightOptions = [
-  { value: 'LOW', label: 'Low Light' },
-  { value: 'MEDIUM', label: 'Medium Light' },
-  { value: 'BRIGHT', label: 'Bright Light' },
-  { value: 'DIRECT_SUN', label: 'Direct Sun' },
-]
+  { value: "LOW", label: "Low Light" },
+  { value: "MEDIUM", label: "Medium Light" },
+  { value: "BRIGHT", label: "Bright Light" },
+  { value: "DIRECT_SUN", label: "Direct Sun" },
+];
 
 const sizeOptions = [
-  { value: 'SMALL', label: 'Small' },
-  { value: 'MEDIUM', label: 'Medium' },
-  { value: 'LARGE', label: 'Large' },
-]
+  { value: "SMALL", label: "Small" },
+  { value: "MEDIUM", label: "Medium" },
+  { value: "LARGE", label: "Large" },
+];
 
 export function ProductFilters({ category }: ProductFiltersProps) {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [priceRange, setPriceRange] = useState([
-    parseInt(searchParams.get('minPrice') || '0'),
-    parseInt(searchParams.get('maxPrice') || '1000')
-  ])
+    parseInt(searchParams.get("minPrice") || "0"),
+    parseInt(searchParams.get("maxPrice") || "1000"),
+  ]);
 
   const getFilterValue = (key: string): string[] => {
-    const value = searchParams.get(key)
-    return value ? value.split(',') : []
-  }
+    const value = searchParams.get(key);
+    return value ? value.split(",") : [];
+  };
 
   const updateFilters = (key: string, values: string[]) => {
-    const params = new URLSearchParams(searchParams.toString())
-    
+    const params = new URLSearchParams(searchParams.toString());
+
     if (values.length > 0) {
-      params.set(key, values.join(','))
+      params.set(key, values.join(","));
     } else {
-      params.delete(key)
+      params.delete(key);
     }
-    
+
     // Reset to first page when filters change
-    params.delete('page')
-    
-    router.push(`?${params.toString()}`)
-  }
+    params.delete("page");
+
+    router.push(`?${params.toString()}`);
+  };
 
   const updatePriceRange = (values: number[]) => {
-    setPriceRange(values)
-    const params = new URLSearchParams(searchParams.toString())
-    
+    setPriceRange(values);
+    const params = new URLSearchParams(searchParams.toString());
+
     if (values[0] > 0) {
-      params.set('minPrice', values[0].toString())
+      params.set("minPrice", values[0].toString());
     } else {
-      params.delete('minPrice')
+      params.delete("minPrice");
     }
-    
+
     if (values[1] < 1000) {
-      params.set('maxPrice', values[1].toString())
+      params.set("maxPrice", values[1].toString());
     } else {
-      params.delete('maxPrice')
+      params.delete("maxPrice");
     }
-    
-    params.delete('page')
-    router.push(`?${params.toString()}`)
-  }
+
+    params.delete("page");
+    router.push(`?${params.toString()}`);
+  };
 
   const clearAllFilters = () => {
-    const params = new URLSearchParams()
+    const params = new URLSearchParams();
     if (category) {
-      params.set('category', category)
+      params.set("category", category);
     }
-    router.push(`?${params.toString()}`)
-  }
+    router.push(`?${params.toString()}`);
+  };
 
-  const hasActiveFilters = Array.from(searchParams.keys()).some(key => 
-    !['category', 'page', 'sortBy', 'sortOrder'].includes(key)
-  )
+  const hasActiveFilters = Array.from(searchParams.keys()).some(
+    (key) => !["category", "page", "sortBy", "sortOrder"].includes(key),
+  );
 
-  const handleCheckboxChange = (filterKey: string, value: string, checked: boolean) => {
-    const currentValues = getFilterValue(filterKey)
-    
+  const handleCheckboxChange = (
+    filterKey: string,
+    value: string,
+    checked: boolean,
+  ) => {
+    const currentValues = getFilterValue(filterKey);
+
     if (checked) {
-      updateFilters(filterKey, [...currentValues, value])
+      updateFilters(filterKey, [...currentValues, value]);
     } else {
-      updateFilters(filterKey, currentValues.filter(v => v !== value))
+      updateFilters(
+        filterKey,
+        currentValues.filter((v) => v !== value),
+      );
     }
-  }
+  };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-ZA', {
-      style: 'currency',
-      currency: 'ZAR',
-    }).format(price)
-  }
+    return new Intl.NumberFormat("en-ZA", {
+      style: "currency",
+      currency: "ZAR",
+    }).format(price);
+  };
 
   return (
     <div className="space-y-6">
@@ -161,12 +167,16 @@ export function ProductFilters({ category }: ProductFiltersProps) {
             <div key={option.value} className="flex items-center space-x-2">
               <Checkbox
                 id={`care-${option.value}`}
-                checked={getFilterValue('careLevel').includes(option.value)}
-                onCheckedChange={(checked) => 
-                  handleCheckboxChange('careLevel', option.value, checked as boolean)
+                checked={getFilterValue("careLevel").includes(option.value)}
+                onCheckedChange={(checked) =>
+                  handleCheckboxChange(
+                    "careLevel",
+                    option.value,
+                    checked as boolean,
+                  )
                 }
               />
-              <Label 
+              <Label
                 htmlFor={`care-${option.value}`}
                 className="text-sm font-normal cursor-pointer"
               >
@@ -187,12 +197,18 @@ export function ProductFilters({ category }: ProductFiltersProps) {
             <div key={option.value} className="flex items-center space-x-2">
               <Checkbox
                 id={`light-${option.value}`}
-                checked={getFilterValue('lightRequirement').includes(option.value)}
-                onCheckedChange={(checked) => 
-                  handleCheckboxChange('lightRequirement', option.value, checked as boolean)
+                checked={getFilterValue("lightRequirement").includes(
+                  option.value,
+                )}
+                onCheckedChange={(checked) =>
+                  handleCheckboxChange(
+                    "lightRequirement",
+                    option.value,
+                    checked as boolean,
+                  )
                 }
               />
-              <Label 
+              <Label
                 htmlFor={`light-${option.value}`}
                 className="text-sm font-normal cursor-pointer"
               >
@@ -213,12 +229,16 @@ export function ProductFilters({ category }: ProductFiltersProps) {
             <div key={option.value} className="flex items-center space-x-2">
               <Checkbox
                 id={`size-${option.value}`}
-                checked={getFilterValue('plantSize').includes(option.value)}
-                onCheckedChange={(checked) => 
-                  handleCheckboxChange('plantSize', option.value, checked as boolean)
+                checked={getFilterValue("plantSize").includes(option.value)}
+                onCheckedChange={(checked) =>
+                  handleCheckboxChange(
+                    "plantSize",
+                    option.value,
+                    checked as boolean,
+                  )
                 }
               />
-              <Label 
+              <Label
                 htmlFor={`size-${option.value}`}
                 className="text-sm font-normal cursor-pointer"
               >
@@ -238,12 +258,12 @@ export function ProductFilters({ category }: ProductFiltersProps) {
           <div className="flex items-center space-x-2">
             <Checkbox
               id="pet-safe"
-              checked={getFilterValue('isPetSafe').includes('true')}
-              onCheckedChange={(checked) => 
-                handleCheckboxChange('isPetSafe', 'true', checked as boolean)
+              checked={getFilterValue("isPetSafe").includes("true")}
+              onCheckedChange={(checked) =>
+                handleCheckboxChange("isPetSafe", "true", checked as boolean)
               }
             />
-            <Label 
+            <Label
               htmlFor="pet-safe"
               className="text-sm font-normal cursor-pointer"
             >
@@ -253,5 +273,5 @@ export function ProductFilters({ category }: ProductFiltersProps) {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

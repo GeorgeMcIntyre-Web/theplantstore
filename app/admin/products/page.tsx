@@ -1,10 +1,17 @@
 // app/admin/products/page.tsx - COMPLETE FIXED VERSION
-'use client'
-import { useState, useEffect } from 'react'
-import { PlusCircle, Trash2, Edit } from 'lucide-react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+"use client";
+import { useState, useEffect } from "react";
+import { PlusCircle, Trash2, Edit } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,78 +21,81 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+} from "@/components/ui/alert-dialog";
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [products, setProducts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [deleteDialog, setDeleteDialog] = useState<{
-    isOpen: boolean
-    productId: string
-    productName: string
+    isOpen: boolean;
+    productId: string;
+    productName: string;
   }>({
     isOpen: false,
-    productId: '',
-    productName: ''
-  })
+    productId: "",
+    productName: "",
+  });
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('/api/admin/products')
+      const response = await fetch("/api/admin/products");
       if (response.ok) {
-        const data = await response.json()
-        setProducts(data)
+        const data = await response.json();
+        setProducts(data);
       }
     } catch (error) {
-      console.error('Failed to fetch products:', error)
+      console.error("Failed to fetch products:", error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleDeleteClick = (product: any) => {
     setDeleteDialog({
       isOpen: true,
       productId: product.id,
-      productName: product.name
-    })
-  }
+      productName: product.name,
+    });
+  };
 
   const handleDeleteConfirm = async () => {
     try {
-      const response = await fetch(`/api/admin/products/${deleteDialog.productId}`, {
-        method: 'DELETE'
-      })
-      
+      const response = await fetch(
+        `/api/admin/products/${deleteDialog.productId}`,
+        {
+          method: "DELETE",
+        },
+      );
+
       if (response.ok) {
         // Remove the deleted product from the local state
-        setProducts(products.filter(p => p.id !== deleteDialog.productId))
-        alert('Product deleted successfully')
+        setProducts(products.filter((p) => p.id !== deleteDialog.productId));
+        alert("Product deleted successfully");
       } else {
-        const error = await response.json()
-        alert(`Failed to delete product: ${error.error || 'Unknown error'}`)
+        const error = await response.json();
+        alert(`Failed to delete product: ${error.error || "Unknown error"}`);
       }
     } catch (error) {
-      alert('Failed to delete product')
+      alert("Failed to delete product");
     } finally {
-      setDeleteDialog({ isOpen: false, productId: '', productName: '' })
+      setDeleteDialog({ isOpen: false, productId: "", productName: "" });
     }
-  }
+  };
 
   const handleDeleteCancel = () => {
-    setDeleteDialog({ isOpen: false, productId: '', productName: '' })
-  }
+    setDeleteDialog({ isOpen: false, productId: "", productName: "" });
+  };
 
-  useEffect(() => { 
-    fetchProducts() 
-  }, [])
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-lg">Loading products...</div>
       </div>
-    )
+    );
   }
 
   return (
@@ -116,7 +126,10 @@ export default function ProductsPage() {
           <TableBody>
             {products.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell
+                  colSpan={7}
+                  className="text-center py-8 text-muted-foreground"
+                >
                   No products found. Create your first product to get started.
                 </TableCell>
               </TableRow>
@@ -124,27 +137,33 @@ export default function ProductsPage() {
               products.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>{product.sku || '-'}</TableCell>
-                  <TableCell>{product.category?.name || '-'}</TableCell>
+                  <TableCell>{product.sku || "-"}</TableCell>
+                  <TableCell>{product.category?.name || "-"}</TableCell>
                   <TableCell>R{Number(product.price).toFixed(2)}</TableCell>
                   <TableCell>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      product.stockQuantity <= (product.lowStockThreshold || 10)
-                        ? 'bg-red-100 text-red-800'
-                        : product.stockQuantity <= (product.lowStockThreshold || 10) * 2
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-green-100 text-green-800'
-                    }`}>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        product.stockQuantity <=
+                        (product.lowStockThreshold || 10)
+                          ? "bg-red-100 text-red-800"
+                          : product.stockQuantity <=
+                              (product.lowStockThreshold || 10) * 2
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-green-100 text-green-800"
+                      }`}
+                    >
                       {product.stockQuantity}
                     </span>
                   </TableCell>
                   <TableCell>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      product.isActive
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {product.isActive ? 'Active' : 'Inactive'}
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        product.isActive
+                          ? "bg-green-100 text-green-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {product.isActive ? "Active" : "Inactive"}
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
@@ -155,9 +174,9 @@ export default function ProductsPage() {
                           Edit
                         </Link>
                       </Button>
-                      <Button 
-                        variant="destructive" 
-                        size="sm" 
+                      <Button
+                        variant="destructive"
+                        size="sm"
                         onClick={() => handleDeleteClick(product)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -177,13 +196,16 @@ export default function ProductsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete "<strong>{deleteDialog.productName}</strong>" and all associated data. 
-              This action cannot be undone.
+              This will permanently delete "
+              <strong>{deleteDialog.productName}</strong>" and all associated
+              data. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleDeleteCancel}>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogCancel onClick={handleDeleteCancel}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
               onClick={handleDeleteConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
@@ -193,5 +215,5 @@ export default function ProductsPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  )
+  );
 }
