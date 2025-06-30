@@ -189,3 +189,9 @@ export default function ProductsPage() {
             >
               Delete Product
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  )
+}

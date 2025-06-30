@@ -43,7 +43,7 @@ async function getAuthOptions() {
           return {
             id: user.id,
             email: user.email,
-            name: user.name,
+            name: user.name || '',
             role: user.role,
           };
         },

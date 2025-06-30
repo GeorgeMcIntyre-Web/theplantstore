@@ -4,6 +4,38 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient()
+export const prisma = globalForPrisma.prisma ?? new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL,
+    },
+  },
+})
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+
+// Graceful shutdown
+process.on('beforeExit', async () => {
+  await prisma.$disconnect()
+})
+
+// Error handling for database connection
+prisma.$connect()
+  .then(() => {
+    console.log('✅ Database connected successfully')
+  })
+  .catch((error) => {
+    console.error('❌ Database connection failed:', error)
+    process.exit(1)
+  })
+
+// Health check function
+export const checkDatabaseHealth = async () => {
+  try {
+    await prisma.$queryRaw`SELECT 1`
+    return { status: 'healthy', timestamp: new Date().toISOString() }
+  } catch (error) {
+    return { status: 'unhealthy', error: error instanceof Error ? error.message : 'Unknown error', timestamp: new Date().toISOString() }
+  }
+}
