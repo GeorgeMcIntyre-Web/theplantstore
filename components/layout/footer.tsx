@@ -95,15 +95,18 @@ export function Footer() {
             <div className="space-y-2 text-sm text-muted-foreground">
               <div className="flex items-center space-x-2">
                 <Mail className="h-4 w-4" />
-                <span>hello@thehouseplantstore.co.za</span>
+                <span>houseplantstore@gmail.com</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Phone className="h-4 w-4" />
-                <span>+27 11 123 4567</span>
+                <span>064 836 0876</span>
               </div>
               <div className="flex items-center space-x-2">
                 <MapPin className="h-4 w-4" />
-                <span>Johannesburg, South Africa</span>
+                <span>Durban, South Africa</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span>Contact: Bodene van Niekerk</span>
               </div>
             </div>
           </div>

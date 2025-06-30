@@ -47,6 +47,9 @@ export default function ContactPage() {
                           houseplantstore@gmail.com
                         </p>
                         <p className="text-sm text-muted-foreground">
+                          Website: www.houseplantstore.co.za
+                        </p>
+                        <p className="text-sm text-muted-foreground">
                           We typically respond within 24 hours
                         </p>
                       </div>
@@ -56,12 +59,9 @@ export default function ContactPage() {
                       <Phone className="h-5 w-5 text-primary mt-1" />
                       <div>
                         <h3 className="font-semibold">Phone</h3>
-                        <p className="text-muted-foreground">+27 11 123 4567</p>
+                        <p className="text-muted-foreground">064 836 0876</p>
                         <p className="text-sm text-muted-foreground">
-                          Mon-Fri: 9AM-5PM, Sat: 9AM-2PM
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Contact Person: Bodene van Niekerk, Cell: 064 836 0876
+                          Contact: Bodene van Niekerk
                         </p>
                       </div>
                     </div>
@@ -71,7 +71,7 @@ export default function ContactPage() {
                       <div>
                         <h3 className="font-semibold">Location</h3>
                         <p className="text-muted-foreground">
-                          Johannesburg, South Africa
+                          Durban, South Africa
                         </p>
                         <p className="text-sm text-muted-foreground">
                           Delivery available nationwide
