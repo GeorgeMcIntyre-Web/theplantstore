@@ -10,23 +10,8 @@ export const dynamic = "force-dynamic";
 
 // GET handler to fetch all products
 export async function GET() {
-  try {
-    const products = await prisma.product.findMany({
-      include: {
-        category: true, // Include category data
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-    return NextResponse.json(products);
-  } catch (error) {
-    console.error("Admin product fetch error:", error);
-    return NextResponse.json(
-      { error: "Internal server error while fetching products" },
-      { status: 500 },
-    );
-  }
+  const products = await prisma.product.findMany({ select: { id: true, slug: true } });
+  return NextResponse.json(products);
 }
 
 // POST handler to create a new product

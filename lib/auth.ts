@@ -3,6 +3,8 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
+import GoogleProvider from "next-auth/providers/google";
+import AzureADProvider from "next-auth/providers/azure-ad";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -42,6 +44,17 @@ export const authOptions: NextAuthOptions = {
           role: user.role,
         };
       },
+    }),
+    // Google OAuth Provider
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!, // required
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!, // required
+    }),
+    // Microsoft (Azure AD) OAuth Provider
+    AzureADProvider({
+      clientId: process.env.AZURE_AD_CLIENT_ID!, // required
+      clientSecret: process.env.AZURE_AD_CLIENT_SECRET!, // required
+      tenantId: process.env.AZURE_AD_TENANT_ID, // optional for multi-tenant
     }),
   ],
   session: {

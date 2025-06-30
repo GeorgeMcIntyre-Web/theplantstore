@@ -1,150 +1,144 @@
-// app/admin/page.tsx
+"use client";
 
-import Link from "next/link";
-import {
-  Activity,
-  CreditCard,
-  Package,
-  Users,
-  Warehouse,
-  LineChart,
-  ShieldAlert,
-} from "lucide-react";
-import { OrderStatus } from "@prisma/client";
-import { prisma } from "@/lib/db";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import DashboardControls from "@/components/admin/DashboardControls";
+import SalesChart from "@/components/admin/SalesChart";
+import CustomerGrowthChart from "@/components/admin/CustomerGrowthChart";
+import TopProductsChart from "@/components/admin/TopProductsChart";
+import RevenueBreakdownChart from "@/components/admin/RevenueBreakdownChart";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { getServerSession } from "next-auth";
-// THIS IS THE CORRECTED IMPORT PATH
-import { authOptions } from "@/lib/auth";
+import { Activity, LineChart, ShieldAlert, Box, ShoppingCart, Users, Upload } from "lucide-react";
+import { useSession } from "next-auth/react";
+import Link from "next/link";
+import { subDays } from "date-fns";
+import { DateRange } from "react-day-picker";
+import ImportExportActions from "@/components/admin/ImportExportActions";
 
-export const dynamic = "force-dynamic";
-
-async function getAdminDashboardData() {
-  try {
-    const [productCount, orderCount, customerCount, totalRevenue] =
-      await Promise.all([
-        prisma.product.count(),
-        prisma.order.count(),
-        prisma.user.count({ where: { role: "CUSTOMER" } }),
-        prisma.order.aggregate({
-          _sum: {
-            totalAmount: true,
-          },
-          where: {
-            status: OrderStatus.DELIVERED,
-          },
-        }),
-      ]);
-
-    return {
-      productCount,
-      orderCount,
-      customerCount,
-      totalRevenue: totalRevenue._sum.totalAmount ?? 0,
-    };
-  } catch (error) {
-    console.error("Failed to fetch admin dashboard data:", error);
-    return {
-      productCount: 0,
-      orderCount: 0,
-      customerCount: 0,
-      totalRevenue: 0,
-    };
-  }
-}
-
-export default async function AdminDashboard() {
-  const session = await getServerSession(authOptions);
-  const data = await getAdminDashboardData();
+export default function AdminDashboard() {
+  const { data: session } = useSession();
   const userRole = (session?.user as any)?.role;
+  const [tab, setTab] = useState("overview");
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: subDays(new Date(), 29),
+    to: new Date(),
+  });
+  const [analytics, setAnalytics] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const dashboardCards = [
-    {
-      title: "Product Management",
-      description:
-        "Add, edit, and manage store products. Monitor inventory levels and product performance.",
-      icon: <Package className="h-4 w-4 text-muted-foreground" />,
-      link: "/admin/products",
-      buttonText: "Manage Product",
-      value: data.productCount,
-      show: ["SUPER_ADMIN", "PLANT_MANAGER"],
-    },
-    {
-      title: "Order Management",
-      description:
-        "View and process customer orders. Track order status and manage fulfillment.",
-      icon: <CreditCard className="h-4 w-4 text-muted-foreground" />,
-      link: "/admin/orders",
-      buttonText: "Manage Order",
-      value: data.orderCount,
-      show: ["SUPER_ADMIN", "PLANT_MANAGER", "ORDER_MANAGER"],
-    },
-    // ... other cards remain the same ...
-  ];
-
-  const visibleCards = dashboardCards.filter(
-    (card) => userRole && card.show.includes(userRole),
-  );
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    if (!dateRange.from || !dateRange.to) {
+      setAnalytics(null);
+      setLoading(false);
+      return;
+    }
+    fetch(`/api/admin/analytics?from=${dateRange.from.toISOString().slice(0,10)}&to=${dateRange.to.toISOString().slice(0,10)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.error) setError(data.error);
+        else setAnalytics(data);
+      })
+      .catch((e) => setError("Failed to fetch analytics"))
+      .finally(() => setLoading(false));
+  }, [dateRange]);
 
   return (
-    <div className="flex flex-1 flex-col">
-      <header className="flex h-auto items-center gap-4 border-b bg-muted/40 px-4 py-4 lg:h-[70px] lg:px-6">
-        <div className="w-full flex-1">
-          <h1 className="text-lg font-semibold md:text-2xl">Admin Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
-            Welcome back, {session?.user?.name || "Admin"}
-            {userRole && (
-              <Badge variant="destructive" className="ml-2">
-                {userRole}
-              </Badge>
-            )}
-          </p>
-        </div>
-      </header>
-      <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-        {visibleCards.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {visibleCards.map((card) => (
-              <Card key={card.title}>
-                <CardHeader>
-                  <CardTitle>{card.title}</CardTitle>
-                  <CardDescription>{card.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <span className="text-4xl font-bold">{card.value}</span>
-                    {card.icon}
-                  </div>
-                  <Link href={card.link}>
-                    <Button className="mt-4 w-full">{card.buttonText}</Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
-            <div className="flex flex-col items-center gap-1 text-center">
-              <ShieldAlert className="h-12 w-12 text-muted-foreground" />
-              <h3 className="text-2xl font-bold tracking-tight">
-                No Permissions
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                You do not have the required role to view any dashboard content.
-                Your current role is: {userRole || "Not Assigned"}
-              </p>
+    <Tabs value={tab} onValueChange={setTab} className="flex flex-1 min-h-screen bg-background">
+      <aside className="w-56 min-h-screen bg-muted/40 border-r flex flex-col py-8 px-4 gap-2">
+        <div className="flex items-center gap-3 mb-8">
+          <Avatar>
+            {session?.user?.image && <AvatarImage src={session.user.image} alt={session.user.name || "Admin"} />}
+            <AvatarFallback>{session?.user?.name?.[0] || "A"}</AvatarFallback>
+          </Avatar>
+          <div>
+            <div className="font-semibold text-lg">{session?.user?.name || "Admin"}</div>
+            <div className="text-xs text-muted-foreground flex items-center gap-1">
+              {userRole ? <Badge variant="destructive">{userRole}</Badge> : <span>Not Assigned</span>}
             </div>
           </div>
-        )}
+        </div>
+        <TabsList className="flex flex-col gap-2 bg-transparent p-0 shadow-none">
+          <TabsTrigger value="overview" className="justify-start px-4 py-3 text-base gap-3"><LineChart className="w-5 h-5" /> Overview</TabsTrigger>
+          <TabsTrigger value="products" className="justify-start px-4 py-3 text-base gap-3"><Box className="w-5 h-5" /> Products</TabsTrigger>
+          <TabsTrigger value="orders" className="justify-start px-4 py-3 text-base gap-3"><ShoppingCart className="w-5 h-5" /> Orders</TabsTrigger>
+          <TabsTrigger value="customers" className="justify-start px-4 py-3 text-base gap-3"><Users className="w-5 h-5" /> Customers</TabsTrigger>
+          <TabsTrigger value="importexport" className="justify-start px-4 py-3 text-base gap-3"><Upload className="w-5 h-5" /> Import/Export</TabsTrigger>
+        </TabsList>
+      </aside>
+      <main className="flex-1 p-8">
+        <div className="w-full">
+          <TabsContent value="overview">
+            <DashboardControls dateRange={dateRange} onDateRangeChange={setDateRange} />
+            {loading && <div className="p-4 text-center">Loading analytics...</div>}
+            {error && <div className="p-4 text-center text-destructive">{error}</div>}
+            {analytics && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="bg-card rounded-lg p-6 shadow border">
+                  <h2 className="text-lg font-semibold mb-2 flex items-center gap-2"><LineChart className="h-5 w-5" /> Sales & Orders</h2>
+                  <SalesChart data={analytics.salesData} />
+                </div>
+                <div className="bg-card rounded-lg p-6 shadow border">
+                  <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">Customer Growth</h2>
+                  <CustomerGrowthChart data={analytics.customerGrowthData} />
+                </div>
+                <div className="bg-card rounded-lg p-6 shadow border">
+                  <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">Top Products</h2>
+                  <TopProductsChart data={analytics.topProductsData} />
+                </div>
+                <div className="bg-card rounded-lg p-6 shadow border">
+                  <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">Revenue Breakdown</h2>
+                  <RevenueBreakdownChart data={analytics.revenueByCategoryData} />
+                </div>
+                <div className="bg-card rounded-lg p-6 shadow border lg:col-span-2">
+                  <h2 className="text-lg font-semibold mb-2 flex items-center gap-2"><Activity className="h-5 w-5" /> Recent Activity</h2>
+                  <ul className="divide-y divide-muted">
+                    {analytics.recentOrders.map((order: any) => (
+                      <li key={order.id} className="py-2 flex flex-col md:flex-row md:items-center md:justify-between">
+                        <span>Order <Link href={`/admin/orders/${order.id}`} className="text-primary underline">#{order.orderNumber}</Link> by {order.user?.name || "Unknown"}</span>
+                        <span className="text-xs text-muted-foreground">{new Date(order.createdAt).toLocaleString()}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="products">
+            <div className="bg-card rounded-lg p-6 shadow border">
+              <h2 className="text-lg font-semibold mb-4">Product Management</h2>
+              {/* Product table/list here */}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="orders">
+            <div className="bg-card rounded-lg p-6 shadow border">
+              <h2 className="text-lg font-semibold mb-4">Order Management</h2>
+              {/* Order management UI here */}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="customers">
+            <div className="bg-card rounded-lg p-6 shadow border">
+              <h2 className="text-lg font-semibold mb-4">Customer Management</h2>
+              {/* Customer management UI here */}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="importexport">
+            <div className="bg-card rounded-lg p-6 shadow border">
+              <h2 className="text-lg font-semibold mb-4">Import / Export</h2>
+              {/* Import/Export actions and UI start */}
+              <ImportExportActions />
+              {/* Import/Export actions and UI end */}
+            </div>
+          </TabsContent>
+        </div>
       </main>
-    </div>
+    </Tabs>
   );
 }
