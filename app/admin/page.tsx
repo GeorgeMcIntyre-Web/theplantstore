@@ -112,7 +112,23 @@ export default async function AdminDashboard() {
       <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
         {visibleCards.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {/* The mapping of cards remains the same */}
+            {visibleCards.map((card) => (
+              <Card key={card.title}>
+                <CardHeader>
+                  <CardTitle>{card.title}</CardTitle>
+                  <CardDescription>{card.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <span className="text-4xl font-bold">{card.value}</span>
+                    {card.icon}
+                  </div>
+                  <Link href={card.link}>
+                    <Button className="mt-4 w-full">{card.buttonText}</Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         ) : (
           <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm">
