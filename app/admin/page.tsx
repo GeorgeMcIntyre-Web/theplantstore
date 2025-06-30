@@ -85,7 +85,7 @@ export default async function AdminDashboard() {
       link: "/admin/orders",
       buttonText: "Manage Order",
       value: data.orderCount,
-      show: ["SUPER_ADMIN", "PLANT_MANAGER"],
+      show: ["SUPER_ADMIN", "PLANT_MANAGER", "ORDER_MANAGER"],
     },
     // ... other cards remain the same ...
   ];
