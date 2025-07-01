@@ -30,17 +30,10 @@
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^14.5.0",
     "@types/node": "20.6.2",
-<<<<<<< HEAD
     "@types/react": "18.2.22",
     "@types/react-dom": "18.2.7",
     "@typescript-eslint/eslint-plugin": "^8.35.1",
     "@typescript-eslint/parser": "^8.35.1",
-=======
-    "@types/react": "^18.2.22",
-    "@types/react-dom": "^18.2.7",
-    "@typescript-eslint/eslint-plugin": "^8.35.0",
-    "@typescript-eslint/parser": "^8.35.0",
->>>>>>> origin/main
     "eslint": "^9.29.0",
     "eslint-config-next": "15.3.0",
     "eslint-plugin-prettier": "5.1.3",
