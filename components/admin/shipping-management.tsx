@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Package, Truck, AlertCircle } from 'lucide-react';
+import { Package, Truck } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 interface Order {
@@ -16,7 +16,7 @@ interface Order {
   createdAt: string;
   trackingNumber?: string;
   user: { name: string; email: string };
-  shippingAddress: any;
+  shippingAddress: unknown;
 }
 
 export function ShippingManagement() {

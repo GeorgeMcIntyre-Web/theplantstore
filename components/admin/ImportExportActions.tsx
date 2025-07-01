@@ -37,7 +37,6 @@ export default function ImportExportActions() {
   const [importResult, setImportResult] = useState<any | null>(null);
   const [importFile, setImportFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [existingProducts, setExistingProducts] = useState<any[]>([]);
 
   async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
     setImportError(null);
@@ -48,7 +47,6 @@ export default function ImportExportActions() {
     try {
       const res = await fetch("/api/admin/products");
       const products = await res.json();
-      setExistingProducts(products);
       Papa.parse<File>(file, {
         header: true,
         skipEmptyLines: true,

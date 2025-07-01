@@ -9,7 +9,7 @@ import TopProductsChart from "@/components/admin/TopProductsChart";
 import RevenueBreakdownChart from "@/components/admin/RevenueBreakdownChart";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Activity, LineChart, ShieldAlert, Box, ShoppingCart, Users, Upload } from "lucide-react";
+import { Activity, LineChart, Box, ShoppingCart, Users, Upload } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { subDays } from "date-fns";

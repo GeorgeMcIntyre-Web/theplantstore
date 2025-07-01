@@ -5,7 +5,6 @@ import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Suspense } from "react";
 
 const ORDER_STATUSES = [
   "PENDING",
