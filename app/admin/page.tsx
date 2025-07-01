@@ -9,17 +9,16 @@ import TopProductsChart from "@/components/admin/TopProductsChart";
 import RevenueBreakdownChart from "@/components/admin/RevenueBreakdownChart";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-<<<<<<< HEAD
-import { Activity, LineChart, Box, ShoppingCart, Users, Upload } from "lucide-react";
-=======
 import { Activity, LineChart, ShieldAlert, Box, ShoppingCart, Users, Upload, Mail } from "lucide-react";
->>>>>>> origin/main
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { subDays } from "date-fns";
 import { DateRange } from "react-day-picker";
 import ImportExportActions from "@/components/admin/ImportExportActions";
 import { EmailManagement } from "@/components/admin/email-management";
+import ProductsPage from '@/app/admin/products/page';
+import CategoryManagement from '@/components/admin/CategoryManagement';
+import CustomerManagement from '@/components/admin/CustomerManagement';
 
 export default function AdminDashboard() {
   const { data: session } = useSession();
@@ -54,6 +53,9 @@ export default function AdminDashboard() {
   return (
     <Tabs value={tab} onValueChange={setTab} className="flex flex-1 min-h-screen bg-background">
       <aside className="w-56 min-h-screen bg-muted/40 border-r flex flex-col py-8 px-4 gap-2">
+        <Link href="/" className="mb-6">
+          <button className="w-full bg-primary text-white py-2 px-4 rounded hover:bg-primary/90 transition font-semibold">← Back to Website</button>
+        </Link>
         <div className="flex items-center gap-3 mb-8">
           <Avatar>
             {session?.user?.image && <AvatarImage src={session.user.image} alt={session.user.name || "Admin"} />}
