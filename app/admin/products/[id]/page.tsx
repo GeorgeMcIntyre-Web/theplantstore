@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
 import { ProductForm } from "@/components/admin/ProductForm";
 import { prisma } from "@/lib/db";
+import type { Product } from "@/lib/types";
 
 interface EditProductPageProps {
   params: {
@@ -38,7 +39,7 @@ export default async function EditProductPage({
     <div>
       <h1 className="text-2xl font-bold">Edit Product</h1>
       <div className="mt-8">
-        <ProductForm product={product as any} />
+        <ProductForm product={product as unknown as Partial<Product>} />
       </div>
     </div>
   );

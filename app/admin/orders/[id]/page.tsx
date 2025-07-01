@@ -11,8 +11,8 @@ async function getOrder(id: string) {
   return res.json();
 }
 
-export default async function OrderDetailsPage({ params }: { params: { id: string } }) {
-  const order = await getOrder(params.id);
+export default async function OrderDetailsPage({ params }: { params: unknown }) {
+  const order = await getOrder(params as string);
   if (!order) return notFound();
 
   return (
@@ -39,11 +39,14 @@ export default async function OrderDetailsPage({ params }: { params: { id: strin
           <div className="mb-4">
             <span className="font-semibold">Order Items:</span>
             <ul className="list-disc ml-6">
-              {order.items.map((item: any) => (
-                <li key={item.id}>
-                  {item.product?.name || "Unknown Product"} x {item.quantity} (R{Number(item.price).toFixed(2)})
-                </li>
-              ))}
+              {order.items.map((item: unknown) => {
+                const i = item as { id: string; product?: { name?: string }; quantity: number; price: number };
+                return (
+                  <li key={i.id}>
+                    {i.product?.name || "Unknown Product"} x {i.quantity} (R{Number(i.price).toFixed(2)})
+                  </li>
+                );
+              })}
             </ul>
           </div>
           <UpdateOrderForm order={{ id: order.id, status: order.status, trackingNumber: order.trackingNumber }} />

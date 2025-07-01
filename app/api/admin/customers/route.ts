@@ -13,7 +13,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userRole = (session.user as any).role;
+    const userRole = (session.user as unknown as { role: string }).role;
     if (userRole !== "SUPER_ADMIN" && userRole !== "PLANT_MANAGER") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

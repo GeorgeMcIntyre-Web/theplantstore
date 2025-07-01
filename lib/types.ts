@@ -4,8 +4,8 @@ export interface Product {
   slug: string;
   description?: string | null;
   shortDescription?: string | null;
-  price: number | any;
-  compareAtPrice?: number | null | any;
+  price: number;
+  compareAtPrice?: number | null;
   sku?: string | null;
   stockQuantity: number;
   lowStockThreshold: number;

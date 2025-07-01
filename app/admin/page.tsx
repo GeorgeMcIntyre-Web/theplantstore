@@ -42,7 +42,7 @@ export default function AdminDashboard() {
         if (data.error) setError(data.error);
         else setAnalytics(data);
       })
-      .catch((e) => setError("Failed to fetch analytics"))
+      .catch((_) => setError("Failed to fetch analytics"))
       .finally(() => setLoading(false));
   }, [dateRange]);
 

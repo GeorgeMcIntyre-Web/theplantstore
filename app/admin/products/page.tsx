@@ -50,11 +50,12 @@ export default function ProductsPage() {
     }
   };
 
-  const handleDeleteClick = (product: any) => {
+  const handleDeleteClick = (product: unknown) => {
+    const p = product as { id: string; name: string; /* add other expected fields here */ };
     setDeleteDialog({
       isOpen: true,
-      productId: product.id,
-      productName: product.name,
+      productId: p.id,
+      productName: p.name,
     });
   };
 
@@ -72,8 +73,7 @@ export default function ProductsPage() {
         setProducts(products.filter((p) => p.id !== deleteDialog.productId));
         alert("Product deleted successfully");
       } else {
-        const error = await response.json();
-        alert(`Failed to delete product: ${error.error || "Unknown error"}`);
+        alert("Failed to delete product");
       }
     } catch (error) {
       alert("Failed to delete product");
@@ -196,8 +196,7 @@ export default function ProductsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete "
-              <strong>{deleteDialog.productName}</strong>" and all associated
+              This will permanently delete &quot;<strong>{deleteDialog.productName}</strong>&quot; and all associated
               data. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>

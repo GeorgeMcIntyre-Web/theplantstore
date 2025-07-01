@@ -16,11 +16,11 @@ function downloadCSV(url: string, filename: string) {
     });
 }
 
-function getProductImportSummary(rows: any[], existing: any[]) {
-  const existingIds = new Set(existing.map((p: any) => p.id));
-  const existingSlugs = new Set(existing.map((p: any) => p.slug));
+function getProductImportSummary(rows: unknown[], existing: unknown[]) {
+  const existingIds = new Set((existing as any[]).map((p: any) => p.id));
+  const existingSlugs = new Set((existing as any[]).map((p: any) => p.slug));
   let creates = 0, updates = 0, errors = 0;
-  for (const row of rows) {
+  for (const row of rows as any[]) {
     if (!row.name || !row.slug) { errors++; continue; }
     if (row.id && existingIds.has(row.id)) updates++;
     else if (existingSlugs.has(row.slug)) updates++;

@@ -47,14 +47,14 @@ export default async function OrdersListPage({ searchParams }: { searchParams: {
   const pageSize = Number(searchParams?.pageSize) || 10;
   const status = searchParams?.status || "";
   const customer = searchParams?.customer || "";
-  let orders: any[] = [];
+  let orders: unknown[] = [];
   let total = 0;
-  let error = null;
+  let error: string | null = null;
   try {
     const result = await getOrders(page, pageSize, status, customer);
     orders = result.orders;
     total = result.total;
-  } catch (e) {
+  } catch (_) {
     error = "Failed to load orders.";
   }
   const totalPages = Math.ceil(total / pageSize);
@@ -122,22 +122,25 @@ export default async function OrdersListPage({ searchParams }: { searchParams: {
                     </tr>
                   </thead>
                   <tbody>
-                    {orders.map((order) => (
-                      <tr key={order.id} className="border-b">
-                        <td className="px-4 py-2">{order.orderNumber}</td>
-                        <td className="px-4 py-2">{order.user?.name || "-"}</td>
-                        <td className="px-4 py-2">
-                          <Badge>{order.status}</Badge>
-                        </td>
-                        <td className="px-4 py-2">R{Number(order.totalAmount).toFixed(2)}</td>
-                        <td className="px-4 py-2">{new Date(order.createdAt).toLocaleDateString()}</td>
-                        <td className="px-4 py-2">
-                          <Link href={`/admin/orders/${order.id}`} className="text-primary underline">
-                            View Details
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
+                    {orders.map((order: unknown) => {
+                      const o = order as { id: string; orderNumber: string; user?: { name?: string }; status?: string; totalAmount?: number; createdAt?: string; };
+                      return (
+                        <tr key={o.id} className="border-b">
+                          <td className="px-4 py-2">{o.orderNumber}</td>
+                          <td className="px-4 py-2">{o.user?.name || "-"}</td>
+                          <td className="px-4 py-2">
+                            <Badge>{o.status}</Badge>
+                          </td>
+                          <td className="px-4 py-2">R{Number(o.totalAmount).toFixed(2)}</td>
+                          <td className="px-4 py-2">{new Date(o.createdAt ?? '').toLocaleDateString()}</td>
+                          <td className="px-4 py-2">
+                            <Link href={`/admin/orders/${o.id}`} className="text-primary underline">
+                              View Details
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
