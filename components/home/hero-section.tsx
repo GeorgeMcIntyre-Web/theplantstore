@@ -90,7 +90,7 @@ export function HeroSection() {
         className="absolute bottom-10 left-10 hidden lg:block"
       >
         <div className="text-sm text-gray-300">
-          <p>🚚 Free delivery nationwide</p>
+          {/* <p>🚚 Free delivery nationwide</p> */}
           <p>🌱 Expert plant care advice</p>
           <p>🇿🇦 Proudly South African</p>
         </div>
