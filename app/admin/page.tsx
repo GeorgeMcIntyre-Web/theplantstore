@@ -16,6 +16,7 @@ import { subDays } from "date-fns";
 import { DateRange } from "react-day-picker";
 import ImportExportActions from "@/components/admin/ImportExportActions";
 import ProductsPage from "../admin/products/page";
+import CategoryManagement from "@/components/admin/CategoryManagement";
 
 export default function AdminDashboard() {
   const { data: session } = useSession();
@@ -124,7 +125,7 @@ export default function AdminDashboard() {
           <TabsContent value="categories">
             <div className="bg-card rounded-lg p-6 shadow border">
               <h2 className="text-lg font-semibold mb-4">Category Management</h2>
-              <div className="text-muted-foreground">Coming soon: View, add, edit, and delete categories here.</div>
+              <CategoryManagement />
             </div>
           </TabsContent>
 
