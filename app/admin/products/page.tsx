@@ -36,6 +36,10 @@ export default function ProductsPage() {
     productId: "",
     productName: "",
   });
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const allSelected = products.length > 0 && selectedProductIds.length === products.length;
+  const toggleSelectAll = () => setSelectedProductIds(allSelected ? [] : products.map(p => p.id));
+  const toggleSelect = (id: string) => setSelectedProductIds(selectedProductIds.includes(id) ? selectedProductIds.filter(pid => pid !== id) : [...selectedProductIds, id]);
 
   const fetchProducts = async () => {
     try {
@@ -87,6 +91,16 @@ export default function ProductsPage() {
     setDeleteDialog({ isOpen: false, productId: "", productName: "" });
   };
 
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`Delete ${selectedProductIds.length} selected products?`)) return;
+    for (const id of selectedProductIds) {
+      await fetch(`/api/admin/products/${id}`, { method: "DELETE" });
+    }
+    setSelectedProductIds([]);
+    // Optionally, refresh product list here
+    window.location.reload();
+  };
+
   useEffect(() => {
     fetchProducts();
   }, []);
@@ -111,10 +125,19 @@ export default function ProductsPage() {
         </Button>
       </div>
 
+      {selectedProductIds.length > 0 && (
+        <div className="mb-4">
+          <Button variant="destructive" onClick={handleBulkDelete}>
+            Delete Selected ({selectedProductIds.length})
+          </Button>
+        </div>
+      )}
+
       <div className="bg-white rounded-lg shadow">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead><input type="checkbox" checked={allSelected} onChange={toggleSelectAll} /></TableHead>
               <TableHead>Name</TableHead>
               <TableHead>SKU</TableHead>
               <TableHead>Category</TableHead>
@@ -138,6 +161,7 @@ export default function ProductsPage() {
             ) : (
               products.map((product) => (
                 <TableRow key={product.id}>
+                  <TableCell><input type="checkbox" checked={selectedProductIds.includes(product.id)} onChange={() => toggleSelect(product.id)} /></TableCell>
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell>{product.sku || "-"}</TableCell>
                   <TableCell>{product.category?.name || "-"}</TableCell>

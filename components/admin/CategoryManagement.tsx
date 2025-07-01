@@ -41,6 +41,10 @@ export default function CategoryManagement() {
     sortOrder: 0,
   });
   const [saving, setSaving] = useState(false);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const allSelected = categories.length > 0 && selectedCategoryIds.length === categories.length;
+  const toggleSelectAll = () => setSelectedCategoryIds(allSelected ? [] : categories.map(c => c.id));
+  const toggleSelect = (id: string) => setSelectedCategoryIds(selectedCategoryIds.includes(id) ? selectedCategoryIds.filter(cid => cid !== id) : [...selectedCategoryIds, id]);
 
   const fetchCategories = async () => {
     setLoading(true);
@@ -130,6 +134,20 @@ export default function CategoryManagement() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`Delete ${selectedCategoryIds.length} selected categories?`)) return;
+    for (const id of selectedCategoryIds) {
+      await fetch("/api/categories", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id })
+      });
+    }
+    setSelectedCategoryIds([]);
+    // Optionally, refresh category list here
+    window.location.reload();
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -144,6 +162,7 @@ export default function CategoryManagement() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead><input type="checkbox" checked={allSelected} onChange={toggleSelectAll} /></TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Slug</TableHead>
               <TableHead>Active</TableHead>
@@ -162,6 +181,7 @@ export default function CategoryManagement() {
             ) : (
               categories.map((cat) => (
                 <TableRow key={cat.id}>
+                  <TableCell><input type="checkbox" checked={selectedCategoryIds.includes(cat.id)} onChange={() => toggleSelect(cat.id)} /></TableCell>
                   <TableCell>{cat.name}</TableCell>
                   <TableCell>{cat.slug}</TableCell>
                   <TableCell>{cat.isActive ? "Yes" : "No"}</TableCell>
@@ -180,6 +200,13 @@ export default function CategoryManagement() {
             )}
           </TableBody>
         </Table>
+      )}
+      {selectedCategoryIds.length > 0 && (
+        <div className="mb-4">
+          <Button variant="destructive" onClick={handleBulkDelete}>
+            Delete Selected ({selectedCategoryIds.length})
+          </Button>
+        </div>
       )}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent>
