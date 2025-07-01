@@ -113,24 +113,26 @@ export function ProductDetails({ product }: ProductDetailsProps) {
 
         <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
 
-        {/* Rating */}
-        <div className="flex items-center gap-4 mb-4">
-          <div className="flex items-center gap-2">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`h-5 w-5 ${
-                  i < Math.floor(product.averageRating)
-                    ? "fill-yellow-400 text-yellow-400"
-                    : "text-gray-300"
-                }`}
-              />
-            ))}
-            <span className="text-sm text-muted-foreground">
-              {product.averageRating.toFixed(1)} ({product.reviewCount} reviews)
-            </span>
-          </div>
+        {/* Rating - hidden for now */}
+        {/*
+        <div className="flex items-center gap-2">
+          {[...Array(5)].map((_, i) => (
+            <Star
+              key={i}
+              className={`h-5 w-5 ${
+                i < Math.floor(product.averageRating)
+                  ? "fill-yellow-400 text-yellow-400"
+                  : "text-gray-300"
+              }`}
+            />
+          ))}
+          <span className="text-sm text-muted-foreground">
+            {product.averageRating.toFixed(1)} ({product.reviewCount} reviews)
+          </span>
+        </div>
+        */}
 
+        <div className="flex items-center gap-4 mb-4">
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"

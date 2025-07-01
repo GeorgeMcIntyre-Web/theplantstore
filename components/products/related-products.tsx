@@ -112,11 +112,13 @@ export function RelatedProducts({ products }: RelatedProductsProps) {
                       )}
                     </div>
 
-                    {/* Rating */}
-                    <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm text-muted-foreground">4.8</span>
-                    </div>
+                    {/* Rating - hidden for now */}
+                    {false && (
+                      <div className="flex items-center gap-1">
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <span className="text-sm text-muted-foreground">4.8</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Add to Cart */}
