@@ -51,7 +51,7 @@ export function ProductDetails({ product }: ProductDetailsProps) {
     : 0;
 
   const handleAddToCart = async () => {
-    await addItem(product.id, quantity);
+    await addItem(product.id, quantity, product);
   };
 
   const handleWishlist = () => {

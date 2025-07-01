@@ -204,7 +204,7 @@ export function FeaturedProducts() {
                       {/* Add to Cart */}
                       <Button
                         className="w-full"
-                        onClick={() => addItem(product.id)}
+                        onClick={() => addItem(product.id, 1, product)}
                         disabled={product.stockQuantity === 0}
                       >
                         <ShoppingCart className="mr-2 h-4 w-4" />
