@@ -23,6 +23,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
@@ -40,6 +42,12 @@ export default function ProductsPage() {
   const allSelected = products.length > 0 && selectedProductIds.length === products.length;
   const toggleSelectAll = () => setSelectedProductIds(allSelected ? [] : products.map(p => p.id));
   const toggleSelect = (id: string) => setSelectedProductIds(selectedProductIds.includes(id) ? selectedProductIds.filter(pid => pid !== id) : [...selectedProductIds, id]);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  const [bulkCategory, setBulkCategory] = useState("");
+  const [bulkPrice, setBulkPrice] = useState("");
+  const [bulkStock, setBulkStock] = useState("");
 
   const fetchProducts = async () => {
     try {
@@ -101,6 +109,50 @@ export default function ProductsPage() {
     window.location.reload();
   };
 
+  // Fetch categories for bulk actions
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setCategoriesLoading(true);
+      try {
+        const res = await fetch("/api/categories");
+        const data = await res.json();
+        setCategories(data.categories || []);
+      } catch (e) {
+        setCategories([]);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  // Bulk update handler
+  const handleBulkAction = async (action: string, value?: any) => {
+    setBulkActionLoading(true);
+    try {
+      const res = await fetch("/api/admin/products", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: selectedProductIds, action, value }),
+      });
+      if (res.ok) {
+        // Refresh products
+        await fetchProducts();
+        setSelectedProductIds([]);
+        setBulkCategory("");
+        setBulkPrice("");
+        setBulkStock("");
+      } else {
+        const data = await res.json();
+        alert(data.error || "Bulk update failed");
+      }
+    } catch (e) {
+      alert("Bulk update failed");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
   }, []);
@@ -126,8 +178,104 @@ export default function ProductsPage() {
       </div>
 
       {selectedProductIds.length > 0 && (
-        <div className="mb-4">
-          <Button variant="destructive" onClick={handleBulkDelete}>
+        <div className="mb-4 flex flex-wrap gap-2 items-center">
+          <Button
+            size="sm"
+            disabled={bulkActionLoading}
+            onClick={() => handleBulkAction("activate")}
+          >
+            Activate
+          </Button>
+          <Button
+            size="sm"
+            disabled={bulkActionLoading}
+            onClick={() => handleBulkAction("deactivate")}
+          >
+            Deactivate
+          </Button>
+          <Button
+            size="sm"
+            disabled={bulkActionLoading}
+            onClick={() => handleBulkAction("setFeatured")}
+          >
+            Set Featured
+          </Button>
+          <Button
+            size="sm"
+            disabled={bulkActionLoading}
+            onClick={() => handleBulkAction("unsetFeatured")}
+          >
+            Unset Featured
+          </Button>
+          <div className="flex items-center gap-1">
+            <Select
+              value={bulkCategory}
+              onValueChange={(val) => setBulkCategory(val)}
+              disabled={categoriesLoading || bulkActionLoading}
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Change Category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              size="sm"
+              disabled={!bulkCategory || bulkActionLoading}
+              onClick={() => handleBulkAction("changeCategory", bulkCategory)}
+            >
+              Change
+            </Button>
+          </div>
+          <div className="flex items-center gap-1">
+            <Input
+              type="number"
+              placeholder="Set Price"
+              value={bulkPrice}
+              min={0}
+              step={0.01}
+              onChange={(e) => setBulkPrice(e.target.value)}
+              className="w-24"
+              disabled={bulkActionLoading}
+            />
+            <Button
+              size="sm"
+              disabled={!bulkPrice || bulkActionLoading}
+              onClick={() => handleBulkAction("setPrice", parseFloat(bulkPrice))}
+            >
+              Set
+            </Button>
+          </div>
+          <div className="flex items-center gap-1">
+            <Input
+              type="number"
+              placeholder="Set Stock"
+              value={bulkStock}
+              min={0}
+              step={1}
+              onChange={(e) => setBulkStock(e.target.value)}
+              className="w-24"
+              disabled={bulkActionLoading}
+            />
+            <Button
+              size="sm"
+              disabled={!bulkStock || bulkActionLoading}
+              onClick={() => handleBulkAction("setStock", parseInt(bulkStock))}
+            >
+              Set
+            </Button>
+          </div>
+          <Button
+            variant="destructive"
+            size="sm"
+            disabled={bulkActionLoading}
+            onClick={handleBulkDelete}
+          >
             Delete Selected ({selectedProductIds.length})
           </Button>
         </div>

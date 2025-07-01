@@ -194,8 +194,54 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Admin product creation error:", error);
     return NextResponse.json(
-      { error: "Internal server error while creating product" },
+      { error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 },
     );
+  }
+}
+
+// Bulk update endpoint
+export async function PATCH(req: NextRequest) {
+  try {
+    const { ids, action, value } = await req.json();
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json({ error: "No product IDs provided" }, { status: 400 });
+    }
+    let data: any = {};
+    switch (action) {
+      case "activate":
+        data.isActive = true;
+        break;
+      case "deactivate":
+        data.isActive = false;
+        break;
+      case "setFeatured":
+        data.isFeatured = true;
+        break;
+      case "unsetFeatured":
+        data.isFeatured = false;
+        break;
+      case "changeCategory":
+        if (!value) return NextResponse.json({ error: "No categoryId provided" }, { status: 400 });
+        data.categoryId = value;
+        break;
+      case "setPrice":
+        if (typeof value !== "number") return NextResponse.json({ error: "Invalid price" }, { status: 400 });
+        data.price = value;
+        break;
+      case "setStock":
+        if (typeof value !== "number") return NextResponse.json({ error: "Invalid stock quantity" }, { status: 400 });
+        data.stockQuantity = value;
+        break;
+      default:
+        return NextResponse.json({ error: "Unknown action" }, { status: 400 });
+    }
+    const updated = await prisma.product.updateMany({
+      where: { id: { in: ids } },
+      data,
+    });
+    return NextResponse.json({ updated: updated.count });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
   }
 }

@@ -154,6 +154,13 @@ export default function CategoryManagement() {
         <h3 className="text-xl font-semibold">Categories</h3>
         <Button onClick={openAddModal}>Add Category</Button>
       </div>
+      {selectedCategoryIds.length > 0 && (
+        <div className="mb-4">
+          <Button variant="destructive" onClick={handleBulkDelete}>
+            Delete Selected ({selectedCategoryIds.length})
+          </Button>
+        </div>
+      )}
       {loading ? (
         <div className="p-8 text-center">Loading...</div>
       ) : error ? (
@@ -200,13 +207,6 @@ export default function CategoryManagement() {
             )}
           </TableBody>
         </Table>
-      )}
-      {selectedCategoryIds.length > 0 && (
-        <div className="mb-4">
-          <Button variant="destructive" onClick={handleBulkDelete}>
-            Delete Selected ({selectedCategoryIds.length})
-          </Button>
-        </div>
       )}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent>
