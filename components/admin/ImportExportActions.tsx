@@ -111,25 +111,23 @@ export default function ImportExportActions() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col md:flex-row md:items-center gap-6">
-        <div className="flex flex-wrap gap-3">
-          <Button variant="outline" size="sm" onClick={() => downloadCSV("/api/admin/export/orders", "orders.csv")}>Export Orders</Button>
-          <Button variant="outline" size="sm" onClick={() => downloadCSV("/api/admin/export/products", "products.csv")}>Export Products</Button>
-          <Button variant="outline" size="sm" onClick={() => downloadCSV("/api/admin/export/customers", "customers.csv")}>Export Customers</Button>
-          <Button variant="outline" size="sm" onClick={() => downloadCSV("/api/admin/export/analytics", "analytics.csv")}>Export Analytics</Button>
+      <div className="bg-muted p-4 rounded border mb-2">
+        <div className="text-sm text-muted-foreground mb-2">
+          <b>Product Import CSV Format</b><br />
+          <span>Required columns: <b>name</b>, <b>slug</b>, <b>price</b>, <b>category</b></span><br />
+          <span>Optional: <b>id</b> (for update), <b>stockQuantity</b>, <b>isActive</b>, <b>description</b>, <b>shortDescription</b>, <b>compareAtPrice</b>, <b>sku</b>, <b>careLevel</b>, <b>lightRequirement</b>, <b>wateringFrequency</b>, <b>isPetSafe</b>, <b>plantSize</b>, <b>growthRate</b>, <b>careInstructions</b>, <b>isFeatured</b>, <b>imageUrls</b></span><br />
         </div>
-        <div className="flex flex-col gap-1 min-w-[220px]">
-          <div className="text-xs text-muted-foreground mb-1">
-            <b>Product CSV format:</b> <br />
-            <span>Required columns: <b>name</b>, <b>slug</b>, <b>price</b>, <b>category</b></span><br />
-            <span>Optional: <b>id</b> (for update), <b>stockQuantity</b>, <b>isActive</b></span><br />
-            <Button variant="link" size="sm" className="px-0" onClick={downloadProductTemplate}>Download Template</Button>
-          </div>
-        </div>
-        <div className="flex">
-          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>Import Products</Button>
-          <input type="file" accept=".csv" ref={fileInputRef} style={{ display: "none" }} onChange={handleImportFile} />
-        </div>
+        <Button variant="link" size="sm" className="px-0" onClick={downloadProductTemplate}>Download Template</Button>
+      </div>
+      <div className="flex flex-wrap gap-3 mb-2">
+        <Button variant="outline" size="sm" onClick={() => downloadCSV("/api/admin/export/orders", "orders.csv")}>Export Orders</Button>
+        <Button variant="outline" size="sm" onClick={() => downloadCSV("/api/admin/export/products", "products.csv")}>Export Products</Button>
+        <Button variant="outline" size="sm" onClick={() => downloadCSV("/api/admin/export/customers", "customers.csv")}>Export Customers</Button>
+        <Button variant="outline" size="sm" onClick={() => downloadCSV("/api/admin/export/analytics", "analytics.csv")}>Export Analytics</Button>
+      </div>
+      <div className="flex items-center gap-3">
+        <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>Import Products</Button>
+        <input type="file" accept=".csv" ref={fileInputRef} style={{ display: "none" }} onChange={handleImportFile} />
       </div>
       {Array.isArray(importPreview) && importPreview.length > 0 && (
         <div className="mt-4 bg-muted p-4 rounded border">
