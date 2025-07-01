@@ -1,124 +1,186 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Mail, CheckCircle } from "lucide-react";
-import { motion } from "framer-motion";
-import { toast } from "@/hooks/use-toast";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Mail, Leaf, CheckCircle } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 export function NewsletterSection() {
-  const [email, setEmail] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
-
-    setIsLoading(true);
-    try {
-      // Simulate newsletter signup
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setIsSubscribed(true);
+    
+    if (!email.trim()) {
       toast({
-        title: "Subscribed!",
-        description: "Thank you for subscribing to our newsletter.",
+        title: 'Error',
+        description: 'Please enter your email address',
+        variant: 'destructive',
       });
-      setEmail("");
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a valid email address',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSubscribed(true);
+        setEmail('');
+        toast({
+          title: 'Success!',
+          description: 'You have been subscribed to our newsletter!',
+        });
+      } else {
+        throw new Error(data.error || 'Failed to subscribe');
+      }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to subscribe. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to subscribe to newsletter',
+        variant: 'destructive',
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  return (
-    <section className="py-16">
-      <div className="container mx-auto px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-        >
-          <Card className="max-w-2xl mx-auto plant-gradient text-white">
-            <CardContent className="p-8 text-center">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                viewport={{ once: true }}
-                className="mb-6"
+  if (subscribed) {
+    return (
+      <section className="py-16 bg-gradient-to-r from-green-50 to-emerald-50">
+        <div className="container mx-auto px-4">
+          <Card className="max-w-md mx-auto text-center">
+            <CardContent className="pt-6">
+              <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-green-800 mb-2">
+                Welcome to The Plant Family! 🌱
+              </h3>
+              <p className="text-green-700 mb-4">
+                You're now subscribed to our newsletter. Look out for plant care tips, 
+                new arrivals, and exclusive offers in your inbox!
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => setSubscribed(false)}
+                className="text-green-600 border-green-600 hover:bg-green-50"
               >
-                <div className="mx-auto w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-4">
-                  <Mail className="h-8 w-8" />
-                </div>
-                <h2 className="text-2xl md:text-3xl font-bold mb-2">
-                  Stay in the Loop
-                </h2>
-                <p className="text-white/90 text-lg">
-                  Get plant care tips, new arrivals, and exclusive offers
-                  delivered to your inbox
-                </p>
-              </motion.div>
+                Subscribe Another Email
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+    );
+  }
 
-              {!isSubscribed ? (
-                <motion.form
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.4 }}
-                  viewport={{ once: true }}
-                  onSubmit={handleSubmit}
-                  className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
-                >
+  return (
+    <section className="py-16 bg-gradient-to-r from-green-50 to-emerald-50">
+      <div className="container mx-auto px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="flex justify-center mb-6">
+            <div className="p-3 bg-green-100 rounded-full">
+              <Mail className="h-8 w-8 text-green-600" />
+            </div>
+          </div>
+          
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            Stay Green with Our Newsletter 🌿
+          </h2>
+          
+          <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
+            Get exclusive plant care tips, new arrivals, seasonal advice, and special offers 
+            delivered straight to your inbox. Join our growing community of plant lovers!
+          </p>
+
+          <Card className="max-w-md mx-auto">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Leaf className="h-5 w-5 text-green-600" />
+                Subscribe Now
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubscribe} className="space-y-4">
+                <div>
+                  <Label htmlFor="newsletter-email" className="sr-only">
+                    Email Address
+                  </Label>
                   <Input
+                    id="newsletter-email"
                     type="email"
                     placeholder="Enter your email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-white/70"
+                    className="text-center"
                     required
                   />
-                  <Button
-                    type="submit"
-                    variant="secondary"
-                    disabled={isLoading}
-                    className="bg-white text-gray-900 hover:bg-white/90"
-                  >
-                    {isLoading ? (
-                      <div className="spinner mr-2" />
-                    ) : (
-                      <Mail className="mr-2 h-4 w-4" />
-                    )}
-                    Subscribe
-                  </Button>
-                </motion.form>
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.6 }}
-                  className="flex items-center justify-center gap-3 text-green-200"
+                </div>
+                
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-green-600 hover:bg-green-700"
                 >
-                  <CheckCircle className="h-6 w-6" />
-                  <span className="font-semibold">
-                    Successfully subscribed!
-                  </span>
-                </motion.div>
-              )}
-
-              <p className="text-xs text-white/60 mt-4">
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Subscribing...
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4" />
+                      Subscribe to Newsletter
+                    </div>
+                  )}
+                </Button>
+              </form>
+              
+              <p className="text-xs text-gray-500 mt-3">
                 We respect your privacy. Unsubscribe at any time.
               </p>
             </CardContent>
           </Card>
-        </motion.div>
+
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-gray-600">
+            <div className="flex items-center gap-2 justify-center">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <span>Plant Care Tips</span>
+            </div>
+            <div className="flex items-center gap-2 justify-center">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <span>New Arrivals</span>
+            </div>
+            <div className="flex items-center gap-2 justify-center">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <span>Exclusive Offers</span>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );

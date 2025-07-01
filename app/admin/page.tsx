@@ -9,12 +9,13 @@ import TopProductsChart from "@/components/admin/TopProductsChart";
 import RevenueBreakdownChart from "@/components/admin/RevenueBreakdownChart";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Activity, LineChart, ShieldAlert, Box, ShoppingCart, Users, Upload } from "lucide-react";
+import { Activity, LineChart, ShieldAlert, Box, ShoppingCart, Users, Upload, Mail } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { subDays } from "date-fns";
 import { DateRange } from "react-day-picker";
 import ImportExportActions from "@/components/admin/ImportExportActions";
+import { EmailManagement } from "@/components/admin/email-management";
 
 export default function AdminDashboard() {
   const { data: session } = useSession();
@@ -66,6 +67,7 @@ export default function AdminDashboard() {
           <TabsTrigger value="products" className="justify-start px-4 py-3 text-base gap-3"><Box className="w-5 h-5" /> Products</TabsTrigger>
           <TabsTrigger value="orders" className="justify-start px-4 py-3 text-base gap-3"><ShoppingCart className="w-5 h-5" /> Orders</TabsTrigger>
           <TabsTrigger value="customers" className="justify-start px-4 py-3 text-base gap-3"><Users className="w-5 h-5" /> Customers</TabsTrigger>
+          <TabsTrigger value="email" className="justify-start px-4 py-3 text-base gap-3"><Mail className="w-5 h-5" /> Email</TabsTrigger>
           <TabsTrigger value="importexport" className="justify-start px-4 py-3 text-base gap-3"><Upload className="w-5 h-5" /> Import/Export</TabsTrigger>
         </TabsList>
       </aside>
@@ -127,6 +129,10 @@ export default function AdminDashboard() {
               <h2 className="text-lg font-semibold mb-4">Customer Management</h2>
               {/* Customer management UI here */}
             </div>
+          </TabsContent>
+
+          <TabsContent value="email">
+            <EmailManagement />
           </TabsContent>
 
           <TabsContent value="importexport">
