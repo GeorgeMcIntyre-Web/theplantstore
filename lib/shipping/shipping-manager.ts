@@ -1,4 +1,5 @@
 import { ShippingProvider, ShippingRate, ShippingAddress, ShipmentDetails, TrackingInfo } from './shipping-service';
+import { CourierGuyProvider } from './providers/courier-guy';
 import { AramexProvider } from './providers/aramex';
 import { PostNetProvider } from './providers/postnet';
 import { LocalDeliveryProvider } from './providers/local-delivery';
@@ -6,9 +7,10 @@ import { prisma } from '@/lib/db';
 
 export class ShippingManager {
   private providers: ShippingProvider[] = [
-    new LocalDeliveryProvider(),
-    new AramexProvider(),
-    new PostNetProvider(),
+    new CourierGuyProvider(), // Primary courier - The Courier Guy
+    new LocalDeliveryProvider(), // Backup local delivery
+    new AramexProvider(), // Backup international
+    new PostNetProvider(), // Additional backup
   ];
 
   async getShippingRates(

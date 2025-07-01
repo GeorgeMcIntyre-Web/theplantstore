@@ -157,6 +157,12 @@ export function ShippingManagement() {
                           <SelectValue placeholder="Select shipping option" />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="The Courier Guy|Economy Service">
+                            The Courier Guy - Economy Service
+                          </SelectItem>
+                          <SelectItem value="The Courier Guy|Overnight Service">
+                            The Courier Guy - Overnight Service
+                          </SelectItem>
                           <SelectItem value="Aramex|Standard Delivery">
                             Aramex - Standard Delivery
                           </SelectItem>

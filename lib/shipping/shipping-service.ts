@@ -4,6 +4,9 @@ export interface ShippingRate {
   price: number;
   estimatedDays: string;
   trackingAvailable: boolean;
+  serviceCode?: string;
+  collectionDate?: string;
+  deliveryDate?: string;
 }
 
 export interface ShippingAddress {
