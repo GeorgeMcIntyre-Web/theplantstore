@@ -10,7 +10,25 @@ export const dynamic = "force-dynamic";
 
 // GET handler to fetch all products
 export async function GET() {
-  const products = await prisma.product.findMany({ select: { id: true, slug: true } });
+  const products = await prisma.product.findMany({
+    select: {
+      id: true,
+      name: true,
+      sku: true,
+      price: true,
+      stockQuantity: true,
+      lowStockThreshold: true,
+      isActive: true,
+      category: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      // Add more fields as needed for the admin table
+    },
+    orderBy: { name: "asc" },
+  });
   return NextResponse.json(products);
 }
 

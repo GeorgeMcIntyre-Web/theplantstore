@@ -4,6 +4,8 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/components/auth-provider";
+import WhatsAppButton from "@/components/WhatsAppButton";
+import { usePathname } from "next/navigation";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,6 +22,10 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Only show WhatsAppButton on non-admin, non-api pages
+  const pathname = typeof window !== "undefined" ? window.location.pathname : "";
+  const showWhatsApp =
+    !pathname.startsWith("/admin") && !pathname.startsWith("/api");
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
@@ -27,6 +33,7 @@ export default function RootLayout({
           <AuthProvider>
             {children}
             <Toaster />
+            {showWhatsApp && <WhatsAppButton />}
           </AuthProvider>
         </ThemeProvider>
       </body>

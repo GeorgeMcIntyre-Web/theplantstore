@@ -9,12 +9,17 @@ import TopProductsChart from "@/components/admin/TopProductsChart";
 import RevenueBreakdownChart from "@/components/admin/RevenueBreakdownChart";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+<<<<<<< HEAD
 import { Activity, LineChart, Box, ShoppingCart, Users, Upload } from "lucide-react";
+=======
+import { Activity, LineChart, ShieldAlert, Box, ShoppingCart, Users, Upload, Mail } from "lucide-react";
+>>>>>>> origin/main
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { subDays } from "date-fns";
 import { DateRange } from "react-day-picker";
 import ImportExportActions from "@/components/admin/ImportExportActions";
+import { EmailManagement } from "@/components/admin/email-management";
 
 export default function AdminDashboard() {
   const { data: session } = useSession();
@@ -64,14 +69,20 @@ export default function AdminDashboard() {
         <TabsList className="flex flex-col gap-2 bg-transparent p-0 shadow-none">
           <TabsTrigger value="overview" className="justify-start px-4 py-3 text-base gap-3"><LineChart className="w-5 h-5" /> Overview</TabsTrigger>
           <TabsTrigger value="products" className="justify-start px-4 py-3 text-base gap-3"><Box className="w-5 h-5" /> Products</TabsTrigger>
+          <TabsTrigger value="categories" className="justify-start px-4 py-3 text-base gap-3"><Box className="w-5 h-5" /> Categories</TabsTrigger>
           <TabsTrigger value="orders" className="justify-start px-4 py-3 text-base gap-3"><ShoppingCart className="w-5 h-5" /> Orders</TabsTrigger>
           <TabsTrigger value="customers" className="justify-start px-4 py-3 text-base gap-3"><Users className="w-5 h-5" /> Customers</TabsTrigger>
+          <TabsTrigger value="email" className="justify-start px-4 py-3 text-base gap-3"><Mail className="w-5 h-5" /> Email</TabsTrigger>
           <TabsTrigger value="importexport" className="justify-start px-4 py-3 text-base gap-3"><Upload className="w-5 h-5" /> Import/Export</TabsTrigger>
         </TabsList>
       </aside>
       <main className="flex-1 p-8">
         <div className="w-full">
           <TabsContent value="overview">
+            {/* Onboarding/Welcome Message */}
+            {session?.user && (
+              <WelcomeAdminMessage name={session.user.name || "Admin"} role={userRole} />
+            )}
             <DashboardControls dateRange={dateRange} onDateRangeChange={setDateRange} />
             {loading && <div className="p-4 text-center">Loading analytics...</div>}
             {error && <div className="p-4 text-center text-destructive">{error}</div>}
@@ -111,7 +122,14 @@ export default function AdminDashboard() {
           <TabsContent value="products">
             <div className="bg-card rounded-lg p-6 shadow border">
               <h2 className="text-lg font-semibold mb-4">Product Management</h2>
-              {/* Product table/list here */}
+              <ProductsPage />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="categories">
+            <div className="bg-card rounded-lg p-6 shadow border">
+              <h2 className="text-lg font-semibold mb-4">Category Management</h2>
+              <CategoryManagement />
             </div>
           </TabsContent>
 
@@ -125,8 +143,12 @@ export default function AdminDashboard() {
           <TabsContent value="customers">
             <div className="bg-card rounded-lg p-6 shadow border">
               <h2 className="text-lg font-semibold mb-4">Customer Management</h2>
-              {/* Customer management UI here */}
+              <CustomerManagement />
             </div>
+          </TabsContent>
+
+          <TabsContent value="email">
+            <EmailManagement />
           </TabsContent>
 
           <TabsContent value="importexport">
@@ -140,5 +162,31 @@ export default function AdminDashboard() {
         </div>
       </main>
     </Tabs>
+  );
+}
+
+function WelcomeAdminMessage({ name, role }: { name: string; role: string }) {
+  const [dismissed, setDismissed] = useState(false);
+  if (dismissed) return null;
+  return (
+    <div className="mb-6 p-4 rounded-lg bg-green-100 dark:bg-green-900/40 border border-green-300 dark:border-green-700 flex items-start gap-4 relative shadow">
+      <ShieldAlert className="w-6 h-6 text-green-600 dark:text-green-300 mt-1" />
+      <div>
+        <div className="font-semibold text-lg mb-1">Welcome, {name}!</div>
+        <div className="text-sm text-muted-foreground mb-1">You are logged in as <span className="font-medium text-green-700 dark:text-green-200">{role}</span>.</div>
+        <ul className="list-disc pl-5 text-sm text-muted-foreground">
+          <li>Use the tabs on the left to manage products, customers, orders, and import/export data.</li>
+          <li>Check analytics and recent activity in the Overview tab.</li>
+          <li>Need help? See the admin guide or contact support.</li>
+        </ul>
+      </div>
+      <button
+        className="absolute top-2 right-2 text-green-700 dark:text-green-200 hover:text-green-900 dark:hover:text-green-100 text-lg"
+        aria-label="Dismiss welcome message"
+        onClick={() => setDismissed(true)}
+      >
+        ×
+      </button>
+    </div>
   );
 }
