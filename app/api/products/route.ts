@@ -33,11 +33,19 @@ export async function GET(request: NextRequest) {
     }
 
     if (careLevel) {
-      where.careLevel = careLevel;
+      if (careLevel.includes(",")) {
+        where.careLevel = { in: careLevel.split(",") };
+      } else {
+        where.careLevel = careLevel;
+      }
     }
 
     if (lightRequirement) {
-      where.lightRequirement = lightRequirement;
+      if (lightRequirement.includes(",")) {
+        where.lightRequirement = { in: lightRequirement.split(",") };
+      } else {
+        where.lightRequirement = lightRequirement;
+      }
     }
 
     if (isPetSafe !== null && isPetSafe !== undefined) {
@@ -112,5 +120,20 @@ export async function GET(request: NextRequest) {
       { error: "Failed to fetch products" },
       { status: 500 },
     );
+  }
+}
+
+export async function GET_PRICE_RANGE() {
+  try {
+    const [min, max] = await Promise.all([
+      prisma.product.aggregate({ _min: { price: true } }),
+      prisma.product.aggregate({ _max: { price: true } }),
+    ]);
+    return NextResponse.json({
+      minPrice: min._min.price ?? 0,
+      maxPrice: max._max.price ?? 1000,
+    });
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to fetch price range' }, { status: 500 });
   }
 }

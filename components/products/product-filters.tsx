@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { X } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ProductFiltersProps {
   category?: string;
@@ -37,10 +38,44 @@ export function ProductFilters({ category }: ProductFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const [minPrice, setMinPrice] = useState(0);
+  const [maxPrice, setMaxPrice] = useState(1000);
   const [priceRange, setPriceRange] = useState([
     parseInt(searchParams.get("minPrice") || "0"),
     parseInt(searchParams.get("maxPrice") || "1000"),
   ]);
+  const [loadingPriceRange, setLoadingPriceRange] = useState(false);
+
+  // Fetch min/max price from API
+  useEffect(() => {
+    // Reset price filter state immediately on category change
+    setMinPrice(0);
+    setMaxPrice(1000);
+    setPriceRange([0, 1000]);
+    setLoadingPriceRange(true);
+    async function fetchPriceRange() {
+      try {
+        let url = "/api/products/price-range";
+        if (category) {
+          url += `?category=${encodeURIComponent(category)}`;
+        }
+        const res = await fetch(url);
+        const data = await res.json();
+        if (res.ok) {
+          setMinPrice(Math.floor(data.minPrice));
+          setMaxPrice(Math.ceil(data.maxPrice));
+          // If no filter is set, initialize slider to full range
+          if (!searchParams.get("minPrice") && !searchParams.get("maxPrice")) {
+            setPriceRange([Math.floor(data.minPrice), Math.ceil(data.maxPrice)]);
+          }
+        }
+      } finally {
+        setLoadingPriceRange(false);
+      }
+    }
+    fetchPriceRange();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category]);
 
   const getFilterValue = (key: string): string[] => {
     const value = searchParams.get(key);
@@ -66,13 +101,13 @@ export function ProductFilters({ category }: ProductFiltersProps) {
     setPriceRange(values);
     const params = new URLSearchParams(searchParams.toString());
 
-    if (values[0] > 0) {
+    if (values[0] > minPrice) {
       params.set("minPrice", values[0].toString());
     } else {
       params.delete("minPrice");
     }
 
-    if (values[1] < 1000) {
+    if (values[1] < maxPrice) {
       params.set("maxPrice", values[1].toString());
     } else {
       params.delete("maxPrice");
@@ -142,17 +177,23 @@ export function ProductFilters({ category }: ProductFiltersProps) {
           <CardTitle className="text-base">Price Range</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Slider
-            value={priceRange}
-            onValueChange={setPriceRange}
-            onValueCommit={updatePriceRange}
-            max={1000}
-            step={10}
-            className="w-full"
-          />
+          {loadingPriceRange ? (
+            <Skeleton className="h-8 w-full mb-2" />
+          ) : (
+            <Slider
+              value={priceRange}
+              onValueChange={setPriceRange}
+              onValueCommit={updatePriceRange}
+              min={minPrice}
+              max={maxPrice}
+              step={10}
+              className="w-full"
+              disabled={loadingPriceRange}
+            />
+          )}
           <div className="flex items-center justify-between text-sm">
-            <span>{formatPrice(priceRange[0])}</span>
-            <span>{formatPrice(priceRange[1])}</span>
+            <span className={loadingPriceRange ? "opacity-50" : ""}>{formatPrice(priceRange[0])}</span>
+            <span className={loadingPriceRange ? "opacity-50" : ""}>{formatPrice(priceRange[1])}</span>
           </div>
         </CardContent>
       </Card>

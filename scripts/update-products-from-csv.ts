@@ -46,6 +46,13 @@ interface ProductUpdateData {
   images?: string;
 }
 
+// Enum value sets for validation
+const CARE_LEVELS = ["EASY", "MODERATE", "ADVANCED"];
+const LIGHT_REQUIREMENTS = ["LOW", "MEDIUM", "BRIGHT", "DIRECT_SUN"];
+const WATERING_FREQUENCIES = ["WEEKLY", "BI_WEEKLY", "MONTHLY"];
+const PLANT_SIZES = ["SMALL", "MEDIUM", "LARGE"];
+const GROWTH_RATES = ["SLOW", "MODERATE", "FAST"];
+
 async function updateProductsFromCSV(csvFilePath: string) {
   console.log('🔄 Starting product update from CSV...');
   
@@ -65,10 +72,16 @@ async function updateProductsFromCSV(csvFilePath: string) {
     
     for (let i = 0; i < dataLines.length; i++) {
       const line = dataLines[i];
-      const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+      let values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+      if (values.length < headers.length) {
+        console.warn(`⚠️  Row ${i + 2} skipped: fewer columns than headers.`);
+        errorDetails.push(`Row ${i + 2}: Skipped, not enough columns.`);
+        continue;
+      }
+      if (values.length > headers.length) {
+        values = values.slice(0, headers.length);
+      }
       const rowData: any = {};
-      
-      // Map CSV values to headers
       headers.forEach((header, index) => {
         rowData[header] = values[index] || '';
       });
@@ -115,12 +128,37 @@ async function updateProductsFromCSV(csvFilePath: string) {
         // Integer fields
         if (rowData.sortOrder) updateData.sortOrder = parseInt(rowData.sortOrder);
         
-        // Enum fields
-        if (rowData.careLevel) updateData.careLevel = rowData.careLevel;
-        if (rowData.lightRequirement) updateData.lightRequirement = rowData.lightRequirement;
-        if (rowData.wateringFrequency) updateData.wateringFrequency = rowData.wateringFrequency;
-        if (rowData.plantSize) updateData.plantSize = rowData.plantSize;
-        if (rowData.growthRate) updateData.growthRate = rowData.growthRate;
+        // Enum fields with validation
+        if (rowData.careLevel && CARE_LEVELS.includes(rowData.careLevel)) {
+          updateData.careLevel = rowData.careLevel;
+        } else if (rowData.careLevel) {
+          updateData.careLevel = null;
+          if (rowData.careLevel) errorDetails.push(`Row ${i + 2}: Invalid careLevel '${rowData.careLevel}'`);
+        }
+        if (rowData.lightRequirement && LIGHT_REQUIREMENTS.includes(rowData.lightRequirement)) {
+          updateData.lightRequirement = rowData.lightRequirement;
+        } else if (rowData.lightRequirement) {
+          updateData.lightRequirement = null;
+          if (rowData.lightRequirement) errorDetails.push(`Row ${i + 2}: Invalid lightRequirement '${rowData.lightRequirement}'`);
+        }
+        if (rowData.wateringFrequency && WATERING_FREQUENCIES.includes(rowData.wateringFrequency)) {
+          updateData.wateringFrequency = rowData.wateringFrequency;
+        } else if (rowData.wateringFrequency) {
+          updateData.wateringFrequency = null;
+          if (rowData.wateringFrequency) errorDetails.push(`Row ${i + 2}: Invalid wateringFrequency '${rowData.wateringFrequency}'`);
+        }
+        if (rowData.plantSize && PLANT_SIZES.includes(rowData.plantSize)) {
+          updateData.plantSize = rowData.plantSize;
+        } else if (rowData.plantSize) {
+          updateData.plantSize = null;
+          if (rowData.plantSize) errorDetails.push(`Row ${i + 2}: Invalid plantSize '${rowData.plantSize}'`);
+        }
+        if (rowData.growthRate && GROWTH_RATES.includes(rowData.growthRate)) {
+          updateData.growthRate = rowData.growthRate;
+        } else if (rowData.growthRate) {
+          updateData.growthRate = null;
+          if (rowData.growthRate) errorDetails.push(`Row ${i + 2}: Invalid growthRate '${rowData.growthRate}'`);
+        }
         
         // Text fields
         if (rowData.careInstructions) updateData.careInstructions = rowData.careInstructions;
