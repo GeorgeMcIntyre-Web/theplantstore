@@ -312,7 +312,7 @@ model OrderItem {
 
   // Relations
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 // Reviews System
