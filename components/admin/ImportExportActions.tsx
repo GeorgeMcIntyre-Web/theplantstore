@@ -121,7 +121,7 @@ export default function ImportExportActions() {
         <div className="flex flex-col gap-1 min-w-[220px]">
           <div className="text-xs text-muted-foreground mb-1">
             <b>Product CSV format:</b> <br />
-            <span>Required columns: <b>name</b>, <b>slug</b>, <b>price</b></span><br />
+            <span>Required columns: <b>name</b>, <b>slug</b>, <b>price</b>, <b>category</b></span><br />
             <span>Optional: <b>id</b> (for update), <b>stockQuantity</b>, <b>isActive</b></span><br />
             <Button variant="link" size="sm" className="px-0" onClick={downloadProductTemplate}>Download Template</Button>
           </div>

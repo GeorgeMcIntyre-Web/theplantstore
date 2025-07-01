@@ -148,13 +148,14 @@ export default function CategoryManagement() {
               <TableHead>Slug</TableHead>
               <TableHead>Active</TableHead>
               <TableHead>Sort Order</TableHead>
+              <TableHead>ID</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {categories.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   No categories found.
                 </TableCell>
               </TableRow>
@@ -165,6 +166,7 @@ export default function CategoryManagement() {
                   <TableCell>{cat.slug}</TableCell>
                   <TableCell>{cat.isActive ? "Yes" : "No"}</TableCell>
                   <TableCell>{cat.sortOrder}</TableCell>
+                  <TableCell>{cat.id}</TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button size="sm" variant="outline" onClick={() => openEditModal(cat)}>
                       Edit

@@ -26,19 +26,27 @@ export async function POST(req: NextRequest) {
     const errors: string[] = [];
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
-      if (!row.name || !row.slug || !row.price) {
+      if (!row.name || !row.slug || !row.price || !row.category) {
         failed++;
-        errors.push(`Row ${i + 2}: Missing required fields`);
+        errors.push(`Row ${i + 2}: Missing required fields (name, slug, price, or category)`);
         continue;
       }
       try {
+        // Look up category by name
+        const category = await prisma.category.findUnique({ where: { name: row.category } });
+        if (!category) {
+          failed++;
+          errors.push(`Row ${i + 2}: Category '${row.category}' not found`);
+          continue;
+        }
         const data: any = {
           name: row.name,
           slug: row.slug,
           price: parseFloat(row.price),
+          categoryId: category.id,
         };
         if (row.stockQuantity) data.stockQuantity = parseInt(row.stockQuantity);
-        if (row.isActive !== undefined) data.isActive = row.isActive === "true";
+        data.isActive = row.isActive === "true" ? true : false;
         let where = undefined;
         if (row.id) where = { id: row.id };
         else where = { slug: row.slug };

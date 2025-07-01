@@ -22,6 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
@@ -120,6 +121,7 @@ export default function ProductsPage() {
               <TableHead>Price</TableHead>
               <TableHead>Stock</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>ID</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -158,14 +160,31 @@ export default function ProductsPage() {
                   <TableCell>
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        product.isActive
-                          ? "bg-green-100 text-green-800"
-                          : "bg-gray-100 text-gray-800"
+                        product.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
                       }`}
                     >
                       {product.isActive ? "Active" : "Inactive"}
                     </span>
+                    <Switch
+                      checked={product.isActive}
+                      onCheckedChange={async (checked) => {
+                        // Update isActive status via API
+                        await fetch(`/api/admin/products/${product.id}`, {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ isActive: checked }),
+                        });
+                        // Update UI
+                        setProducts((prev) =>
+                          prev.map((p) =>
+                            p.id === product.id ? { ...p, isActive: checked } : p
+                          )
+                        );
+                      }}
+                      className="ml-2"
+                    />
                   </TableCell>
+                  <TableCell>{product.id}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end space-x-2">
                       <Button asChild variant="outline" size="sm">
