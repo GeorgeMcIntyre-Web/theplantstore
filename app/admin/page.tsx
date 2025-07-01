@@ -17,6 +17,7 @@ import { DateRange } from "react-day-picker";
 import ImportExportActions from "@/components/admin/ImportExportActions";
 import ProductsPage from "../admin/products/page";
 import CategoryManagement from "@/components/admin/CategoryManagement";
+import CustomerManagement from "@/components/admin/CustomerManagement";
 
 export default function AdminDashboard() {
   const { data: session } = useSession();
@@ -139,7 +140,7 @@ export default function AdminDashboard() {
           <TabsContent value="customers">
             <div className="bg-card rounded-lg p-6 shadow border">
               <h2 className="text-lg font-semibold mb-4">Customer Management</h2>
-              {/* Customer management UI here */}
+              <CustomerManagement />
             </div>
           </TabsContent>
 
