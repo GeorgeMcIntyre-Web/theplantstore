@@ -122,18 +122,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-
-export async function GET_PRICE_RANGE() {
-  try {
-    const [min, max] = await Promise.all([
-      prisma.product.aggregate({ _min: { price: true } }),
-      prisma.product.aggregate({ _max: { price: true } }),
-    ]);
-    return NextResponse.json({
-      minPrice: min._min.price ?? 0,
-      maxPrice: max._max.price ?? 1000,
-    });
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch price range' }, { status: 500 });
-  }
-}

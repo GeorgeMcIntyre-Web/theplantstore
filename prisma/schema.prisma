@@ -65,6 +65,7 @@ model User {
   newsletterSubscribed Boolean  @default(false)
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
+  isActive            Boolean   @default(true)
 
   // Relations
   accounts     Account[]

@@ -15,8 +15,10 @@ async function main() {
 
   // Create categories
   console.log("📁 Creating categories...");
-  const indoorCategory = await prisma.category.create({
-    data: {
+  const indoorCategory = await prisma.category.upsert({
+    where: { name: "Indoor Plants" },
+    update: {},
+    create: {
       name: "Indoor Plants",
       slug: "indoor-plants",
       description: "Beautiful houseplants perfect for any indoor space",
@@ -25,8 +27,10 @@ async function main() {
     },
   });
 
-  const outdoorCategory = await prisma.category.create({
-    data: {
+  const outdoorCategory = await prisma.category.upsert({
+    where: { name: "Outdoor Plants" },
+    update: {},
+    create: {
       name: "Outdoor Plants",
       slug: "outdoor-plants",
       description: "Hardy plants for your garden and outdoor spaces",
@@ -35,8 +39,10 @@ async function main() {
     },
   });
 
-  const succulentsCategory = await prisma.category.create({
-    data: {
+  const succulentsCategory = await prisma.category.upsert({
+    where: { name: "Succulents" },
+    update: {},
+    create: {
       name: "Succulents",
       slug: "succulents",
       description: "Low-maintenance plants perfect for beginners",
@@ -45,8 +51,10 @@ async function main() {
     },
   });
 
-  const accessoriesCategory = await prisma.category.create({
-    data: {
+  const accessoriesCategory = await prisma.category.upsert({
+    where: { name: "Accessories" },
+    update: {},
+    create: {
       name: "Accessories",
       slug: "accessories",
       description: "Everything you need to care for your plants",
@@ -59,8 +67,10 @@ async function main() {
   console.log("👥 Creating admin users...");
   const hashedPassword = await bcrypt.hash("admin123", 12);
 
-  const superAdmin = await prisma.user.create({
-    data: {
+  const superAdmin = await prisma.user.upsert({
+    where: { email: "admin@thehouseplantstore.co.za" },
+    update: {},
+    create: {
       name: "Super Admin",
       email: "admin@thehouseplantstore.co.za",
       password: hashedPassword,
@@ -68,8 +78,10 @@ async function main() {
     },
   });
 
-  const plantManager = await prisma.user.create({
-    data: {
+  const plantManager = await prisma.user.upsert({
+    where: { email: "plants@thehouseplantstore.co.za" },
+    update: {},
+    create: {
       name: "Plant Manager",
       email: "plants@thehouseplantstore.co.za",
       password: hashedPassword,
@@ -77,8 +89,10 @@ async function main() {
     },
   });
 
-  const orderManager = await prisma.user.create({
-    data: {
+  const orderManager = await prisma.user.upsert({
+    where: { email: "orders@thehouseplantstore.co.za" },
+    update: {},
+    create: {
       name: "Order Manager",
       email: "orders@thehouseplantstore.co.za",
       password: hashedPassword,
