@@ -3,6 +3,8 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 
 interface Supplier {
   id: string;
@@ -23,6 +25,7 @@ export default function PurchaseOrdersPage() {
   const [pos, setPOs] = useState<PurchaseOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [approving, setApproving] = useState<string | null>(null);
+  const router = useRouter();
 
   const adminId = session?.user?.id;
 
@@ -50,8 +53,23 @@ export default function PurchaseOrdersPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Purchase Orders</h1>
+    <div className="w-full h-full flex flex-col p-4">
+      <div className="flex items-center gap-2 mb-4">
+        <button
+          onClick={() => {
+            if (window.history.length > 1) {
+              router.back();
+            } else {
+              router.push("/admin");
+            }
+          }}
+          className="flex items-center text-primary hover:underline"
+        >
+          <ArrowLeft className="w-4 h-4 mr-1" />
+          Back
+        </button>
+        <h1 className="text-2xl font-bold ml-2">Purchase Orders</h1>
+      </div>
       {loading ? (
         <div>Loading...</div>
       ) : pos.length === 0 ? (

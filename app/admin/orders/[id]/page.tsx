@@ -1,7 +1,8 @@
-import { notFound } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
 import { UpdateOrderForm } from "@/components/admin/UpdateOrderForm";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ArrowLeft } from "lucide-react";
 
 async function getOrder(id: string) {
   const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ""}/api/admin/orders/${id}`,
@@ -12,12 +13,28 @@ async function getOrder(id: string) {
 }
 
 export default async function OrderDetailsPage({ params }: { params: unknown }) {
+  const router = useRouter();
   const order = await getOrder(params as string);
   if (!order) return notFound();
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold mb-4">Order Details</h1>
+    <div className="w-full h-full flex flex-col p-4">
+      <div className="flex items-center gap-2 mb-4">
+        <button
+          onClick={() => {
+            if (window.history.length > 1) {
+              router.back();
+            } else {
+              router.push("/admin/orders");
+            }
+          }}
+          className="flex items-center text-primary hover:underline"
+        >
+          <ArrowLeft className="w-4 h-4 mr-1" />
+          Back
+        </button>
+        <h1 className="text-2xl font-bold ml-2">Order Details</h1>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle>Order #{order.orderNumber}</CardTitle>

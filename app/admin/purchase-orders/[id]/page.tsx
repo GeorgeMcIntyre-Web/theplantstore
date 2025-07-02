@@ -3,6 +3,7 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 interface Supplier {
   id: string;
@@ -63,40 +64,58 @@ export default function PurchaseOrderDetailPage() {
   if (!po) return <div className="p-8">Purchase order not found.</div>;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <h1 className="text-2xl font-bold mb-4">Purchase Order {po.orderNumber}</h1>
-      <div className="mb-4">
-        <div><b>Status:</b> {po.status}</div>
-        <div><b>Supplier:</b> {po.supplier?.name || "-"}</div>
-        <div><b>Total:</b> R{Number(po.total).toFixed(2)}</div>
-        <div><b>Created:</b> {new Date(po.createdAt).toLocaleString()}</div>
+    <div className="w-full h-full flex flex-col p-4">
+      <div className="flex items-center gap-2 mb-4">
+        <button
+          onClick={() => {
+            if (window.history.length > 1) {
+              router.back();
+            } else {
+              router.push("/admin/purchase-orders");
+            }
+          }}
+          className="flex items-center text-primary hover:underline"
+        >
+          <ArrowLeft className="w-4 h-4 mr-1" />
+          Back
+        </button>
+        <h1 className="text-2xl font-bold ml-2">Purchase Order Details</h1>
       </div>
-      <h2 className="text-lg font-semibold mb-2">Items</h2>
-      <table className="min-w-full border mb-6">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="p-2 text-left">Product</th>
-            <th className="p-2 text-left">Quantity</th>
-            <th className="p-2 text-left">Price</th>
-            <th className="p-2 text-left">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {Array.isArray(po.items) && po.items.map((item) => (
-            <tr key={item.productId} className="border-b">
-              <td className="p-2">{item.name}</td>
-              <td className="p-2">{item.quantity}</td>
-              <td className="p-2">R{Number(item.price).toFixed(2)}</td>
-              <td className="p-2">R{Number(item.price * item.quantity).toFixed(2)}</td>
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <h1 className="text-2xl font-bold mb-4">Purchase Order {po.orderNumber}</h1>
+        <div className="mb-4">
+          <div><b>Status:</b> {po.status}</div>
+          <div><b>Supplier:</b> {po.supplier?.name || "-"}</div>
+          <div><b>Total:</b> R{Number(po.total).toFixed(2)}</div>
+          <div><b>Created:</b> {new Date(po.createdAt).toLocaleString()}</div>
+        </div>
+        <h2 className="text-lg font-semibold mb-2">Items</h2>
+        <table className="min-w-full border mb-6">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="p-2 text-left">Product</th>
+              <th className="p-2 text-left">Quantity</th>
+              <th className="p-2 text-left">Price</th>
+              <th className="p-2 text-left">Total</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-      {po.status === "DRAFT" && (
-        <Button onClick={approvePO} disabled={approving}>
-          {approving ? "Approving..." : "Approve Purchase Order"}
-        </Button>
-      )}
+          </thead>
+          <tbody>
+            {Array.isArray(po.items) && po.items.map((item) => (
+              <tr key={item.productId} className="border-b">
+                <td className="p-2">{item.name}</td>
+                <td className="p-2">{item.quantity}</td>
+                <td className="p-2">R{Number(item.price).toFixed(2)}</td>
+                <td className="p-2">R{Number(item.price * item.quantity).toFixed(2)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {po.status === "DRAFT" && (
+          <Button onClick={approvePO} disabled={approving}>
+            {approving ? "Approving..." : "Approve Purchase Order"}
+          </Button>
+        )}
+      </div>
     </div>
   );
 } 

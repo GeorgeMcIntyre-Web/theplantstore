@@ -12,6 +12,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { prisma } from "@/lib/db";
+import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 
 async function getCustomers() {
   return prisma.user.findMany({
@@ -21,11 +23,27 @@ async function getCustomers() {
 }
 
 export default async function CustomersPage() {
+  const router = useRouter();
   const customers = await getCustomers();
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold">Customers</h1>
+    <div className="w-full h-full flex flex-col p-4">
+      <div className="flex items-center gap-2 mb-4">
+        <button
+          onClick={() => {
+            if (window.history.length > 1) {
+              router.back();
+            } else {
+              router.push("/admin");
+            }
+          }}
+          className="flex items-center text-primary hover:underline"
+        >
+          <ArrowLeft className="w-4 h-4 mr-1" />
+          Back
+        </button>
+        <h1 className="text-2xl font-bold ml-2">Customers</h1>
+      </div>
       <div className="mt-8">
         <Table>
           <TableHeader>
