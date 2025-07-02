@@ -74,6 +74,9 @@ model User {
   reviews      Review[]
   cartItems    CartItem[]
   addresses    Address[]
+  notifications Notification[]
+  purchaseOrders PurchaseOrder[] @relation("AdminPurchaseOrders")
+  notificationsAssigned Notification[] @relation("NotificationAssignee")
 }
 
 // Address Management for SA Provinces
@@ -201,6 +204,8 @@ model Product {
   reviews      Review[]
   orderItems   OrderItem[]
   cartItems    CartItem[]
+  supplierId   String?
+  supplier     Supplier?      @relation(fields: [supplierId], references: [id])
 }
 
 model ProductImage {
@@ -334,6 +339,49 @@ model Review {
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
+}
+
+model Notification {
+  id         String   @id @default(cuid())
+  userId     String
+  type       String   // e.g., "order", "po-draft", "low-stock"
+  message    String
+  link       String?
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedTo String?
+  assignee   User?    @relation("NotificationAssignee", fields: [assignedTo], references: [id])
+  status     String   @default("pending") // e.g., 'pending', 'in_progress', 'completed'
+}
+
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  products  Product[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  purchaseOrders PurchaseOrder[]
+}
+
+model PurchaseOrder {
+  id         String   @id @default(cuid())
+  orderNumber String  @unique
+  status     String   // e.g., 'DRAFT', 'APPROVED', 'SENT'
+  adminId    String
+  supplierId String
+  items      Json     // [{ productId, name, quantity, price }]
+  total      Decimal  @db.Decimal(10,2)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  admin      User     @relation("AdminPurchaseOrders", fields: [adminId], references: [id])
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
 }
 
 // Shipping Rates by Province
