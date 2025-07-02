@@ -118,6 +118,14 @@ export function Header() {
                         </div>
                       ))
                     )}
+                    {/* Add link to full notifications page */}
+                    {notifications.length > 0 && (
+                      <div className="p-2 border-t text-center">
+                        <Link href="/admin/notifications" className="text-primary hover:underline text-sm">
+                          View all notifications
+                        </Link>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
