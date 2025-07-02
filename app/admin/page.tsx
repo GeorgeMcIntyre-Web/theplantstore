@@ -19,6 +19,8 @@ import { EmailManagement } from "@/components/admin/email-management";
 import ProductsPage from '@/app/admin/products/page';
 import CategoryManagement from '@/components/admin/CategoryManagement';
 import CustomerManagement from '@/components/admin/CustomerManagement';
+import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 
 export default function AdminDashboard() {
   const { data: session } = useSession();
@@ -31,6 +33,8 @@ export default function AdminDashboard() {
   const [analytics, setAnalytics] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lowStockProducts, setLowStockProducts] = useState<any[]>([]);
+  const [suggestingPOs, setSuggestingPOs] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -48,7 +52,42 @@ export default function AdminDashboard() {
       })
       .catch((_) => setError("Failed to fetch analytics"))
       .finally(() => setLoading(false));
+
+    // Fetch low stock products
+    fetch("/api/products")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.products) {
+          setLowStockProducts(
+            data.products.filter((p: any) =>
+              typeof p.stockQuantity === 'number' && typeof p.lowStockThreshold === 'number' && p.stockQuantity <= p.lowStockThreshold
+            )
+          );
+        }
+      });
   }, [dateRange]);
+
+  // Suggest POs handler
+  const handleSuggestPOs = async () => {
+    setSuggestingPOs(true);
+    try {
+      const res = await fetch("/api/admin/purchase-orders/auto-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminId: session?.user?.id }),
+      });
+      const data = await res.json();
+      toast({
+        title: data.created > 0 ? `Created ${data.created} draft POs` : "No new POs needed",
+        description: data.created > 0 ? "Review and approve in Purchase Orders." : undefined,
+      });
+      // Optionally, refresh low stock products or notifications here
+    } catch (e) {
+      toast({ title: "Error", description: "Failed to suggest POs", variant: "destructive" });
+    } finally {
+      setSuggestingPOs(false);
+    }
+  };
 
   return (
     <Tabs value={tab} onValueChange={setTab} className="flex flex-1 min-h-screen bg-background">
@@ -116,6 +155,43 @@ export default function AdminDashboard() {
                       </li>
                     ))}
                   </ul>
+                </div>
+                {/* Low Stock Widget */}
+                <div className="bg-card rounded-lg p-6 shadow border mt-8">
+                  <div className="flex items-center justify-between mb-2">
+                    <h2 className="text-lg font-semibold flex items-center gap-2">Low Stock Products</h2>
+                    <Button size="sm" onClick={handleSuggestPOs} disabled={suggestingPOs}>
+                      {suggestingPOs ? "Suggesting..." : "Suggest POs"}
+                    </Button>
+                  </div>
+                  {lowStockProducts.length === 0 ? (
+                    <div className="text-muted-foreground">No products are low in stock.</div>
+                  ) : (
+                    <table className="min-w-full border mb-2">
+                      <thead>
+                        <tr className="bg-gray-100">
+                          <th className="p-2 text-left">Product</th>
+                          <th className="p-2 text-left">Stock</th>
+                          <th className="p-2 text-left">Threshold</th>
+                          <th className="p-2 text-left">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {lowStockProducts.map((p) => (
+                          <tr key={p.id} className="border-b">
+                            <td className="p-2">{p.name}</td>
+                            <td className="p-2">{p.stockQuantity}</td>
+                            <td className="p-2">{p.lowStockThreshold}</td>
+                            <td className="p-2">
+                              <Link href={`/admin/purchase-orders/new?productId=${p.id}&quantity=${Math.max(1, p.lowStockThreshold - p.stockQuantity + 1)}`}>
+                                <Button size="sm">Create PO</Button>
+                              </Link>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               </div>
             )}
