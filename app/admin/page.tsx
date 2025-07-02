@@ -116,6 +116,11 @@ export default function AdminDashboard() {
           <TabsTrigger value="email" className="justify-start px-4 py-3 text-base gap-3"><Mail className="w-5 h-5" /> Email</TabsTrigger>
           <TabsTrigger value="importexport" className="justify-start px-4 py-3 text-base gap-3"><Upload className="w-5 h-5" /> Import/Export</TabsTrigger>
         </TabsList>
+        {/* Notifications sidebar link */}
+        <Link href="/admin/notifications" className="flex items-center gap-3 px-4 py-3 mt-2 rounded hover:bg-accent transition text-base text-primary font-medium">
+          <span><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 7.165 6 9.388 6 12v2.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg></span>
+          Notifications
+        </Link>
       </aside>
       <main className="flex-1 p-8">
         <div className="w-full">
