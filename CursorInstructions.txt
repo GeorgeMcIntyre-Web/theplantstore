@@ -28,3 +28,6 @@ feature/contact-form-backend
 feature/paystack-integration
 
 I think there should be a main branch and then a deloper branch with the feature coming off that
+At the moment the main branch is setup in digital ocean that if it is push to then DO tries to 
+deploy this app.
+We also need to look at best practices for DO when developing my app in cursor ide pro. I also have the db in DO.
