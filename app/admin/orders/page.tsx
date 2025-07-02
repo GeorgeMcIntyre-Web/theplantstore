@@ -44,7 +44,7 @@ async function getOrders(page: number, pageSize: number, status?: string, custom
   return { orders, total };
 }
 
-export default function OrdersListPage({ searchParams }: { searchParams: { page?: string, pageSize?: string, status?: string, customer?: string } }) {
+export default async function OrdersListPage({ searchParams }: { searchParams: { page?: string, pageSize?: string, status?: string, customer?: string } }) {
   const router = useRouter();
   const page = Number(searchParams?.page) || 1;
   const pageSize = Number(searchParams?.pageSize) || 10;
@@ -74,23 +74,8 @@ export default function OrdersListPage({ searchParams }: { searchParams: { page?
   }
 
   return (
-    <div className="w-full h-full flex flex-col p-4">
-      <div className="flex items-center gap-2 mb-4">
-        <button
-          onClick={() => {
-            if (window.history.length > 1) {
-              router.back();
-            } else {
-              router.push("/admin");
-            }
-          }}
-          className="flex items-center text-primary hover:underline"
-        >
-          <ArrowLeft className="w-4 h-4 mr-1" />
-          Back
-        </button>
-        <h1 className="text-2xl font-bold ml-2">Orders</h1>
-      </div>
+    <>
+      <h1 className="text-2xl font-bold mb-6">Orders</h1>
       <form
         className="flex flex-wrap gap-4 mb-4"
         action="/admin/orders"
@@ -183,6 +168,6 @@ export default function OrdersListPage({ searchParams }: { searchParams: { page?
           )}
         </CardContent>
       </Card>
-    </div>
+    </>
   );
 }

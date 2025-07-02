@@ -1,6 +1,30 @@
 we need to get this to work do whatever it takes please
 please can you proceed and follow best practices in all cases
 please do all these items.
-continue
+
+
 we need to get this branch working so please think about this but carry on.
 do not ask until really required
+you got stuck
+
+
+we need to do a commit 
+continue
+you got stuck
+
+we now need to look at all branches with coded features that are at a good level
+the idea to do also clean the branch structure to follow best practices.
+please take a look at the whole repo and give me a break down of what we need to do to get 
+this Structureed as per best practices
+
+see below
+feature/in-app-notifications
+feature/contact-form-backend
+feature/paystack-integration
+refactor/ui-improvements
+feature/dynamic-plant-data
+feature/in-app-notifications
+feature/contact-form-backend
+feature/paystack-integration
+
+I think there should be a main branch and then a deloper branch with the feature coming off that

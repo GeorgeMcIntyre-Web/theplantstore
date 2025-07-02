@@ -2,6 +2,7 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import Papa, { ParseResult } from "papaparse";
+import Link from "next/link";
 
 function downloadCSV(url: string, filename: string) {
   fetch(url)
@@ -110,83 +111,95 @@ export default function ImportExportActions() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="bg-muted p-4 rounded border mb-2">
-        <div className="text-sm text-muted-foreground mb-2">
-          <b>Product Import CSV Format</b><br />
-          <span>Required columns: <b>name</b>, <b>slug</b>, <b>price</b>, <b>category</b></span><br />
-          <span>Optional: <b>id</b> (for update), <b>stockQuantity</b>, <b>isActive</b>, <b>description</b>, <b>shortDescription</b>, <b>compareAtPrice</b>, <b>sku</b>, <b>careLevel</b>, <b>lightRequirement</b>, <b>wateringFrequency</b>, <b>isPetSafe</b>, <b>plantSize</b>, <b>growthRate</b>, <b>careInstructions</b>, <b>isFeatured</b>, <b>imageUrls</b></span><br />
+    <div className="w-full h-full flex flex-col items-center justify-center p-8 bg-background">
+      <div className="w-full max-w-3xl bg-white rounded-lg shadow-lg p-8 border flex flex-col gap-8">
+        <div>
+          <h1 className="text-2xl font-bold mb-4 text-primary">Import / Export</h1>
+          <div className="bg-muted p-4 rounded border mb-4">
+            <div className="text-sm text-muted-foreground mb-2">
+              <b>Product Import CSV Format</b><br />
+              <span>Required columns: <b>name</b>, <b>slug</b>, <b>price</b>, <b>category</b></span><br />
+              <span>Optional: <b>id</b> (for update), <b>stockQuantity</b>, <b>isActive</b>, <b>description</b>, <b>shortDescription</b>, <b>compareAtPrice</b>, <b>sku</b>, <b>careLevel</b>, <b>lightRequirement</b>, <b>wateringFrequency</b>, <b>isPetSafe</b>, <b>plantSize</b>, <b>growthRate</b>, <b>careInstructions</b>, <b>isFeatured</b>, <b>imageUrls</b></span><br />
+            </div>
+            <Button variant="link" size="sm" className="px-0" onClick={downloadProductTemplate}>Download Template</Button>
+          </div>
         </div>
-        <Button variant="link" size="sm" className="px-0" onClick={downloadProductTemplate}>Download Template</Button>
-      </div>
-      <div className="flex flex-wrap gap-3 mb-2">
-        <Button variant="outline" size="sm" onClick={() => downloadCSV("/api/admin/export/orders", "orders.csv")}>Export Orders</Button>
-        <Button variant="outline" size="sm" onClick={() => downloadCSV("/api/admin/export/products", "products.csv")}>Export Products</Button>
-        <Button variant="outline" size="sm" onClick={() => downloadCSV("/api/admin/export/customers", "customers.csv")}>Export Customers</Button>
-        <Button variant="outline" size="sm" onClick={() => downloadCSV("/api/admin/export/analytics", "analytics.csv")}>Export Analytics</Button>
-      </div>
-      <div className="flex items-center gap-3">
-        <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>Import Products</Button>
-        <input type="file" accept=".csv" ref={fileInputRef} style={{ display: "none" }} onChange={handleImportFile} />
-      </div>
-      {Array.isArray(importPreview) && importPreview.length > 0 && (
-        <div className="mt-4 bg-muted p-4 rounded border">
-          <div className="font-semibold mb-2">Import Preview (first 5 rows):</div>
-          <div className="overflow-x-auto">
-            <table className="text-xs border w-full">
-              <thead>
-                <tr>
-                  {Object.keys(importPreview[0] || {}).map((col) => (
-                    <th key={col} className="border px-2 py-1">{col}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {importPreview.map((row, i) => (
-                  <tr key={i}>
-                    {Object.values(row).map((val, j) => (
-                      <td key={j} className="border px-2 py-1">{String(val)}</td>
+        <div>
+          <h2 className="text-lg font-semibold mb-2">Export Data</h2>
+          <div className="flex flex-wrap gap-3 mb-4">
+            <Button variant="outline" size="sm" className="hover:bg-primary/10" onClick={() => downloadCSV("/api/admin/export/orders", "orders.csv")}>Export Orders</Button>
+            <Button variant="outline" size="sm" className="hover:bg-primary/10" onClick={() => downloadCSV("/api/admin/export/products", "products.csv")}>Export Products</Button>
+            <Button variant="outline" size="sm" className="hover:bg-primary/10" onClick={() => downloadCSV("/api/admin/export/customers", "customers.csv")}>Export Customers</Button>
+            <Button variant="outline" size="sm" className="hover:bg-primary/10" onClick={() => downloadCSV("/api/admin/export/analytics", "analytics.csv")}>Export Analytics</Button>
+          </div>
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold mb-2">Import Products</h2>
+          <div className="flex items-center gap-3 mb-2">
+            <Link href="/admin/products/import" passHref legacyBehavior>
+              <a className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/50">Import Products</a>
+            </Link>
+          </div>
+          {Array.isArray(importPreview) && importPreview.length > 0 && (
+            <div className="mt-4 bg-muted p-4 rounded border">
+              <div className="font-semibold mb-2">Import Preview (first 5 rows):</div>
+              <div className="overflow-x-auto">
+                <table className="text-xs border w-full">
+                  <thead>
+                    <tr>
+                      {Object.keys(importPreview[0] || {}).map((col) => (
+                        <th key={col} className="border px-2 py-1 bg-gray-100">{col}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {importPreview.map((row, i) => (
+                      <tr key={i} className="even:bg-gray-50">
+                        {Object.values(row).map((val, j) => (
+                          <td key={j} className="border px-2 py-1">{String(val)}</td>
+                        ))}
+                      </tr>
                     ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {importSummary && (
-            <div className="mt-2">
-              <span className="mr-4">Creates: <b>{importSummary.creates}</b></span>
-              <span className="mr-4">Updates: <b>{importSummary.updates}</b></span>
-              <span className="mr-4">Errors: <b>{importSummary.errors}</b></span>
+                  </tbody>
+                </table>
+              </div>
+              {importSummary && (
+                <div className="mt-2">
+                  <span className="mr-4">Creates: <b>{importSummary.creates}</b></span>
+                  <span className="mr-4">Updates: <b>{importSummary.updates}</b></span>
+                  <span className="mr-4">Errors: <b>{importSummary.errors}</b></span>
+                </div>
+              )}
+              <div className="mt-2 flex gap-2">
+                <Button size="sm" variant="default" className="hover:bg-primary/90" onClick={handleConfirmImport} disabled={importing}>Confirm Import</Button>
+                <Button size="sm" variant="outline" className="hover:bg-primary/10" onClick={() => { setImportPreview(null); setImportSummary(null); }}>Cancel</Button>
+              </div>
             </div>
           )}
-          <div className="mt-2 flex gap-2">
-            <Button size="sm" variant="default" onClick={handleConfirmImport} disabled={importing}>Confirm Import</Button>
-            <Button size="sm" variant="outline" onClick={() => { setImportPreview(null); setImportSummary(null); }}>Cancel</Button>
-          </div>
-        </div>
-      )}
-      {importError && <div className="text-destructive mt-2">{importError}</div>}
-      {importResult && (
-        <div className="mt-4 bg-muted p-4 rounded border">
-          <div className="font-semibold mb-2">Import Result:</div>
-          <div>Created: <b>{importResult.created}</b></div>
-          <div>Updated: <b>{importResult.updated}</b></div>
-          <div>Failed: <b>{importResult.failed}</b></div>
-          {Array.isArray(importResult.errors) && importResult.errors.length > 0 && (
-            <div className="mt-2 text-destructive">
-              <div>Errors:</div>
-              <ul className="list-disc ml-6">
-                {importResult.errors.map((err: string, i: number) => (
-                  <li key={i}>{err}</li>
-                ))}
-              </ul>
+          {importError && <div className="text-destructive mt-2">{importError}</div>}
+          {importResult && (
+            <div className="mt-4 bg-muted p-4 rounded border">
+              <div className="font-semibold mb-2">Import Result:</div>
+              <div>Created: <b>{importResult.created}</b></div>
+              <div>Updated: <b>{importResult.updated}</b></div>
+              <div>Failed: <b>{importResult.failed}</b></div>
+              {Array.isArray(importResult.errors) && importResult.errors.length > 0 && (
+                <div className="mt-2 text-destructive">
+                  <div>Errors:</div>
+                  <ul className="list-disc ml-6">
+                    {importResult.errors.map((err: string, i: number) => (
+                      <li key={i}>{err}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <div className="mt-2">
+                <Button size="sm" variant="outline" className="hover:bg-primary/10" onClick={() => setImportResult(null)}>Close</Button>
+              </div>
             </div>
           )}
-          <div className="mt-2">
-            <Button size="sm" variant="outline" onClick={() => setImportResult(null)}>Close</Button>
-          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 } 

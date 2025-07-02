@@ -63,23 +63,8 @@ export default function SuppliersPage() {
   };
 
   return (
-    <div className="w-full h-full flex flex-col p-4">
-      <div className="flex items-center gap-2 mb-4">
-        <button
-          onClick={() => {
-            if (window.history.length > 1) {
-              router.back();
-            } else {
-              router.push("/admin");
-            }
-          }}
-          className="flex items-center text-primary hover:underline"
-        >
-          <ArrowLeft className="w-4 h-4 mr-1" />
-          Back
-        </button>
-        <h1 className="text-2xl font-bold ml-2">Suppliers</h1>
-      </div>
+    <>
+      <h1 className="text-2xl font-bold mb-6">Suppliers</h1>
       {loading ? (
         <div>Loading...</div>
       ) : (
@@ -152,6 +137,6 @@ export default function SuppliersPage() {
           </form>
         </>
       )}
-    </div>
+    </>
   );
 } 

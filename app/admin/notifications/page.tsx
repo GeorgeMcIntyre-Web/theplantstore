@@ -131,23 +131,8 @@ export default function NotificationManagementPage() {
   };
 
   return (
-    <div className="w-full h-full flex flex-col p-4">
-      <div className="flex items-center gap-2 mb-4">
-        <button
-          onClick={() => {
-            if (window.history.length > 1) {
-              router.back();
-            } else {
-              router.push("/admin");
-            }
-          }}
-          className="flex items-center text-primary hover:underline"
-        >
-          <ArrowLeft className="w-4 h-4 mr-1" />
-          Back
-        </button>
-        <h1 className="text-2xl font-bold ml-2">Notification Management</h1>
-      </div>
+    <>
+      <h1 className="text-2xl font-bold mb-6">Notification Management</h1>
       <div className="flex items-center justify-between mb-6">
         <Button onClick={() => setShowCreate(true)} size="sm">Create Task</Button>
       </div>
@@ -325,6 +310,6 @@ export default function NotificationManagementPage() {
           </tbody>
         </table>
       </div>
-    </div>
+    </>
   );
 } 
