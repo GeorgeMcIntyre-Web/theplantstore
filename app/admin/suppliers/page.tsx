@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 
 interface Supplier {
   id: string;
@@ -11,6 +13,7 @@ interface Supplier {
 }
 
 export default function SuppliersPage() {
+  const router = useRouter();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Supplier | null>(null);
@@ -60,8 +63,23 @@ export default function SuppliersPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <h1 className="text-2xl font-bold mb-6">Suppliers</h1>
+    <div className="w-full h-full flex flex-col p-4">
+      <div className="flex items-center gap-2 mb-4">
+        <button
+          onClick={() => {
+            if (window.history.length > 1) {
+              router.back();
+            } else {
+              router.push("/admin");
+            }
+          }}
+          className="flex items-center text-primary hover:underline"
+        >
+          <ArrowLeft className="w-4 h-4 mr-1" />
+          Back
+        </button>
+        <h1 className="text-2xl font-bold ml-2">Suppliers</h1>
+      </div>
       {loading ? (
         <div>Loading...</div>
       ) : (

@@ -1,7 +1,7 @@
 // app/admin/products/page.tsx - COMPLETE FIXED VERSION
 "use client";
 import { useState, useEffect } from "react";
-import { PlusCircle, Trash2, Edit } from "lucide-react";
+import { PlusCircle, Trash2, Edit, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,8 +25,10 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { useRouter } from "next/navigation";
 
 export default function ProductsPage() {
+  const router = useRouter();
   const [products, setProducts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteDialog, setDeleteDialog] = useState<{
@@ -166,9 +168,25 @@ export default function ProductsPage() {
   }
 
   return (
-    <div>
+    <div className="w-full h-full flex flex-col p-4">
+      <div className="flex items-center gap-2 mb-4">
+        <button
+          onClick={() => {
+            if (window.history.length > 1) {
+              router.back();
+            } else {
+              router.push("/admin");
+            }
+          }}
+          className="flex items-center text-primary hover:underline"
+        >
+          <ArrowLeft className="w-4 h-4 mr-1" />
+          Back
+        </button>
+        <h1 className="text-2xl font-bold ml-2">Products</h1>
+      </div>
+
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold">Products</h1>
         <Button asChild>
           <Link href="/admin/products/new">
             <PlusCircle className="mr-2 h-4 w-4" />

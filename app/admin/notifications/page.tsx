@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { useNotifications, Notification } from "@/hooks/use-notifications";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 
 const NOTIF_TYPES = [
   { value: "all", label: "All" },
@@ -48,6 +50,7 @@ async function updateNotificationStatus(id: string, status: string) {
 }
 
 export default function NotificationManagementPage() {
+  const router = useRouter();
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const [filter, setFilter] = useState("all");
@@ -129,8 +132,23 @@ export default function NotificationManagementPage() {
 
   return (
     <div className="w-full h-full flex flex-col p-4">
+      <div className="flex items-center gap-2 mb-4">
+        <button
+          onClick={() => {
+            if (window.history.length > 1) {
+              router.back();
+            } else {
+              router.push("/admin");
+            }
+          }}
+          className="flex items-center text-primary hover:underline"
+        >
+          <ArrowLeft className="w-4 h-4 mr-1" />
+          Back
+        </button>
+        <h1 className="text-2xl font-bold ml-2">Notification Management</h1>
+      </div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Notification Management</h1>
         <Button onClick={() => setShowCreate(true)} size="sm">Create Task</Button>
       </div>
       <Dialog open={showCreate} onOpenChange={setShowCreate}>

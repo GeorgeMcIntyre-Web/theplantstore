@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 
 const ORDER_STATUSES = [
   "PENDING",
@@ -42,7 +44,8 @@ async function getOrders(page: number, pageSize: number, status?: string, custom
   return { orders, total };
 }
 
-export default async function OrdersListPage({ searchParams }: { searchParams: { page?: string, pageSize?: string, status?: string, customer?: string } }) {
+export default function OrdersListPage({ searchParams }: { searchParams: { page?: string, pageSize?: string, status?: string, customer?: string } }) {
+  const router = useRouter();
   const page = Number(searchParams?.page) || 1;
   const pageSize = Number(searchParams?.pageSize) || 10;
   const status = searchParams?.status || "";
@@ -71,8 +74,23 @@ export default async function OrdersListPage({ searchParams }: { searchParams: {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Orders</h1>
+    <div className="w-full h-full flex flex-col p-4">
+      <div className="flex items-center gap-2 mb-4">
+        <button
+          onClick={() => {
+            if (window.history.length > 1) {
+              router.back();
+            } else {
+              router.push("/admin");
+            }
+          }}
+          className="flex items-center text-primary hover:underline"
+        >
+          <ArrowLeft className="w-4 h-4 mr-1" />
+          Back
+        </button>
+        <h1 className="text-2xl font-bold ml-2">Orders</h1>
+      </div>
       <form
         className="flex flex-wrap gap-4 mb-4"
         action="/admin/orders"
