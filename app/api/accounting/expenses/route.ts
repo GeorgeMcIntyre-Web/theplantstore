@@ -30,6 +30,12 @@ const getExpensesQuerySchema = z.object({
   }),
   limit: z.string().optional().refine((val) => !val || !isNaN(Number(val)), {
     message: 'Limit must be a number'
+  }),
+  startDate: z.string().optional().refine((val) => !val || !isNaN(Date.parse(val)), {
+    message: 'Invalid startDate format'
+  }),
+  endDate: z.string().optional().refine((val) => !val || !isNaN(Date.parse(val)), {
+    message: 'Invalid endDate format'
   })
 });
 
@@ -52,12 +58,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     
     // Validate query parameters
-    const queryResult = getExpensesQuerySchema.safeParse({
-      status: searchParams.get('status'),
-      categoryId: searchParams.get('categoryId'),
-      page: searchParams.get('page'),
-      limit: searchParams.get('limit')
-    });
+    const queryObj: any = {};
+    for (const key of ['status', 'categoryId', 'page', 'limit', 'startDate', 'endDate']) {
+      if (searchParams.has(key)) queryObj[key] = searchParams.get(key);
+    }
+    const queryResult = getExpensesQuerySchema.safeParse(queryObj);
 
     if (!queryResult.success) {
       return NextResponse.json({ 
@@ -66,11 +71,16 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const { status, categoryId, page = '1', limit = '20' } = queryResult.data;
+    const { status, categoryId, page = '1', limit = '20', startDate, endDate } = queryResult.data;
     
     const where: any = {};
     if (status) where.status = status;
     if (categoryId) where.categoryId = categoryId;
+    if (startDate || endDate) {
+      where.expenseDate = {};
+      if (startDate) where.expenseDate.gte = new Date(startDate);
+      if (endDate) where.expenseDate.lte = new Date(endDate);
+    }
     
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);

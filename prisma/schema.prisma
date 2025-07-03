@@ -84,6 +84,7 @@ model User {
   expenses         Expense[]
   expenseApprovals ExpenseApproval[]
   shrinkageRecords Shrinkage[]
+  expenseAuditLogs ExpenseAuditLog[]
 }
 
 // Address Management for SA Provinces
@@ -490,6 +491,7 @@ model Expense {
 
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
+  auditLogs       ExpenseAuditLog[]
 }
 
 model ExpenseApproval {
@@ -577,4 +579,16 @@ model JournalLine {
   account        ChartOfAccounts @relation(fields: [accountId], references: [id])
   debitAmount    Decimal         @default(0) @db.Decimal(12, 2)
   creditAmount   Decimal         @default(0) @db.Decimal(12, 2)
+}
+
+model ExpenseAuditLog {
+  id          String   @id @default(cuid())
+  expenseId   String
+  expense     Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  action      String   // CREATE, UPDATE, DELETE, APPROVE, REJECT
+  before      Json?
+  after       Json?
+  createdAt   DateTime @default(now())
 }

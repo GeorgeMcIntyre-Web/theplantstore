@@ -2,14 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/db';
 import { UserRole, OrderStatus, ExpenseStatus } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 import { z } from 'zod';
 
 // Zod schemas for validation
-const summaryQuerySchema = z.object({
-  period: z.enum(['current-month', 'current-quarter', 'current-year']).default('current-month')
+const reportsQuerySchema = z.object({
+  type: z.enum(['summary', 'detailed', 'vat', 'trends']).default('summary'),
+  period: z.enum(['current-month', 'current-quarter', 'current-year', 'custom']).default('current-month'),
+  startDate: z.string().optional().refine((val) => !val || !isNaN(Date.parse(val)), {
+    message: 'Invalid startDate format'
+  }),
+  endDate: z.string().optional().refine((val) => !val || !isNaN(Date.parse(val)), {
+    message: 'Invalid endDate format'
+  })
 });
 
-function getDateRange(period: string) {
+function getDateRange(period: string, startDate?: string, endDate?: string) {
   const now = new Date();
   let start: Date;
   let end: Date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
@@ -24,6 +32,14 @@ function getDateRange(period: string) {
       break;
     case 'current-year':
       start = new Date(now.getFullYear(), 0, 1);
+      break;
+    case 'custom':
+      if (!startDate || !endDate) {
+        throw new Error('Start date and end date are required for custom period');
+      }
+      start = new Date(startDate);
+      end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
       break;
     default:
       start = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -52,10 +68,10 @@ export async function GET(request: NextRequest) {
     
     // Validate query parameters
     const queryObj: any = {};
-    for (const key of ['period']) {
+    for (const key of ['type', 'period', 'startDate', 'endDate']) {
       if (searchParams.has(key)) queryObj[key] = searchParams.get(key);
     }
-    const queryResult = summaryQuerySchema.safeParse(queryObj);
+    const queryResult = reportsQuerySchema.safeParse(queryObj);
 
     if (!queryResult.success) {
       return NextResponse.json({ 
@@ -64,14 +80,21 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const { period } = queryResult.data;
-    const { start, end } = getDateRange(period);
+    const { type, period, startDate, endDate } = queryResult.data;
+    const { start, end } = getDateRange(period, startDate, endDate);
 
     // Fetch orders data
     const orders = await prisma.order.findMany({
       where: {
         createdAt: { gte: start, lte: end },
         status: { in: [OrderStatus.DELIVERED, OrderStatus.PROCESSING, OrderStatus.SHIPPED] }
+      },
+      include: {
+        items: {
+          include: {
+            product: true
+          }
+        }
       }
     });
 
@@ -80,6 +103,9 @@ export async function GET(request: NextRequest) {
       where: {
         expenseDate: { gte: start, lte: end },
         status: { in: [ExpenseStatus.APPROVED, ExpenseStatus.PAID] }
+      },
+      include: {
+        category: true
       }
     });
 
@@ -89,7 +115,7 @@ export async function GET(request: NextRequest) {
     }, 0);
 
     const vatCollected = orders.reduce((sum, order) => {
-      return sum + Number(order.vatAmount);
+      return sum + Number(order.totalAmount) * 0.15 / 1.15; // Assuming 15% VAT
     }, 0);
 
     const netRevenue = totalRevenue - vatCollected;
@@ -115,63 +141,49 @@ export async function GET(request: NextRequest) {
     // Calculate VAT liability
     const vatLiability = vatCollected - vatPaid;
 
-    // Get expense breakdown by category
-    const expensesByCategory = await prisma.expense.groupBy({
-      by: ['categoryId'],
-      where: {
-        expenseDate: { gte: start, lte: end },
-        status: { in: [ExpenseStatus.APPROVED, ExpenseStatus.PAID] }
-      },
-      _sum: {
-        amount: true
+    // Group expenses by category
+    const expensesByCategory = expenses.reduce((acc, expense) => {
+      const categoryName = expense.category.name;
+      if (!acc[categoryName]) {
+        acc[categoryName] = { amount: 0, count: 0 };
       }
-    });
+      acc[categoryName].amount += Number(expense.amount);
+      acc[categoryName].count += 1;
+      return acc;
+    }, {} as Record<string, { amount: number; count: number }>);
 
-    const categoryDetails = await Promise.all(
-      expensesByCategory.map(async (group) => {
-        const category = await prisma.expenseCategory.findUnique({
-          where: { id: group.categoryId }
-        });
-        return {
-          category: category?.name || 'Unknown',
-          amount: Number(group._sum.amount)
-        };
-      })
-    );
+    const expensesByCategoryArray = Object.entries(expensesByCategory)
+      .map(([category, data]) => ({
+        category,
+        amount: data.amount,
+        percentage: totalExpenses > 0 ? (data.amount / totalExpenses) * 100 : 0
+      }))
+      .sort((a, b) => b.amount - a.amount);
 
-    // Get top products
-    const topProducts = await prisma.orderItem.groupBy({
-      by: ['productId'],
-      where: {
-        order: {
-          createdAt: { gte: start, lte: end },
-          status: { in: [OrderStatus.DELIVERED, OrderStatus.PROCESSING, OrderStatus.SHIPPED] }
+    // Calculate top products
+    const productSales = orders.reduce((acc, order) => {
+      order.items.forEach(item => {
+        const productName = item.product.name;
+        if (!acc[productName]) {
+          acc[productName] = { revenue: 0, quantity: 0, cost: 0 };
         }
-      },
-      _sum: {
-        totalPrice: true,
-        quantity: true
-      },
-      orderBy: {
-        _sum: {
-          totalPrice: 'desc'
-        }
-      },
-      take: 5
-    });
+        acc[productName].revenue += Number(item.price) * item.quantity;
+        acc[productName].quantity += item.quantity;
+        // Assuming 60% cost of goods sold for profit calculation
+        acc[productName].cost += Number(item.price) * item.quantity * 0.6;
+      });
+      return acc;
+    }, {} as Record<string, { revenue: number; quantity: number; cost: number }>);
 
-    const productDetails = await Promise.all(
-      topProducts.map(async (group) => {
-        const product = await prisma.product.findUnique({
-          where: { id: group.productId }
-        });
-        return {
-          name: product?.name || 'Unknown Product',
-          revenue: Number(group._sum.totalPrice),
-          quantity: Number(group._sum.quantity)
-        };
-      })
-    );
+    const topProducts = Object.entries(productSales)
+      .map(([name, data]) => ({
+        name,
+        revenue: data.revenue,
+        quantity: data.quantity,
+        profit: data.revenue - data.cost
+      }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 10);
 
     // Calculate monthly trends (last 6 months)
     const monthlyTrends = [];
@@ -183,12 +195,12 @@ export async function GET(request: NextRequest) {
       const monthOrders = orders.filter(order => 
         order.createdAt >= monthStart && order.createdAt <= monthEnd
       );
-      const monthExpenses = expenses.filter(expense => 
+      const monthExpensesData = expenses.filter(expense => 
         expense.expenseDate >= monthStart && expense.expenseDate <= monthEnd
       );
 
       const monthRevenue = monthOrders.reduce((sum, order) => sum + Number(order.totalAmount), 0);
-      const monthExpensesTotal = monthExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+      const monthExpensesTotal = monthExpensesData.reduce((sum, expense) => sum + Number(expense.amount), 0);
       const monthProfit = monthRevenue - monthExpensesTotal;
 
       monthlyTrends.push({
@@ -199,7 +211,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const summary = {
+    const report = {
       period: {
         startDate: start.toISOString(),
         endDate: end.toISOString()
@@ -216,7 +228,7 @@ export async function GET(request: NextRequest) {
         net: netExpenses,
         vat: vatPaid,
         count: expenses.length,
-        byCategory: categoryDetails
+        byCategory: expensesByCategoryArray
       },
       profit: {
         gross: grossProfit,
@@ -228,13 +240,13 @@ export async function GET(request: NextRequest) {
         paid: vatPaid,
         liability: vatLiability
       },
-      topProducts: productDetails,
+      topProducts,
       monthlyTrends
     };
 
-    return NextResponse.json(summary);
+    return NextResponse.json(report);
   } catch (error) {
-    console.error('Error generating financial summary:', error);
-    return NextResponse.json({ error: 'Failed to generate financial summary' }, { status: 500 });
+    console.error('Error generating financial report:', error);
+    return NextResponse.json({ error: 'Failed to generate financial report' }, { status: 500 });
   }
 } 

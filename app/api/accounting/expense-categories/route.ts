@@ -20,7 +20,11 @@ export async function GET() {
 
   try {
     const categories = await prisma.expenseCategory.findMany({
-      where: { isActive: true },
+      include: {
+        _count: {
+          select: { expenses: true }
+        }
+      },
       orderBy: { name: 'asc' }
     });
     
@@ -49,14 +53,29 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
     
-    if (!data.name) {
+    if (!data.name || !data.name.trim()) {
       return NextResponse.json({ error: 'Category name is required' }, { status: 400 });
+    }
+
+    // Check if category name already exists
+    const existingCategory = await prisma.expenseCategory.findUnique({
+      where: { name: data.name.trim() }
+    });
+
+    if (existingCategory) {
+      return NextResponse.json({ error: 'Category name already exists' }, { status: 409 });
     }
 
     const newCategory = await prisma.expenseCategory.create({
       data: {
-        name: data.name,
-        description: data.description,
+        name: data.name.trim(),
+        description: data.description?.trim() || null,
+        isActive: data.isActive !== undefined ? data.isActive : true
+      },
+      include: {
+        _count: {
+          select: { expenses: true }
+        }
       }
     });
 

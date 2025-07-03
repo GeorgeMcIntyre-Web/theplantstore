@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ReactNode } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { LineChart, Box, ShoppingCart, Users, Upload, Mail, Package, Layers, Truck } from "lucide-react";
+import { LineChart, Box, ShoppingCart, Users, Upload, Mail, Package, Layers, Truck, Activity, BarChart3 } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const { data: session } = useSession();
@@ -50,7 +50,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               <div className="mt-4 mb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Accounting</div>
               <Link href="/admin/accounting" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-accent transition text-base font-medium"><LineChart className="w-5 h-5" /> Dashboard</Link>
               <Link href="/admin/accounting/expenses" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-accent transition text-base font-medium"><Box className="w-5 h-5" /> Expenses</Link>
-              <Link href="/admin/accounting/reports" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-accent transition text-base font-medium"><Layers className="w-5 h-5" /> Reports</Link>
+              <Link href="/admin/accounting/categories" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-accent transition text-base font-medium"><Layers className="w-5 h-5" /> Categories</Link>
+              <Link href="/admin/accounting/reports" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-accent transition text-base font-medium"><BarChart3 className="w-5 h-5" /> Reports</Link>
+              <Link href="/admin/accounting/audit-logs" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-accent transition text-base font-medium"><Activity className="w-5 h-5" /> Audit Logs</Link>
             </>
           )}
         </nav>

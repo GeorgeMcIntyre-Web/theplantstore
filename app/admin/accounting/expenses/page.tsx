@@ -10,8 +10,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertTriangle, Plus, Eye, CheckCircle, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { AlertTriangle, Plus, Eye, CheckCircle, XCircle, ChevronLeft, ChevronRight, Trash2, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
+import { saveAs } from 'file-saver';
 
 interface ExpenseCategory {
   id: string;
@@ -80,6 +81,24 @@ const ExpenseManagement = () => {
   const [approvalComments, setApprovalComments] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  // Filter state
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [filterStartDate, setFilterStartDate] = useState<string>('');
+  const [filterEndDate, setFilterEndDate] = useState<string>('');
+
+  const [editExpense, setEditExpense] = useState<Expense | null>(null);
+  const [showDeleteId, setShowDeleteId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<any>(null);
+  const [editLoading, setEditLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const allSelected = expenses.length > 0 && selectedIds.length === expenses.length;
+  const toggleSelect = (id: string) => setSelectedIds(ids => ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id]);
+  const toggleSelectAll = () => setSelectedIds(allSelected ? [] : expenses.map(e => e.id));
+  const clearSelection = () => setSelectedIds([]);
+
   const hasAccess = session?.user?.role === 'SUPER_ADMIN' || 
                    session?.user?.role === 'FINANCIAL_MANAGER' || 
                    session?.user?.role === 'ACCOUNTANT';
@@ -92,13 +111,32 @@ const ExpenseManagement = () => {
       fetchExpenses();
       fetchCategories();
     }
+    // eslint-disable-next-line
   }, [hasAccess, pagination.page]);
 
-  const fetchExpenses = async () => {
+  // Fetch expenses when filters change
+  useEffect(() => {
+    if (hasAccess) {
+      setPagination((prev) => ({ ...prev, page: 1 })); // Reset to page 1 on filter change
+      fetchExpenses(1);
+    }
+    // eslint-disable-next-line
+  }, [filterStatus, filterCategory, filterStartDate, filterEndDate]);
+
+  const fetchExpenses = async (pageOverride?: number) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(`/api/accounting/expenses?page=${pagination.page}&limit=${pagination.limit}`);
+      const params = new URLSearchParams();
+      params.append('page', String(pageOverride || pagination.page));
+      params.append('limit', String(pagination.limit));
+      const statusParam = filterStatus === 'all' ? '' : filterStatus;
+      const categoryParam = filterCategory === 'all' ? '' : filterCategory;
+      if (statusParam) params.append('status', statusParam);
+      if (categoryParam) params.append('categoryId', categoryParam);
+      if (filterStartDate) params.append('startDate', filterStartDate);
+      if (filterEndDate) params.append('endDate', filterEndDate);
+      const response = await fetch(`/api/accounting/expenses?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
         setExpenses(data.expenses);
@@ -216,6 +254,28 @@ const ExpenseManagement = () => {
     setPagination(prev => ({ ...prev, page: newPage }));
   };
 
+  function exportToCSV(expenses: Expense[]) {
+    if (!expenses.length) return;
+    const header = [
+      'Description', 'Amount', 'VAT Amount', 'VAT Rate', 'Category', 'Date', 'Vendor', 'Notes', 'Status', 'Requested By'
+    ];
+    const rows = expenses.map(e => [
+      e.description,
+      e.amount,
+      e.vatAmount ?? '',
+      e.vatRate ?? '',
+      e.category?.name ?? '',
+      new Date(e.expenseDate).toLocaleDateString(),
+      e.vendorName ?? '',
+      e.notes ?? '',
+      e.status,
+      e.requestedBy?.name || e.requestedBy?.email || ''
+    ]);
+    const csv = [header, ...rows].map(r => r.map(x => `"${String(x).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    saveAs(blob, `expenses-${new Date().toISOString().slice(0,10)}.csv`);
+  }
+
   if (!hasAccess) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -330,6 +390,71 @@ const ExpenseManagement = () => {
         </Dialog>
       </div>
 
+      {/* Filters */}
+      <div className="flex flex-wrap gap-4 items-end mb-4">
+        <div>
+          <Label>Status</Label>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="All Statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="DRAFT">Draft</SelectItem>
+              <SelectItem value="PENDING_APPROVAL">Pending Approval</SelectItem>
+              <SelectItem value="APPROVED">Approved</SelectItem>
+              <SelectItem value="REJECTED">Rejected</SelectItem>
+              <SelectItem value="PAID">Paid</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label>Category</Label>
+          <Select value={filterCategory} onValueChange={setFilterCategory}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label>Start Date</Label>
+          <Input
+            type="date"
+            value={filterStartDate}
+            onChange={(e) => setFilterStartDate(e.target.value)}
+            className="w-40"
+          />
+        </div>
+        <div>
+          <Label>End Date</Label>
+          <Input
+            type="date"
+            value={filterEndDate}
+            onChange={(e) => setFilterEndDate(e.target.value)}
+            className="w-40"
+          />
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => {
+            setFilterStatus('all');
+            setFilterCategory('all');
+            setFilterStartDate('');
+            setFilterEndDate('');
+          }}
+        >
+          Reset Filters
+        </Button>
+      </div>
+
       {/* Expenses List */}
       <Card>
         <CardHeader>
@@ -354,12 +479,21 @@ const ExpenseManagement = () => {
             </div>
           ) : (
             <>
+              {selectedIds.length > 0 && (
+                <div className="mb-4 flex items-center gap-4 bg-gray-50 border p-2 rounded">
+                  <span>{selectedIds.length} selected</span>
+                  <Button variant="destructive" size="sm" onClick={() => setShowDeleteId(selectedIds.join(','))}>Delete Selected</Button>
+                  <Button variant="outline" size="sm" onClick={clearSelection}>Clear</Button>
+                </div>
+              )}
               <div className="space-y-4">
+                <Button variant="outline" size="sm" onClick={() => exportToCSV(expenses)} disabled={!expenses.length} className="mb-2">Export to CSV</Button>
                 {expenses.map((expense) => (
                   <div key={expense.id} className="border rounded-lg p-4">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
+                          <input type="checkbox" checked={selectedIds.includes(expense.id)} onChange={() => toggleSelect(expense.id)} />
                           <h3 className="font-semibold">{expense.description}</h3>
                           {getStatusBadge(expense.status)}
                         </div>
@@ -493,6 +627,24 @@ const ExpenseManagement = () => {
                             </DialogContent>
                           </Dialog>
                         )}
+                        <Button variant="outline" size="sm" onClick={() => {
+                          setEditExpense(expense);
+                          setEditForm({
+                            description: expense.description,
+                            amount: String(expense.amount),
+                            expenseDate: expense.expenseDate.split('T')[0],
+                            categoryId: expense.categoryId,
+                            vendorName: expense.vendorName || '',
+                            notes: expense.notes || '',
+                            vatRate: expense.vatRate ? String(expense.vatRate) : '15',
+                            status: expense.status,
+                          });
+                        }}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="destructive" size="sm" onClick={() => toggleSelect(expense.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -530,10 +682,138 @@ const ExpenseManagement = () => {
                   </div>
                 </div>
               )}
+              {expenses.length > 0 && (
+                <div className="flex items-center gap-2 mb-2">
+                  <input type="checkbox" checked={allSelected} onChange={toggleSelectAll} />
+                  <span className="text-sm">Select All</span>
+                </div>
+              )}
             </>
           )}
         </CardContent>
       </Card>
+      <Dialog open={!!editExpense} onOpenChange={(open) => { if (!open) setEditExpense(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Expense</DialogTitle>
+          </DialogHeader>
+          {editForm && (
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              setEditLoading(true);
+              try {
+                const res = await fetch(`/api/accounting/expenses/${editExpense!.id}`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(editForm),
+                });
+                if (res.ok) {
+                  toast.success('Expense updated');
+                  setEditExpense(null);
+                  fetchExpenses();
+                } else {
+                  const err = await res.json();
+                  toast.error(err.error || 'Failed to update expense');
+                }
+              } finally {
+                setEditLoading(false);
+              }
+            }} className="space-y-4">
+              <div>
+                <Label>Description</Label>
+                <Input value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} required />
+              </div>
+              <div>
+                <Label>Amount</Label>
+                <Input type="number" value={editForm.amount} onChange={e => setEditForm({ ...editForm, amount: e.target.value })} required />
+              </div>
+              <div>
+                <Label>Date</Label>
+                <Input type="date" value={editForm.expenseDate} onChange={e => setEditForm({ ...editForm, expenseDate: e.target.value })} required />
+              </div>
+              <div>
+                <Label>Category</Label>
+                <Select value={editForm.categoryId} onValueChange={val => setEditForm({ ...editForm, categoryId: val })}>
+                  <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Vendor</Label>
+                <Input value={editForm.vendorName} onChange={e => setEditForm({ ...editForm, vendorName: e.target.value })} />
+              </div>
+              <div>
+                <Label>Notes</Label>
+                <Textarea value={editForm.notes} onChange={e => setEditForm({ ...editForm, notes: e.target.value })} />
+              </div>
+              <div>
+                <Label>VAT Rate</Label>
+                <Input type="number" value={editForm.vatRate} onChange={e => setEditForm({ ...editForm, vatRate: e.target.value })} />
+              </div>
+              <div>
+                <Label>Status</Label>
+                <Select value={editForm.status} onValueChange={val => setEditForm({ ...editForm, status: val })}>
+                  <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="DRAFT">Draft</SelectItem>
+                    <SelectItem value="PENDING_APPROVAL">Pending Approval</SelectItem>
+                    <SelectItem value="APPROVED">Approved</SelectItem>
+                    <SelectItem value="REJECTED">Rejected</SelectItem>
+                    <SelectItem value="PAID">Paid</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button type="button" variant="outline" onClick={() => setEditExpense(null)}>Cancel</Button>
+                <Button type="submit" disabled={editLoading}>
+                  {editLoading ? <span className="animate-spin mr-2 h-4 w-4 border-b-2 border-gray-900 inline-block"></span> : null}
+                  Save
+                </Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!showDeleteId} onOpenChange={(open) => { if (!open) setShowDeleteId(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Expense{showDeleteId && showDeleteId.includes(',') ? 's' : ''}</DialogTitle>
+          </DialogHeader>
+          <p>Are you sure you want to delete {showDeleteId && showDeleteId.includes(',') ? 'these expenses' : 'this expense'}? This action cannot be undone.</p>
+          <div className="flex justify-end space-x-2 mt-4">
+            <Button variant="outline" onClick={() => setShowDeleteId(null)}>Cancel</Button>
+            <Button variant="destructive" disabled={deleteLoading} onClick={async () => {
+              setDeleteLoading(true);
+              try {
+                if (showDeleteId && showDeleteId.includes(',')) {
+                  // Bulk delete
+                  await Promise.all(showDeleteId.split(',').map(id => fetch(`/api/accounting/expenses/${id}`, { method: 'DELETE' })));
+                  toast.success('Expenses deleted');
+                } else {
+                  // Single delete
+                  const res = await fetch(`/api/accounting/expenses/${showDeleteId}`, { method: 'DELETE' });
+                  if (res.ok) {
+                    toast.success('Expense deleted');
+                  } else {
+                    const err = await res.json();
+                    toast.error(err.error || 'Failed to delete expense');
+                  }
+                }
+                setShowDeleteId(null);
+                clearSelection();
+                fetchExpenses();
+              } finally {
+                setDeleteLoading(false);
+              }
+            }}>
+              {deleteLoading ? <span className="animate-spin mr-2 h-4 w-4 border-b-2 border-white inline-block"></span> : null}
+              Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
