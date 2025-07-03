@@ -26,14 +26,17 @@ export async function POST(req: NextRequest) {
   const createdPOs = [];
   for (const product of lowStock) {
     // Check if a draft PO already exists for this product and supplier
-    const existing = await prisma.purchaseOrder.findFirst({
+    const draftPOs = await prisma.purchaseOrder.findMany({
       where: {
         status: 'DRAFT',
         supplierId: product.supplierId!,
         adminId,
-        items: { path: '$[*].productId', array_contains: product.id },
       },
     });
+    const existing = draftPOs.find((po: any) =>
+      Array.isArray(po.items) &&
+      po.items.some((item: any) => item.productId === product.id)
+    );
     if (existing) continue;
     // Create draft PO
     const items = [{

@@ -3,6 +3,9 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import Papa, { ParseResult } from "papaparse";
 import Link from "next/link";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Download, Upload, FileText, Table as TableIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 function downloadCSV(url: string, filename: string) {
   fetch(url)
@@ -111,94 +114,132 @@ export default function ImportExportActions() {
   }
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center p-8 bg-background">
-      <div className="w-full max-w-3xl bg-white rounded-lg shadow-lg p-8 border flex flex-col gap-8">
-        <div>
-          <h1 className="text-2xl font-bold mb-4 text-primary">Import / Export</h1>
-          <div className="bg-muted p-4 rounded border mb-4">
-            <div className="text-sm text-muted-foreground mb-2">
-              <b>Product Import CSV Format</b><br />
-              <span>Required columns: <b>name</b>, <b>slug</b>, <b>price</b>, <b>category</b></span><br />
-              <span>Optional: <b>id</b> (for update), <b>stockQuantity</b>, <b>isActive</b>, <b>description</b>, <b>shortDescription</b>, <b>compareAtPrice</b>, <b>sku</b>, <b>careLevel</b>, <b>lightRequirement</b>, <b>wateringFrequency</b>, <b>isPetSafe</b>, <b>plantSize</b>, <b>growthRate</b>, <b>careInstructions</b>, <b>isFeatured</b>, <b>imageUrls</b></span><br />
+    <div className="w-full min-h-[80vh] flex flex-col bg-background px-12 py-12">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2 text-primary">Import & Export Data</h1>
+        <p className="text-muted-foreground max-w-2xl">
+          Easily import new products or update existing ones using a CSV file, and export your store data for backup, reporting, or migration. Use the template for correct import formatting.
+        </p>
+      </div>
+      <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-stretch">
+        {/* Export Section */}
+        <Card className="flex flex-col w-full h-full min-h-[400px] shadow-lg border border-gray-200 bg-white p-8">
+          <CardHeader className="flex flex-row items-center gap-3 pb-2">
+            <FileText className="text-primary w-6 h-6" />
+            <CardTitle className="text-xl font-bold">Export Data</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4 flex-1">
+            <div className="flex flex-wrap gap-3">
+              <Button variant="outline" size="sm" className="hover:bg-primary/10" onClick={() => downloadCSV("/api/admin/export/orders", "orders.csv")}>Export Orders</Button>
+              <Button variant="outline" size="sm" className="hover:bg-primary/10" onClick={() => downloadCSV("/api/admin/export/products", "products.csv")}>Export Products</Button>
+              <Button variant="outline" size="sm" className="hover:bg-primary/10" onClick={() => downloadCSV("/api/admin/export/customers", "customers.csv")}>Export Customers</Button>
+              <Button variant="outline" size="sm" className="hover:bg-primary/10" onClick={() => downloadCSV("/api/admin/export/analytics", "analytics.csv")}>Export Analytics</Button>
             </div>
-            <Button variant="link" size="sm" className="px-0" onClick={downloadProductTemplate}>Download Template</Button>
-          </div>
-        </div>
-        <div>
-          <h2 className="text-lg font-semibold mb-2">Export Data</h2>
-          <div className="flex flex-wrap gap-3 mb-4">
-            <Button variant="outline" size="sm" className="hover:bg-primary/10" onClick={() => downloadCSV("/api/admin/export/orders", "orders.csv")}>Export Orders</Button>
-            <Button variant="outline" size="sm" className="hover:bg-primary/10" onClick={() => downloadCSV("/api/admin/export/products", "products.csv")}>Export Products</Button>
-            <Button variant="outline" size="sm" className="hover:bg-primary/10" onClick={() => downloadCSV("/api/admin/export/customers", "customers.csv")}>Export Customers</Button>
-            <Button variant="outline" size="sm" className="hover:bg-primary/10" onClick={() => downloadCSV("/api/admin/export/analytics", "analytics.csv")}>Export Analytics</Button>
-          </div>
-        </div>
-        <div>
-          <h2 className="text-lg font-semibold mb-2">Import Products</h2>
-          <div className="flex items-center gap-3 mb-2">
-            <Link href="/admin/products/import" passHref legacyBehavior>
-              <a className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/50">Import Products</a>
-            </Link>
-          </div>
-          {Array.isArray(importPreview) && importPreview.length > 0 && (
-            <div className="mt-4 bg-muted p-4 rounded border">
-              <div className="font-semibold mb-2">Import Preview (first 5 rows):</div>
-              <div className="overflow-x-auto">
-                <table className="text-xs border w-full">
-                  <thead>
-                    <tr>
-                      {Object.keys(importPreview[0] || {}).map((col) => (
-                        <th key={col} className="border px-2 py-1 bg-gray-100">{col}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {importPreview.map((row, i) => (
-                      <tr key={i} className="even:bg-gray-50">
-                        {Object.values(row).map((val, j) => (
-                          <td key={j} className="border px-2 py-1">{String(val)}</td>
+            <div className="text-xs text-muted-foreground mt-2">
+              Download CSV files for backup, reporting, or migration.
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Import Section */}
+        <Card className="flex flex-col w-full h-full min-h-[400px] shadow-lg border border-gray-200 bg-white p-8">
+          <CardHeader className="flex flex-row items-center gap-3 pb-2">
+            <Upload className="text-primary w-6 h-6" />
+            <CardTitle className="text-xl font-bold">Import Products</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4 flex-1">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv"
+                  className="hidden"
+                  onChange={handleImportFile}
+                />
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={importing}
+                >
+                  <Upload className="w-4 h-4 mr-2" /> Choose CSV File
+                </Button>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="px-0"
+                  onClick={downloadProductTemplate}
+                >
+                  Download Template
+                </Button>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Import a CSV file to add or update products. Download the template for the correct format.
+              </div>
+            </div>
+            {Array.isArray(importPreview) && importPreview.length > 0 && (
+              <div className="mt-4 bg-muted p-4 rounded border">
+                <div className="font-semibold mb-2 flex items-center gap-2">
+                  <TableIcon className="w-4 h-4 text-primary" /> Import Preview (first 5 rows):
+                </div>
+                <div className="overflow-x-auto rounded-lg border">
+                  <table className="text-xs w-full border-collapse">
+                    <thead className="bg-gray-100 sticky top-0 z-10">
+                      <tr>
+                        {Object.keys(importPreview[0] || {}).map((col) => (
+                          <th key={col} className="border px-2 py-1 font-semibold text-left text-muted-foreground">{col}</th>
                         ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {importPreview.map((row, i) => (
+                        <tr key={i} className="even:bg-gray-50">
+                          {Object.values(row).map((val, j) => (
+                            <td key={j} className="border px-2 py-1">{String(val)}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {importSummary && (
+                  <div className="mt-2 flex gap-4">
+                    <Badge variant="default">Creates: {importSummary.creates}</Badge>
+                    <Badge variant="secondary">Updates: {importSummary.updates}</Badge>
+                    <Badge variant="destructive">Errors: {importSummary.errors}</Badge>
+                  </div>
+                )}
+                <div className="mt-2 flex gap-2">
+                  <Button size="sm" variant="default" className="hover:bg-primary/90" onClick={handleConfirmImport} disabled={importing}>Confirm Import</Button>
+                  <Button size="sm" variant="outline" className="hover:bg-primary/10" onClick={() => { setImportPreview(null); setImportSummary(null); }}>Cancel</Button>
+                </div>
               </div>
-              {importSummary && (
+            )}
+            {importError && <div className="text-destructive mt-2">{importError}</div>}
+            {importResult && (
+              <div className="mt-4 bg-muted p-4 rounded border">
+                <div className="font-semibold mb-2">Import Result:</div>
+                <div>Created: <b>{importResult.created}</b></div>
+                <div>Updated: <b>{importResult.updated}</b></div>
+                <div>Failed: <b>{importResult.failed}</b></div>
+                {Array.isArray(importResult.errors) && importResult.errors.length > 0 && (
+                  <div className="mt-2 text-destructive">
+                    <div>Errors:</div>
+                    <ul className="list-disc ml-6">
+                      {importResult.errors.map((err: string, i: number) => (
+                        <li key={i}>{err}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 <div className="mt-2">
-                  <span className="mr-4">Creates: <b>{importSummary.creates}</b></span>
-                  <span className="mr-4">Updates: <b>{importSummary.updates}</b></span>
-                  <span className="mr-4">Errors: <b>{importSummary.errors}</b></span>
+                  <Button size="sm" variant="outline" className="hover:bg-primary/10" onClick={() => setImportResult(null)}>Close</Button>
                 </div>
-              )}
-              <div className="mt-2 flex gap-2">
-                <Button size="sm" variant="default" className="hover:bg-primary/90" onClick={handleConfirmImport} disabled={importing}>Confirm Import</Button>
-                <Button size="sm" variant="outline" className="hover:bg-primary/10" onClick={() => { setImportPreview(null); setImportSummary(null); }}>Cancel</Button>
               </div>
-            </div>
-          )}
-          {importError && <div className="text-destructive mt-2">{importError}</div>}
-          {importResult && (
-            <div className="mt-4 bg-muted p-4 rounded border">
-              <div className="font-semibold mb-2">Import Result:</div>
-              <div>Created: <b>{importResult.created}</b></div>
-              <div>Updated: <b>{importResult.updated}</b></div>
-              <div>Failed: <b>{importResult.failed}</b></div>
-              {Array.isArray(importResult.errors) && importResult.errors.length > 0 && (
-                <div className="mt-2 text-destructive">
-                  <div>Errors:</div>
-                  <ul className="list-disc ml-6">
-                    {importResult.errors.map((err: string, i: number) => (
-                      <li key={i}>{err}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              <div className="mt-2">
-                <Button size="sm" variant="outline" className="hover:bg-primary/10" onClick={() => setImportResult(null)}>Close</Button>
-              </div>
-            </div>
-          )}
-        </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

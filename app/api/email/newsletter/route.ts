@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     const subscribers = await prisma.user.findMany({
       where: {
         newsletterSubscribed: true,
-        emailVerified: true,
+        NOT: { emailVerified: null },
       },
       select: {
         email: true,
@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
     const subscriberCount = await prisma.user.count({
       where: {
         newsletterSubscribed: true,
-        emailVerified: true,
+        NOT: { emailVerified: null },
       },
     });
 

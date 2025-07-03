@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Product } from '@prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -88,7 +88,7 @@ async function updateProductsFromCSV(csvFilePath: string) {
       
       try {
         // Find the product to update
-        let product = null;
+        let product: Product | null = null;
         if (rowData.id) {
           product = await prisma.product.findUnique({ where: { id: rowData.id } });
         } else if (rowData.slug) {
@@ -192,7 +192,7 @@ async function updateProductsFromCSV(csvFilePath: string) {
             updateData.images = {
               create: imageUrls.map((url: string, index: number) => ({
                 url: url,
-                altText: `${updateData.name || product.name} - Image ${index + 1}`,
+                altText: `${updateData.name || product?.name || 'Product'} - Image ${index + 1}`,
                 sortOrder: index,
                 isPrimary: index === 0
               }))

@@ -42,9 +42,13 @@ export default function AdminProductsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [categories, setCategories] = useState<{ id: string, name: string }[]>([]);
 
   useEffect(() => {
     fetchProducts();
+    fetch('/api/admin/categories')
+      .then(res => res.json())
+      .then(data => setCategories(data.categories || []));
   }, []);
 
   const fetchProducts = async () => {
@@ -52,7 +56,7 @@ export default function AdminProductsPage() {
       const response = await fetch("/api/admin/products");
       if (response.ok) {
         const data = await response.json();
-        setProducts(data.products || []);
+        setProducts(Array.isArray(data) ? data : data.products || []);
       }
     } catch (error) {
       console.error("Failed to fetch products:", error);
@@ -157,8 +161,8 @@ export default function AdminProductsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
-                  {Array.from(new Set(products.map(p => p.category.name))).map(category => (
-                    <SelectItem key={category} value={category}>{category}</SelectItem>
+                  {categories.map(category => (
+                    <SelectItem key={category.id} value={category.name}>{category.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -205,7 +209,8 @@ export default function AdminProductsPage() {
               </TableHeader>
               <TableBody>
                 {filteredProducts.map((product) => {
-                  const primaryImage = product.images.find(img => img.isPrimary) || product.images[0];
+                  const images = Array.isArray(product.images) ? product.images : [];
+                  const primaryImage = images.find(img => img.isPrimary) || images[0];
                   
                   return (
                     <TableRow key={product.id}>

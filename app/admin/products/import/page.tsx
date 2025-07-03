@@ -6,6 +6,7 @@ import Papa from "papaparse";
 import { levenshtein } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { saveAs } from "file-saver";
 
 export default function ProductImportPage() {
   const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -156,7 +157,9 @@ export default function ProductImportPage() {
     setImportResult(null);
     try {
       const formData = new FormData();
-      formData.append("products", JSON.stringify(previewData));
+      if (csvFile) {
+        formData.append("file", csvFile);
+      }
       // Attach all images (avoid duplicates)
       const added = new Set();
       previewData.forEach((row) => {
@@ -165,13 +168,20 @@ export default function ProductImportPage() {
           added.add(row.imageFile.name);
         }
       });
-      const res = await fetch("/api/admin/products/import", {
+      const res = await fetch("/api/admin/import/products", {
         method: "POST",
         body: formData,
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Import failed");
-      setImportResult({ success: true, results: data.results });
+      setImportResult({
+        success: true,
+        created: data.created,
+        updated: data.updated,
+        failed: data.failed,
+        errors: data.errors || [],
+        updateNotes: data.updateNotes || [],
+      });
       // Clear preview and files after success
       setCsvFile(null); setImageFiles([]); setPreviewData([]); setManualImageMap({});
     } catch (err: any) {
@@ -180,55 +190,54 @@ export default function ProductImportPage() {
     setImporting(false);
   };
 
+  // Download errors as CSV
+  const handleDownloadErrors = () => {
+    const csvContent = ["Error"].concat(errors).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    saveAs(blob, "import-errors.csv");
+  };
+
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Sidebar */}
-      <aside className="w-56 min-h-screen bg-muted/40 border-r flex flex-col py-8 px-4 gap-2">
-        <Link href="/admin" className="mb-6">
-          <button className="w-full bg-green-600 text-white py-3 px-4 rounded-lg text-lg font-bold hover:bg-green-700 transition">← Back to Dashboard</button>
-        </Link>
-        <nav className="flex flex-col gap-2 mt-4">
-          <Link href="/admin/products" className="py-2 px-4 rounded hover:bg-primary/10 font-medium">Products</Link>
-          <Link href="/admin/categories" className="py-2 px-4 rounded hover:bg-primary/10 font-medium">Categories</Link>
-          <Link href="/admin/orders" className="py-2 px-4 rounded hover:bg-primary/10 font-medium">Orders</Link>
-          <Link href="/admin/customers" className="py-2 px-4 rounded hover:bg-primary/10 font-medium">Customers</Link>
-          <Link href="/admin/notifications" className="py-2 px-4 rounded hover:bg-primary/10 font-medium">Notifications</Link>
-          <Link href="/admin/purchase-orders" className="py-2 px-4 rounded hover:bg-primary/10 font-medium">Purchase Orders</Link>
-          <Link href="/admin/suppliers" className="py-2 px-4 rounded hover:bg-primary/10 font-medium">Suppliers</Link>
-          <Link href="/admin/users" className="py-2 px-4 rounded hover:bg-primary/10 font-medium">Users</Link>
-          <Link href="/admin/products/import" className="py-2 px-4 rounded bg-primary/10 font-semibold text-primary">Import Products</Link>
-        </nav>
-      </aside>
-      {/* Main Content */}
-      <main className="flex-1 p-8">
-        <h1 className="text-2xl font-bold mb-6">Import Products</h1>
-        <div className="flex flex-col gap-4 max-w-xl">
-          <label className="font-medium">CSV File
-            <Input type="file" accept=".csv" onChange={handleCsvChange} />
-          </label>
-          <label className="font-medium">Product Images (PNG/JPG, multiple allowed)
-            <Input type="file" accept="image/png,image/jpeg" multiple onChange={handleImageChange} />
-          </label>
-          <Button onClick={handlePreview} disabled={!csvFile || imageFiles.length === 0 || loading}>
-            {loading ? "Processing..." : "Preview Import"}
-          </Button>
-        </div>
-        <div className="mt-8">
-          <h2 className="text-lg font-semibold mb-2">Preview</h2>
-          {errors.length > 0 && (
-            <div className="mb-4 text-red-600">
-              {errors.map((err, i) => <div key={i}>{err}</div>)}
-            </div>
-          )}
-          {/* Show preview table only if not imported yet */}
-          {importResult && importResult.success ? null : previewData.length > 0 ? (
-            <table className="min-w-full border">
+    <div className="w-full flex flex-col items-center justify-center p-8">
+      <h1 className="text-2xl font-bold mb-6">Import Products</h1>
+      <div className="flex flex-col gap-4 max-w-xl">
+        <label className="font-medium">CSV File
+          <Input type="file" accept=".csv" onChange={handleCsvChange} />
+        </label>
+        <label className="font-medium">Product Images (PNG/JPG, multiple allowed)
+          <Input type="file" accept="image/png,image/jpeg" multiple onChange={handleImageChange} />
+        </label>
+        <Button onClick={handlePreview} disabled={!csvFile || imageFiles.length === 0 || loading}>
+          {loading ? "Processing..." : "Preview Import"}
+        </Button>
+      </div>
+      <div className="mt-8">
+        <h2 className="text-lg font-semibold mb-2">Preview</h2>
+        {errors.length > 0 && (
+          <div className="mb-4 text-red-600">
+            {errors.map((err, i) => <div key={i}>{err}</div>)}
+            <Button className="mt-2" variant="outline" onClick={handleDownloadErrors}>
+              Download Errors as CSV
+            </Button>
+          </div>
+        )}
+        {/* Show preview table only if not imported yet */}
+        {importResult && importResult.success ? null : previewData.length > 0 ? (
+          <div className="overflow-x-auto w-full">
+            <table className="min-w-full border text-sm">
               <thead>
                 <tr className="bg-gray-100">
                   <th className="p-2">Name</th>
                   <th className="p-2">SKU</th>
+                  <th className="p-2">Slug</th>
+                  <th className="p-2">Category</th>
+                  <th className="p-2">Price</th>
+                  <th className="p-2">Stock</th>
+                  <th className="p-2">isActive</th>
+                  <th className="p-2">isFeatured</th>
                   <th className="p-2">Image</th>
                   <th className="p-2">Status</th>
+                  <th className="p-2">Errors/Warnings</th>
                 </tr>
               </thead>
               <tbody>
@@ -236,75 +245,80 @@ export default function ProductImportPage() {
                   <tr key={i} className={row.status !== "Ready" ? "bg-red-50" : row.ambiguous ? "bg-yellow-50" : ""}>
                     <td className="p-2">{row.name}</td>
                     <td className="p-2">{row.sku}</td>
+                    <td className="p-2">{row.slug}</td>
+                    <td className="p-2">{row.category}</td>
+                    <td className="p-2">{row.price}</td>
+                    <td className="p-2">{row.stockQuantity}</td>
+                    <td className="p-2">{row.isActive ? 'Yes' : 'No'}</td>
+                    <td className="p-2">{row.isFeatured ? 'Yes' : 'No'}</td>
                     <td className="p-2">
                       {row.imageFile ? (
-                        <>
-                          <img src={URL.createObjectURL(row.imageFile)} alt={row.name} className="h-10 w-10 object-contain inline-block mr-2" />
-                          <label className="ml-2 cursor-pointer text-xs text-primary underline">
-                            <input
-                              type="file"
-                              accept="image/png,image/jpeg"
-                              style={{ display: "none" }}
-                              onChange={e => {
-                                if (e.target.files && e.target.files[0]) {
-                                  handleManualImage(row.sku, e.target.files[0]);
-                                }
-                              }}
-                            />
-                            Change Image
-                          </label>
-                          <button className="ml-2 text-xs text-red-600 underline" onClick={() => handleManualImage(row.sku, null)}>
-                            Clear Image
-                          </button>
-                          {row.ambiguous && (
-                            <span className="ml-2 text-xs text-yellow-700 font-semibold">Ambiguous match! Please confirm.</span>
-                          )}
-                          <span className="ml-2 text-xs text-muted-foreground">{row.matchReason}</span>
-                        </>
+                        <img src={URL.createObjectURL(row.imageFile)} alt={row.name} className="h-10 w-10 object-contain inline-block mr-2" />
                       ) : (
-                        <>
-                          <span className="text-red-600">No match</span>
-                          <label className="ml-2 cursor-pointer text-xs text-primary underline">
-                            <input
-                              type="file"
-                              accept="image/png,image/jpeg"
-                              style={{ display: "none" }}
-                              onChange={e => {
-                                if (e.target.files && e.target.files[0]) {
-                                  handleManualImage(row.sku, e.target.files[0]);
-                                }
-                              }}
-                            />
-                            Add Image
-                          </label>
-                          <span className="ml-2 text-xs text-muted-foreground">{row.matchReason}</span>
-                        </>
+                        <span className="text-red-600">No match</span>
                       )}
                     </td>
                     <td className="p-2">{row.status}</td>
+                    <td className="p-2">
+                      {row.status !== "Ready" && (
+                        <span className="text-red-600" title={row.status}>⚠️ {row.status}</span>
+                      )}
+                      {row.ambiguous && (
+                        <span className="text-yellow-700 ml-2" title="Ambiguous image match">⚠️ Ambiguous</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          ) : (
-            <div className="text-muted-foreground">No preview data yet. Upload CSV and images, then click Preview.</div>
-          )}
-          <Button className="mt-6" disabled={previewData.length === 0 || errors.length > 0 || importing || (importResult && importResult.success)} onClick={handleImport}>
-            {importing ? "Importing..." : "Import Products"}
-          </Button>
-          {importing && <div className="mt-4 text-blue-600">Importing products...</div>}
-          {importResult && importResult.success && (
-            <div className="mt-4 text-green-600 font-semibold text-lg">Import complete! {importResult.results.length} products processed.</div>
-          )}
-          {importResult && !importResult.success && (
-            <div className="mt-4 text-red-600">Import failed: {importResult.error}</div>
-          )}
-          {/* Prominent green back button for quick navigation */}
-          <Button size="lg" className="mt-8 w-full bg-green-600 hover:bg-green-700 text-white text-lg font-bold py-4" onClick={() => router.back()}>
-            ← Back
-          </Button>
-        </div>
-      </main>
+          </div>
+        ) : (
+          <div className="text-muted-foreground">No preview data yet. Upload CSV and images, then click Preview.</div>
+        )}
+        <Button className="mt-6" disabled={previewData.length === 0 || errors.length > 0 || importing || (importResult && importResult.success)} onClick={handleImport}>
+          {importing ? "Importing..." : "Import Products"}
+        </Button>
+        {importing && <div className="mt-4 text-blue-600">Importing products...</div>}
+        {importResult && importResult.success && (
+          <div className="mt-4">
+            <div className="text-green-600 font-semibold text-lg mb-2">
+              Import complete!
+            </div>
+            <div className="mb-2">
+              <span className="font-semibold">Created:</span> {importResult.created} &nbsp;|
+              <span className="font-semibold"> Updated:</span> {importResult.updated} &nbsp;|
+              <span className="font-semibold"> Failed:</span> {importResult.failed}
+            </div>
+            {importResult.updateNotes && importResult.updateNotes.length > 0 && (
+              <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded mb-2">
+                <div className="font-semibold mb-1">Update Notes:</div>
+                <ul className="list-disc pl-5">
+                  {importResult.updateNotes.map((note: string, i: number) => (
+                    <li key={i}>{note}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {importResult.errors && importResult.errors.length > 0 && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-2">
+                <div className="font-semibold mb-1">Import Errors:</div>
+                <ul className="list-disc pl-5">
+                  {importResult.errors.map((err: string, i: number) => (
+                    <li key={i}>{err}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+        {importResult && !importResult.success && (
+          <div className="mt-4 text-red-600">Import failed: {importResult.error}</div>
+        )}
+        {/* Prominent green back button for quick navigation */}
+        <Button size="lg" className="mt-8 w-full bg-green-600 hover:bg-green-700 text-white text-lg font-bold py-4" onClick={() => router.back()}>
+          ← Back
+        </Button>
+      </div>
     </div>
   );
 } 

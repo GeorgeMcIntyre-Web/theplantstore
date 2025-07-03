@@ -19,7 +19,6 @@ import { Search, Filter, Check, Trash2 } from "lucide-react";
 
 interface AdminNotification {
   id: string;
-  title: string;
   message: string;
   type: string;
   status: string;
@@ -127,7 +126,6 @@ export default function NotificationsPage() {
 
   const filteredNotifications = notifications.filter((notification) => {
     const matchesSearch = 
-      notification.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       notification.message.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesType = typeFilter === "all" || notification.type === typeFilter;
@@ -229,7 +227,6 @@ export default function NotificationsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Type</TableHead>
-                  <TableHead>Title</TableHead>
                   <TableHead>Message</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Assigned To</TableHead>
@@ -241,7 +238,6 @@ export default function NotificationsPage() {
                 {filteredNotifications.map((notification) => (
                   <TableRow key={notification.id}>
                     <TableCell>{getTypeBadge(notification.type)}</TableCell>
-                    <TableCell className="font-medium">{notification.title}</TableCell>
                     <TableCell className="max-w-xs truncate">{notification.message}</TableCell>
                     <TableCell>{getStatusBadge(notification.status)}</TableCell>
                     <TableCell>

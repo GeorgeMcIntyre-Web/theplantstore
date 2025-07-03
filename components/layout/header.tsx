@@ -23,8 +23,8 @@ export function Header() {
   const userId = session?.user?.id;
   const userRole = session?.user?.role;
   const isAdmin = userRole === "SUPER_ADMIN" || userRole === "PLANT_MANAGER";
-  const { notifications, isLoading, markAsRead, refetch } = useNotifications(isAdmin ? userId : undefined);
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const { notifications = [], isLoading, markAsRead, refetch } = useNotifications(isAdmin ? userId : undefined);
+  const unreadCount = Array.isArray(notifications) ? notifications.filter(n => !n.read).length : 0;
   const [showNotifications, setShowNotifications] = useState(false);
 
   const markAllAsRead = async () => {

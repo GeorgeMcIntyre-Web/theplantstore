@@ -7,6 +7,17 @@ import { Badge } from '@/components/ui/badge';
 import { Package, Truck } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
+interface ShippingAddress {
+  firstName: string;
+  lastName: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  province: string;
+  postalCode: string;
+  phone: string;
+}
+
 interface Order {
   id: string;
   orderNumber: string;
@@ -15,7 +26,7 @@ interface Order {
   createdAt: string;
   trackingNumber?: string;
   user: { name: string; email: string };
-  shippingAddress: unknown;
+  shippingAddress: ShippingAddress | null;
 }
 
 export function ShippingManagement() {

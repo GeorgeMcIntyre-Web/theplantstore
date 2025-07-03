@@ -1,3 +1,5 @@
+"use client";
+
 import { notFound, useRouter } from "next/navigation";
 import { UpdateOrderForm } from "@/components/admin/UpdateOrderForm";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
