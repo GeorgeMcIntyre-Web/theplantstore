@@ -1,3 +1,4 @@
+"use client";
 // app/admin/users/page.tsx
 
 // This line tells Next.js to render this page dynamically

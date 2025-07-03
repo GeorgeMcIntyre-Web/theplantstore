@@ -1,3 +1,4 @@
+"use client";
 // app/admin/products/new/page.tsx
 
 import { ProductForm } from "@/components/admin/ProductForm";

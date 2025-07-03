@@ -1,173 +1,227 @@
-// app/admin/orders/[id]/page.tsx - MISSING ORDER DETAILS PAGE
-export const dynamic = "force-dynamic";
+"use client";
 
-import { prisma } from "@/lib/db";
-import Link from "next/link";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, Filter, Eye, Package } from "lucide-react";
+import Link from "next/link";
 
-const ORDER_STATUSES = [
-  "PENDING",
-  "CONFIRMED",
-  "PROCESSING",
-  "SHIPPED",
-  "DELIVERED",
-  "CANCELLED",
-  "REFUNDED",
-];
-
-async function getOrders(page: number, pageSize: number, status?: string, customer?: string) {
-  const where: any = {};
-  if (status) where.status = status;
-  if (customer) {
-    where.user = {
-      OR: [
-        { name: { contains: customer, mode: "insensitive" } },
-        { email: { contains: customer, mode: "insensitive" } },
-      ],
-    };
-  }
-  const [orders, total] = await Promise.all([
-    prisma.order.findMany({
-      include: {
-        user: { select: { name: true, email: true } },
-      },
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-      where,
-    }),
-    prisma.order.count({ where }),
-  ]);
-  return { orders, total };
+interface Order {
+  id: string;
+  orderNumber: string;
+  status: string;
+  paymentStatus: string;
+  totalAmount: number;
+  createdAt: string;
+  user: {
+    name: string;
+    email: string;
+  };
+  orderItems: Array<{
+    productName: string;
+    quantity: number;
+    price: number;
+  }>;
 }
 
-export default async function OrdersListPage({ searchParams }: { searchParams: { page?: string, pageSize?: string, status?: string, customer?: string } }) {
-  const router = useRouter();
-  const page = Number(searchParams?.page) || 1;
-  const pageSize = Number(searchParams?.pageSize) || 10;
-  const status = searchParams?.status || "";
-  const customer = searchParams?.customer || "";
-  let orders: unknown[] = [];
-  let total = 0;
-  let error: string | null = null;
-  try {
-    const result = await getOrders(page, pageSize, status, customer);
-    orders = result.orders;
-    total = result.total;
-  } catch (_) {
-    error = "Failed to load orders.";
-  }
-  const totalPages = Math.ceil(total / pageSize);
+export default function OrdersPage() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
-  function buildQuery(newParams: Record<string, string | number>) {
-    const params = new URLSearchParams({
-      page: String(page),
-      pageSize: String(pageSize),
-      status,
-      customer,
-      ...newParams,
-    });
-    return `?${params.toString()}`;
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const fetchOrders = async () => {
+    try {
+      const response = await fetch("/api/admin/orders");
+      if (response.ok) {
+        const data = await response.json();
+        setOrders(data.orders || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch orders:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      PENDING: { variant: "secondary", label: "Pending" },
+      CONFIRMED: { variant: "default", label: "Confirmed" },
+      PROCESSING: { variant: "default", label: "Processing" },
+      SHIPPED: { variant: "default", label: "Shipped" },
+      DELIVERED: { variant: "default", label: "Delivered" },
+      CANCELLED: { variant: "destructive", label: "Cancelled" },
+    };
+    const config = statusConfig[status as keyof typeof statusConfig] || { variant: "secondary", label: status };
+    return <Badge variant={config.variant as any}>{config.label}</Badge>;
+  };
+
+  const getPaymentStatusBadge = (status: string) => {
+    const statusConfig = {
+      PENDING: { variant: "secondary", label: "Pending" },
+      PAID: { variant: "default", label: "Paid" },
+      FAILED: { variant: "destructive", label: "Failed" },
+      REFUNDED: { variant: "destructive", label: "Refunded" },
+    };
+    const config = statusConfig[status as keyof typeof statusConfig] || { variant: "secondary", label: status };
+    return <Badge variant={config.variant as any}>{config.label}</Badge>;
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("en-ZA", {
+      style: "currency",
+      currency: "ZAR",
+    }).format(price);
+  };
+
+  const filteredOrders = orders.filter((order) => {
+    const matchesSearch = 
+      order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.user.email.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  if (loading) {
+    return (
+      <div className="p-8">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <>
-      <h1 className="text-2xl font-bold mb-6">Orders</h1>
-      <form
-        className="flex flex-wrap gap-4 mb-4"
-        action="/admin/orders"
-        method="get"
-        suppressHydrationWarning
-      >
-        <select
-          name="status"
-          defaultValue={status}
-          className="border rounded px-2 py-1"
-        >
-          <option value="">All Statuses</option>
-          {ORDER_STATUSES.map((s) => (
-            <option key={s} value={s}>{s.charAt(0) + s.slice(1).toLowerCase()}</option>
-          ))}
-        </select>
-        <input
-          type="text"
-          name="customer"
-          placeholder="Customer name or email"
-          defaultValue={customer}
-          className="border rounded px-2 py-1"
-        />
-        <button type="submit" className="px-4 py-1 bg-primary text-white rounded">Filter</button>
-      </form>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Orders</h1>
+        <div className="flex items-center gap-2">
+          <Link href="/admin/shipping">
+            <Button variant="outline" size="sm">
+              <Package className="h-4 w-4 mr-2" />
+              Shipping
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle>All Orders</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Filters
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          {error ? (
-            <div className="text-red-500">{error}</div>
-          ) : orders.length === 0 ? (
-            <div>No orders found.</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="search">Search</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="search"
+                  placeholder="Search orders, customers..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="status">Status</Label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="PENDING">Pending</SelectItem>
+                  <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+                  <SelectItem value="PROCESSING">Processing</SelectItem>
+                  <SelectItem value="SHIPPED">Shipped</SelectItem>
+                  <SelectItem value="DELIVERED">Delivered</SelectItem>
+                  <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Orders Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>All Orders ({filteredOrders.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {filteredOrders.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No orders found.
+            </div>
           ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead>
-                    <tr>
-                      <th className="px-4 py-2 text-left">Order #</th>
-                      <th className="px-4 py-2 text-left">Customer</th>
-                      <th className="px-4 py-2 text-left">Status</th>
-                      <th className="px-4 py-2 text-left">Total</th>
-                      <th className="px-4 py-2 text-left">Created</th>
-                      <th className="px-4 py-2 text-left">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {orders.map((order: unknown) => {
-                      const o = order as { id: string; orderNumber: string; user?: { name?: string }; status?: string; totalAmount?: number; createdAt?: string; };
-                      return (
-                        <tr key={o.id} className="border-b">
-                          <td className="px-4 py-2">{o.orderNumber}</td>
-                          <td className="px-4 py-2">{o.user?.name || "-"}</td>
-                          <td className="px-4 py-2">
-                            <Badge>{o.status}</Badge>
-                          </td>
-                          <td className="px-4 py-2">R{Number(o.totalAmount).toFixed(2)}</td>
-                          <td className="px-4 py-2">{new Date(o.createdAt ?? '').toLocaleDateString()}</td>
-                          <td className="px-4 py-2">
-                            <Link href={`/admin/orders/${o.id}`} className="text-primary underline">
-                              View Details
-                            </Link>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              <div className="flex justify-between items-center mt-4">
-                <a
-                  href={buildQuery({ page: page - 1 })}
-                  className={`px-4 py-2 bg-gray-200 rounded ${page <= 1 ? "opacity-50 pointer-events-none" : ""}`}
-                  aria-disabled={page <= 1}
-                >
-                  Previous
-                </a>
-                <span>Page {page} of {totalPages}</span>
-                <a
-                  href={buildQuery({ page: page + 1 })}
-                  className={`px-4 py-2 bg-gray-200 rounded ${page >= totalPages ? "opacity-50 pointer-events-none" : ""}`}
-                  aria-disabled={page >= totalPages}
-                >
-                  Next
-                </a>
-              </div>
-            </>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order #</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Payment</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredOrders.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell className="font-medium">{order.orderNumber}</TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{order.user.name}</div>
+                        <div className="text-sm text-muted-foreground">{order.user.email}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{getStatusBadge(order.status)}</TableCell>
+                    <TableCell>{getPaymentStatusBadge(order.paymentStatus)}</TableCell>
+                    <TableCell className="font-medium">{formatPrice(order.totalAmount)}</TableCell>
+                    <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-right">
+                      <Link href={`/admin/orders/${order.id}`}>
+                        <Button size="sm" variant="outline">
+                          <Eye className="h-4 w-4 mr-2" />
+                          View
+                        </Button>
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
-    </>
+    </div>
   );
 }

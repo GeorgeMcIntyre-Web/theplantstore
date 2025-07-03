@@ -22,13 +22,18 @@ export interface EmailTemplate {
 }
 
 export class EmailService {
-  private resend: Resend;
+  private resend: Resend | null;
   private nodemailerTransporter: nodemailer.Transporter;
   private defaultFrom: string;
 
   constructor() {
-    // Initialize Resend (primary provider)
-    this.resend = new Resend(process.env.RESEND_API_KEY);
+    // Initialize Resend (primary provider) - only if API key is provided
+    if (process.env.RESEND_API_KEY) {
+      this.resend = new Resend(process.env.RESEND_API_KEY);
+    } else {
+      console.warn('RESEND_API_KEY not provided - email service will use Nodemailer fallback only');
+      this.resend = null as any;
+    }
     
     // Initialize Nodemailer (fallback provider)
     this.nodemailerTransporter = nodemailer.createTransport({
@@ -60,6 +65,10 @@ export class EmailService {
 
   private async sendWithResend(options: EmailOptions): Promise<boolean> {
     try {
+      if (!this.resend) {
+        return false;
+      }
+      
       const { data, error } = await this.resend.emails.send({
         from: options.from || this.defaultFrom,
         to: Array.isArray(options.to) ? options.to : [options.to],
