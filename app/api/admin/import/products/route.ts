@@ -63,6 +63,30 @@ export async function POST(req: NextRequest) {
           errors.push(`Row ${i + 2}: Category '${row.category}' not found (case-insensitive match failed)`);
           continue;
         }
+
+        // Handle SKU conflicts
+        let finalSku = row.sku || null;
+        if (finalSku) {
+          // Check if SKU already exists
+          const existingProductWithSku = await prisma.product.findUnique({
+            where: { sku: finalSku },
+          });
+          if (existingProductWithSku) {
+            // SKU already exists, generate a new one or skip it
+            console.log(`Row ${i + 2}: SKU '${finalSku}' already exists for product '${existingProductWithSku.name}', generating new SKU`);
+            // Generate a new unique SKU based on the slug
+            const baseSku = row.slug.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            let counter = 1;
+            let newSku = `${baseSku}-${counter.toString().padStart(3, '0')}`;
+            while (await prisma.product.findUnique({ where: { sku: newSku } })) {
+              counter++;
+              newSku = `${baseSku}-${counter.toString().padStart(3, '0')}`;
+            }
+            finalSku = newSku;
+            updateNotes.push(`Row ${i + 2}: Generated new SKU '${finalSku}' for product '${row.name}' (original SKU '${row.sku}' was already taken)`);
+          }
+        }
+
         const data: any = {
           name: row.name,
           slug: row.slug,
@@ -71,7 +95,7 @@ export async function POST(req: NextRequest) {
           description: row.description || null,
           shortDescription: row.shortDescription || null,
           compareAtPrice: row.compareAtPrice ? new Decimal(parseFloat(row.compareAtPrice)) : undefined,
-          sku: row.sku || null,
+          sku: finalSku,
           stockQuantity: row.stockQuantity ? parseInt(row.stockQuantity) : 0,
           careLevel: row.careLevel || null,
           lightRequirement: row.lightRequirement || null,
