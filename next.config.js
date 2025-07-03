@@ -15,7 +15,11 @@ const nextConfig = {
   },
   images: {
     unoptimized: true,
-    domains: ["localhost"],
+    domains: [
+      "localhost", 
+      "your-domain.com", // Replace with your actual domain
+      "www.your-domain.com" // Replace with your actual domain
+    ],
   },
   compress: true,
   poweredByHeader: false,
@@ -40,6 +44,10 @@ const nextConfig = {
         ],
       },
     ];
+  },
+  // Ensure environment variables are available at build time
+  env: {
+    CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
 };
 
