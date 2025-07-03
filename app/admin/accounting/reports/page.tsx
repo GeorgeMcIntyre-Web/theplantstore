@@ -17,6 +17,9 @@ import {
   LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart
 } from 'recharts';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 
 interface FinancialReport {
   period: {
@@ -63,6 +66,7 @@ interface FinancialReport {
     expenses: number;
     profit: number;
   }>;
+  transactions?: Array<any>;
 }
 
 interface ExpenseCategory {
@@ -82,6 +86,19 @@ const ReportsPage = () => {
   const [customEndDate, setCustomEndDate] = useState<string>('');
   const [refreshing, setRefreshing] = useState(false);
 
+  // Advanced filters state
+  const [productFilter, setProductFilter] = useState<string>('');
+  const [supplierFilter, setSupplierFilter] = useState<string>('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('');
+
+  // Auto-refresh state
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [autoRefreshInterval, setAutoRefreshInterval] = useState<NodeJS.Timeout | null>(null);
+
+  // Drill-down modal state
+  const [selectedTransaction, setSelectedTransaction] = useState<any | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
   const hasAccess = session?.user?.role === 'SUPER_ADMIN' || 
                    session?.user?.role === 'FINANCIAL_MANAGER' || 
                    session?.user?.role === 'ACCOUNTANT';
@@ -90,7 +107,33 @@ const ReportsPage = () => {
     if (hasAccess) {
       fetchReport();
     }
-  }, [hasAccess, reportType, dateRange, customStartDate, customEndDate]);
+  }, [hasAccess, reportType, dateRange, customStartDate, customEndDate, productFilter, supplierFilter, categoryFilter]);
+
+  // Auto-refresh effect
+  useEffect(() => {
+    if (autoRefresh && hasAccess) {
+      const interval = setInterval(() => {
+        fetchReport();
+      }, 30000); // 30 seconds
+      setAutoRefreshInterval(interval);
+      
+      return () => {
+        if (interval) clearInterval(interval);
+      };
+    } else if (autoRefreshInterval) {
+      clearInterval(autoRefreshInterval);
+      setAutoRefreshInterval(null);
+    }
+  }, [autoRefresh, hasAccess]);
+
+  const toggleAutoRefresh = () => {
+    setAutoRefresh(!autoRefresh);
+    if (!autoRefresh) {
+      toast.success('Auto-refresh enabled (30s interval)');
+    } else {
+      toast.info('Auto-refresh disabled');
+    }
+  };
 
   const fetchReport = async () => {
     try {
@@ -104,6 +147,10 @@ const ReportsPage = () => {
         if (customStartDate) params.append('startDate', customStartDate);
         if (customEndDate) params.append('endDate', customEndDate);
       }
+      // Add advanced filters
+      if (productFilter) params.append('product', productFilter);
+      if (supplierFilter) params.append('supplier', supplierFilter);
+      if (categoryFilter) params.append('category', categoryFilter);
       
       const response = await fetch(`/api/accounting/reports?${params.toString()}`);
       
@@ -244,6 +291,76 @@ const ReportsPage = () => {
     return null;
   };
 
+  // PDF Export Handler
+  const exportReportAsPDF = async () => {
+    try {
+      const reportElement = document.getElementById('report-content');
+      if (!reportElement) {
+        toast.error('Report content not found for PDF export.');
+        return;
+      }
+      const canvas = await html2canvas(reportElement, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pageWidth;
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      const filename = `financial-report-${reportType}-${new Date().toISOString().slice(0,10)}.pdf`;
+      pdf.save(filename);
+      toast.success('Report exported as PDF');
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      toast.error('Failed to export PDF');
+    }
+  };
+
+  const openTransactionModal = (transaction: any) => {
+    setSelectedTransaction(transaction);
+    setModalOpen(true);
+  };
+  const closeTransactionModal = () => {
+    setModalOpen(false);
+    setSelectedTransaction(null);
+  };
+
+  // Save favorite configuration
+  const saveFavorite = () => {
+    const config = {
+      reportType,
+      dateRange,
+      customStartDate,
+      customEndDate,
+      productFilter,
+      supplierFilter,
+      categoryFilter,
+      name: `Favorite ${new Date().toLocaleDateString()}`
+    };
+    
+    const favorites = JSON.parse(localStorage.getItem('reportFavorites') || '[]');
+    favorites.push(config);
+    localStorage.setItem('reportFavorites', JSON.stringify(favorites));
+    toast.success('Configuration saved as favorite');
+  };
+
+  // Load favorite configuration
+  const loadFavorite = (config: any) => {
+    setReportType(config.reportType);
+    setDateRange(config.dateRange);
+    setCustomStartDate(config.customStartDate);
+    setCustomEndDate(config.customEndDate);
+    setProductFilter(config.productFilter);
+    setSupplierFilter(config.supplierFilter);
+    setCategoryFilter(config.categoryFilter);
+    toast.success('Favorite configuration loaded');
+  };
+
+  const getFavorites = () => {
+    return JSON.parse(localStorage.getItem('reportFavorites') || '[]');
+  };
+
   if (!hasAccess) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -276,11 +393,19 @@ const ReportsPage = () => {
             <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
+          <Button 
+            variant={autoRefresh ? "default" : "outline"} 
+            onClick={toggleAutoRefresh}
+            className={autoRefresh ? "bg-green-600 hover:bg-green-700" : ""}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${autoRefresh ? 'animate-pulse' : ''}`} />
+            {autoRefresh ? 'Auto On' : 'Auto Off'}
+          </Button>
           <Button onClick={() => exportReport('csv')} disabled={!report}>
             <Download className="h-4 w-4 mr-2" />
             Export CSV
           </Button>
-          <Button variant="outline" disabled={!report}>
+          <Button variant="outline" disabled={!report} onClick={exportReportAsPDF}>
             <FileText className="h-4 w-4 mr-2" />
             Export PDF
           </Button>
@@ -343,404 +468,531 @@ const ReportsPage = () => {
               </>
             )}
           </div>
+          
+          {/* Advanced Filters */}
+          <div className="mt-4 pt-4 border-t">
+            <h4 className="font-semibold mb-3">Advanced Filters</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label>Product</Label>
+                <Input
+                  placeholder="Filter by product name"
+                  value={productFilter}
+                  onChange={(e) => setProductFilter(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Supplier</Label>
+                <Input
+                  placeholder="Filter by supplier"
+                  value={supplierFilter}
+                  onChange={(e) => setSupplierFilter(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Category</Label>
+                <Input
+                  placeholder="Filter by category"
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+          
+          {/* Favorites */}
+          <div className="mt-4 pt-4 border-t flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" onClick={saveFavorite}>
+                Save as Favorite
+              </Button>
+              {getFavorites().length > 0 && (
+                <Select onValueChange={(value) => {
+                  const favorites = getFavorites();
+                  const selected = favorites.find((f: any) => f.name === value);
+                  if (selected) loadFavorite(selected);
+                }}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Load Favorite" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getFavorites().map((favorite: any, index: number) => (
+                      <SelectItem key={index} value={favorite.name}>
+                        {favorite.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+            <Button variant="outline" onClick={() => {
+              setProductFilter('');
+              setSupplierFilter('');
+              setCategoryFilter('');
+            }}>
+              Clear Filters
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
-      {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-        </div>
-      ) : error ? (
-        <div className="text-center py-8">
-          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <p className="text-red-600 mb-4">{error}</p>
-          <Button onClick={fetchReport} variant="outline">
-            Try Again
-          </Button>
-        </div>
-      ) : report ? (
-        <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="revenue">Revenue</TabsTrigger>
-            <TabsTrigger value="expenses">Expenses</TabsTrigger>
-            <TabsTrigger value="trends">Trends</TabsTrigger>
-          </TabsList>
+      <div id="report-content">
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          </div>
+        ) : error ? (
+          <div className="text-center py-8">
+            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <p className="text-red-600 mb-4">{error}</p>
+            <Button onClick={fetchReport} variant="outline">
+              Try Again
+            </Button>
+          </div>
+        ) : report ? (
+          <Tabs defaultValue="overview" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="revenue">Revenue</TabsTrigger>
+              <TabsTrigger value="expenses">Expenses</TabsTrigger>
+              <TabsTrigger value="trends">Trends</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="overview" className="space-y-4">
-            {/* Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <TabsContent value="overview" className="space-y-4">
+              {/* Key Metrics */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium flex items-center">
+                      Total Revenue
+                      <UITooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-4 w-4 ml-1 text-gray-400 cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Gross revenue including VAT</p>
+                        </TooltipContent>
+                      </UITooltip>
+                    </CardTitle>
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{formatCurrency(report.revenue.total)}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {report.revenue.orders} orders • Avg: {formatCurrency(report.revenue.averageOrderValue)}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+                    <Receipt className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{formatCurrency(report.expenses.total)}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {report.expenses.count} expenses
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
+                    <div className={`h-4 w-4 ${getProfitTrend(report.profit.net).color}`}>
+                      {React.createElement(getProfitTrend(report.profit.net).icon)}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{formatCurrency(report.profit.net)}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {formatPercentage(report.profit.margin)} margin
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">VAT Liability</CardTitle>
+                    <div className={`h-4 w-4 ${getVATStatus(report.vat.liability).color}`}>
+                      {React.createElement(getVATStatus(report.vat.liability).icon)}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{formatCurrency(report.vat.liability)}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {getVATStatus(report.vat.liability).status}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* VAT Summary */}
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium flex items-center">
-                    Total Revenue
-                    <UITooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 ml-1 text-gray-400 cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Gross revenue including VAT</p>
-                      </TooltipContent>
-                    </UITooltip>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    VAT Summary
+                    <Info className="h-4 w-4 ml-2 text-gray-400" />
                   </CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{formatCurrency(report.revenue.total)}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {report.revenue.orders} orders • Avg: {formatCurrency(report.revenue.averageOrderValue)}
-                  </p>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="text-center p-4 bg-green-50 rounded-lg">
+                        <div className="text-2xl font-bold text-green-600">{formatCurrency(report.vat.collected)}</div>
+                        <div className="text-sm text-green-600">VAT Collected</div>
+                      </div>
+                      <div className="text-center p-4 bg-blue-50 rounded-lg">
+                        <div className="text-2xl font-bold text-blue-600">{formatCurrency(report.vat.paid)}</div>
+                        <div className="text-sm text-blue-600">VAT Paid</div>
+                      </div>
+                      <div className={`text-center p-4 rounded-lg ${report.vat.liability > 0 ? 'bg-red-50' : 'bg-green-50'}`}>
+                        <div className={`text-2xl font-bold ${report.vat.liability > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          {formatCurrency(report.vat.liability)}
+                        </div>
+                        <div className={`text-sm ${report.vat.liability > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          Net VAT {report.vat.liability > 0 ? 'Payable' : 'Refundable'}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* VAT Chart */}
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={[
+                          { name: 'VAT Collected', value: report.vat.collected, fill: chartColors.revenue },
+                          { name: 'VAT Paid', value: report.vat.paid, fill: chartColors.expenses },
+                          { name: 'Net Liability', value: report.vat.liability, fill: report.vat.liability > 0 ? chartColors.expenses : chartColors.revenue }
+                        ]}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis tickFormatter={formatChartCurrency} />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Bar dataKey="value" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
+              {/* Monthly Trends Chart */}
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-                  <Receipt className="h-4 w-4 text-muted-foreground" />
+                <CardHeader>
+                  <CardTitle>Monthly Financial Trends</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{formatCurrency(report.expenses.total)}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {report.expenses.count} expenses
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
-                  <div className={`h-4 w-4 ${getProfitTrend(report.profit.net).color}`}>
-                    {React.createElement(getProfitTrend(report.profit.net).icon)}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{formatCurrency(report.profit.net)}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {formatPercentage(report.profit.margin)} margin
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">VAT Liability</CardTitle>
-                  <div className={`h-4 w-4 ${getVATStatus(report.vat.liability).color}`}>
-                    {React.createElement(getVATStatus(report.vat.liability).icon)}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{formatCurrency(report.vat.liability)}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {getVATStatus(report.vat.liability).status}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* VAT Summary */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  VAT Summary
-                  <Info className="h-4 w-4 ml-2 text-gray-400" />
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="text-center p-4 bg-green-50 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">{formatCurrency(report.vat.collected)}</div>
-                      <div className="text-sm text-green-600">VAT Collected</div>
-                    </div>
-                    <div className="text-center p-4 bg-blue-50 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">{formatCurrency(report.vat.paid)}</div>
-                      <div className="text-sm text-blue-600">VAT Paid</div>
-                    </div>
-                    <div className={`text-center p-4 rounded-lg ${report.vat.liability > 0 ? 'bg-red-50' : 'bg-green-50'}`}>
-                      <div className={`text-2xl font-bold ${report.vat.liability > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                        {formatCurrency(report.vat.liability)}
-                      </div>
-                      <div className={`text-sm ${report.vat.liability > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                        Net VAT {report.vat.liability > 0 ? 'Payable' : 'Refundable'}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* VAT Chart */}
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={[
-                        { name: 'VAT Collected', value: report.vat.collected, fill: chartColors.revenue },
-                        { name: 'VAT Paid', value: report.vat.paid, fill: chartColors.expenses },
-                        { name: 'Net Liability', value: report.vat.liability, fill: report.vat.liability > 0 ? chartColors.expenses : chartColors.revenue }
-                      ]}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis tickFormatter={formatChartCurrency} />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Bar dataKey="value" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Monthly Trends Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Monthly Financial Trends</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={report.monthlyTrends}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis tickFormatter={formatChartCurrency} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend />
-                      <Area type="monotone" dataKey="revenue" stackId="1" stroke={chartColors.revenue} fill={chartColors.revenue} fillOpacity={0.3} name="Revenue" />
-                      <Area type="monotone" dataKey="expenses" stackId="1" stroke={chartColors.expenses} fill={chartColors.expenses} fillOpacity={0.3} name="Expenses" />
-                      <Line type="monotone" dataKey="profit" stroke={chartColors.profit} strokeWidth={3} name="Profit" />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="revenue" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Revenue Analysis</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="font-semibold mb-4">Revenue Breakdown</h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span>Gross Revenue:</span>
-                        <span className="font-semibold">{formatCurrency(report.revenue.total)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>VAT Collected:</span>
-                        <span className="font-semibold">{formatCurrency(report.revenue.vat)}</span>
-                      </div>
-                      <div className="flex justify-between border-t pt-2">
-                        <span>Net Revenue:</span>
-                        <span className="font-semibold">{formatCurrency(report.revenue.net)}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-4">Order Statistics</h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span>Total Orders:</span>
-                        <span className="font-semibold">{report.revenue.orders}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Average Order Value:</span>
-                        <span className="font-semibold">{formatCurrency(report.revenue.averageOrderValue)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Top Performing Products</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Product List */}
-                  <div className="space-y-4">
-                    {report.topProducts.map((product, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
-                        <div className="flex-1">
-                          <div className="font-semibold">{product.name}</div>
-                          <div className="text-sm text-gray-600">
-                            {product.quantity} units sold
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-semibold">{formatCurrency(product.revenue)}</div>
-                          <div className="text-sm text-green-600">
-                            {formatCurrency(product.profit)} profit
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {/* Product Revenue Chart */}
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={report.topProducts} layout="horizontal">
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis type="number" tickFormatter={formatChartCurrency} />
-                        <YAxis type="category" dataKey="name" width={80} />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Bar dataKey="revenue" fill={chartColors.revenue} name="Revenue" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="expenses" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Expense Analysis</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="font-semibold mb-4">Expense Breakdown</h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span>Total Expenses:</span>
-                        <span className="font-semibold">{formatCurrency(report.expenses.total)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>VAT Paid:</span>
-                        <span className="font-semibold">{formatCurrency(report.expenses.vat)}</span>
-                      </div>
-                      <div className="flex justify-between border-t pt-2">
-                        <span>Net Expenses:</span>
-                        <span className="font-semibold">{formatCurrency(report.expenses.net)}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-4">Expense Count</h3>
-                    <div className="text-3xl font-bold text-blue-600">{report.expenses.count}</div>
-                    <div className="text-sm text-gray-600">Total expenses in period</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Expenses by Category</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Category List */}
-                  <div className="space-y-4">
-                    {report.expenses.byCategory.map((category, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center space-x-3">
-                          <div 
-                            className="w-4 h-4 rounded-full" 
-                            style={{ backgroundColor: chartColors.categories[index % chartColors.categories.length] }}
-                          />
-                          <div className="flex-1">
-                            <div className="font-semibold">{category.category}</div>
-                            <div className="text-sm text-gray-600">
-                              {formatPercentage(category.percentage)} of total
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-semibold">{formatCurrency(category.amount)}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {/* Expense Categories Pie Chart */}
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RechartsPieChart>
-                        <Pie
-                          data={report.expenses.byCategory}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ category, percentage }) => `${category} (${percentage.toFixed(1)}%)`}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="amount"
-                        >
-                          {report.expenses.byCategory.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={chartColors.categories[index % chartColors.categories.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={formatChartTooltip} />
-                      </RechartsPieChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="trends" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Monthly Trends Analysis</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {/* Trends Chart */}
                   <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={report.monthlyTrends}>
+                      <ComposedChart data={report.monthlyTrends}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="month" />
                         <YAxis tickFormatter={formatChartCurrency} />
                         <Tooltip content={<CustomTooltip />} />
                         <Legend />
-                        <Line type="monotone" dataKey="revenue" stroke={chartColors.revenue} strokeWidth={3} name="Revenue" />
-                        <Line type="monotone" dataKey="expenses" stroke={chartColors.expenses} strokeWidth={3} name="Expenses" />
+                        <Area type="monotone" dataKey="revenue" stackId="1" stroke={chartColors.revenue} fill={chartColors.revenue} fillOpacity={0.3} name="Revenue" />
+                        <Area type="monotone" dataKey="expenses" stackId="1" stroke={chartColors.expenses} fill={chartColors.expenses} fillOpacity={0.3} name="Expenses" />
                         <Line type="monotone" dataKey="profit" stroke={chartColors.profit} strokeWidth={3} name="Profit" />
-                      </LineChart>
+                      </ComposedChart>
                     </ResponsiveContainer>
                   </div>
-                  
-                  {/* Trends Table */}
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left p-3 font-semibold">Month</th>
-                          <th className="text-right p-3 font-semibold text-green-600">Revenue</th>
-                          <th className="text-right p-3 font-semibold text-red-600">Expenses</th>
-                          <th className="text-right p-3 font-semibold">Profit</th>
-                          <th className="text-right p-3 font-semibold">Margin</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {report.monthlyTrends.map((trend, index) => (
-                          <tr key={index} className="border-b hover:bg-gray-50">
-                            <td className="p-3 font-medium">{trend.month}</td>
-                            <td className="p-3 text-right text-green-600">{formatCurrency(trend.revenue)}</td>
-                            <td className="p-3 text-right text-red-600">{formatCurrency(trend.expenses)}</td>
-                            <td className={`p-3 text-right font-semibold ${trend.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {formatCurrency(trend.profit)}
-                            </td>
-                            <td className="p-3 text-right">
-                              {trend.revenue > 0 ? formatPercentage((trend.profit / trend.revenue) * 100) : '0%'}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="revenue" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Revenue Analysis</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="font-semibold mb-4">Revenue Breakdown</h3>
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span>Gross Revenue:</span>
+                          <span className="font-semibold">{formatCurrency(report.revenue.total)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>VAT Collected:</span>
+                          <span className="font-semibold">{formatCurrency(report.revenue.vat)}</span>
+                        </div>
+                        <div className="flex justify-between border-t pt-2">
+                          <span>Net Revenue:</span>
+                          <span className="font-semibold">{formatCurrency(report.revenue.net)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold mb-4">Order Statistics</h3>
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span>Total Orders:</span>
+                          <span className="font-semibold">{report.revenue.orders}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Average Order Value:</span>
+                          <span className="font-semibold">{formatCurrency(report.revenue.averageOrderValue)}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Top Performing Products</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Product List */}
+                    <div className="space-y-4">
+                      {report.topProducts.map((product, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                          <div className="flex-1">
+                            <div className="font-semibold">{product.name}</div>
+                            <div className="text-sm text-gray-600">
+                              {product.quantity} units sold
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-semibold">{formatCurrency(product.revenue)}</div>
+                            <div className="text-sm text-green-600">
+                              {formatCurrency(product.profit)} profit
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Product Revenue Chart */}
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={report.topProducts} layout="horizontal">
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis type="number" tickFormatter={formatChartCurrency} />
+                          <YAxis type="category" dataKey="name" width={80} />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Bar dataKey="revenue" fill={chartColors.revenue} name="Revenue" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="expenses" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Expense Analysis</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="font-semibold mb-4">Expense Breakdown</h3>
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <span>Total Expenses:</span>
+                          <span className="font-semibold">{formatCurrency(report.expenses.total)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>VAT Paid:</span>
+                          <span className="font-semibold">{formatCurrency(report.expenses.vat)}</span>
+                        </div>
+                        <div className="flex justify-between border-t pt-2">
+                          <span>Net Expenses:</span>
+                          <span className="font-semibold">{formatCurrency(report.expenses.net)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold mb-4">Expense Count</h3>
+                      <div className="text-3xl font-bold text-blue-600">{report.expenses.count}</div>
+                      <div className="text-sm text-gray-600">Total expenses in period</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Expenses by Category</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Category List */}
+                    <div className="space-y-4">
+                      {report.expenses.byCategory.map((category, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                          <div className="flex items-center space-x-3">
+                            <div 
+                              className="w-4 h-4 rounded-full" 
+                              style={{ backgroundColor: chartColors.categories[index % chartColors.categories.length] }}
+                            />
+                            <div className="flex-1">
+                              <div className="font-semibold">{category.category}</div>
+                              <div className="text-sm text-gray-600">
+                                {formatPercentage(category.percentage)} of total
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-semibold">{formatCurrency(category.amount)}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Expense Categories Pie Chart */}
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RechartsPieChart>
+                          <Pie
+                            data={report.expenses.byCategory}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ category, percentage }) => `${category} (${percentage.toFixed(1)}%)`}
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="amount"
+                          >
+                            {report.expenses.byCategory.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={chartColors.categories[index % chartColors.categories.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={formatChartTooltip} />
+                        </RechartsPieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="trends" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Monthly Trends Analysis</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {/* Trends Chart */}
+                    <div className="h-80">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={report.monthlyTrends}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="month" />
+                          <YAxis tickFormatter={formatChartCurrency} />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Legend />
+                          <Line type="monotone" dataKey="revenue" stroke={chartColors.revenue} strokeWidth={3} name="Revenue" />
+                          <Line type="monotone" dataKey="expenses" stroke={chartColors.expenses} strokeWidth={3} name="Expenses" />
+                          <Line type="monotone" dataKey="profit" stroke={chartColors.profit} strokeWidth={3} name="Profit" />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                    
+                    {/* Trends Table */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left p-3 font-semibold">Month</th>
+                            <th className="text-right p-3 font-semibold text-green-600">Revenue</th>
+                            <th className="text-right p-3 font-semibold text-red-600">Expenses</th>
+                            <th className="text-right p-3 font-semibold">Profit</th>
+                            <th className="text-right p-3 font-semibold">Margin</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {report.monthlyTrends.map((trend, index) => (
+                            <tr key={index} className="border-b hover:bg-gray-50">
+                              <td className="p-3 font-medium">{trend.month}</td>
+                              <td className="p-3 text-right text-green-600">{formatCurrency(trend.revenue)}</td>
+                              <td className="p-3 text-right text-red-600">{formatCurrency(trend.expenses)}</td>
+                              <td className={`p-3 text-right font-semibold ${trend.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {formatCurrency(trend.profit)}
+                              </td>
+                              <td className="p-3 text-right">
+                                {trend.revenue > 0 ? formatPercentage((trend.profit / trend.revenue) * 100) : '0%'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        ) : null}
+
+        {(reportType === 'detailed' || reportType === 'vat') && report && (
+          <Card>
+            <CardHeader>
+              <CardTitle>{reportType === 'detailed' ? 'Detailed Transactions' : 'VAT Transactions'}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-3 font-semibold">Date</th>
+                      <th className="text-left p-3 font-semibold">Type</th>
+                      <th className="text-left p-3 font-semibold">Reference</th>
+                      <th className="text-right p-3 font-semibold">Amount</th>
+                      <th className="text-right p-3 font-semibold">VAT</th>
+                      <th className="text-right p-3 font-semibold">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(report.transactions || []).map((txn: any, idx: number) => (
+                      <tr key={idx} className="border-b hover:bg-gray-50 cursor-pointer" onClick={() => openTransactionModal(txn)}>
+                        <td className="p-3">{txn.date ? new Date(txn.date).toLocaleDateString() : '-'}</td>
+                        <td className="p-3">{txn.type || '-'}</td>
+                        <td className="p-3">{txn.reference || '-'}</td>
+                        <td className="p-3 text-right">{formatCurrency(txn.amount)}</td>
+                        <td className="p-3 text-right">{formatCurrency(txn.vat)}</td>
+                        <td className="p-3 text-right"><Button size="sm" variant="outline">View</Button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Transaction Details</DialogTitle>
+            <DialogDescription>
+              {selectedTransaction ? (
+                <div className="space-y-2">
+                  <div><b>Date:</b> {selectedTransaction.date ? new Date(selectedTransaction.date).toLocaleString() : '-'}</div>
+                  <div><b>Type:</b> {selectedTransaction.type}</div>
+                  <div><b>Reference:</b> {selectedTransaction.reference}</div>
+                  <div><b>Amount:</b> {formatCurrency(selectedTransaction.amount)}</div>
+                  <div><b>VAT:</b> {formatCurrency(selectedTransaction.vat)}</div>
+                  <div><b>Description:</b> {selectedTransaction.description || '-'}</div>
+                  {/* Add more fields as needed */}
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      ) : null}
+              ) : 'No transaction selected.'}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogClose asChild>
+            <Button variant="outline">Close</Button>
+          </DialogClose>
+        </DialogContent>
+      </Dialog>
       </div>
     </TooltipProvider>
   );
