@@ -1,19 +1,35 @@
-import type { NextAuthOptions } from "next-auth";
+import { NextAuthOptions } from "next-auth";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import { prisma } from "./db";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import { prisma } from "@/lib/db";
-import bcrypt from "bcryptjs";
 import GoogleProvider from "next-auth/providers/google";
 import AzureADProvider from "next-auth/providers/azure-ad";
+import bcrypt from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
+    // Google OAuth
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+    
+    // Azure AD (if configured)
+    ...(process.env.AZURE_AD_CLIENT_ID ? [
+      AzureADProvider({
+        clientId: process.env.AZURE_AD_CLIENT_ID,
+        clientSecret: process.env.AZURE_AD_CLIENT_SECRET!,
+        tenantId: process.env.AZURE_AD_TENANT_ID!,
+      })
+    ] : []),
+    
+    // Credentials (email/password)
     CredentialsProvider({
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
+        password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -21,7 +37,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { email: credentials.email }
         });
 
         if (!user || !user.password) {
@@ -30,7 +46,7 @@ export const authOptions: NextAuthOptions = {
 
         const isPasswordValid = await bcrypt.compare(
           credentials.password,
-          user.password,
+          user.password
         );
 
         if (!isPasswordValid) {
@@ -43,38 +59,27 @@ export const authOptions: NextAuthOptions = {
           name: user.name || "",
           role: user.role,
         };
-      },
-    }),
-    // Google OAuth Provider
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!, // required
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!, // required
-    }),
-    // Microsoft (Azure AD) OAuth Provider
-    AzureADProvider({
-      clientId: process.env.AZURE_AD_CLIENT_ID!, // required
-      clientSecret: process.env.AZURE_AD_CLIENT_SECRET!, // required
-      tenantId: process.env.AZURE_AD_TENANT_ID, // optional for multi-tenant
-    }),
+      }
+    })
   ],
   session: {
-    strategy: "jwt",
+    strategy: "jwt"
   },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = (user as any).role;
+        token.role = user.role;
         token.id = user.id;
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        (session.user as any).role = token.role as string;
-        (session.user as any).id = token.id as string;
+      if (token) {
+        session.user.role = token.role;
+        session.user.id = token.id;
       }
       return session;
-    },
+    }
   },
   pages: {
     signIn: "/auth/signin",
