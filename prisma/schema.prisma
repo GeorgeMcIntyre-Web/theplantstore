@@ -500,6 +500,11 @@ model Expense {
   // Approval relation (one-to-one)
   approval ExpenseApproval?
 
+  // Bank reconciliation
+  reconciled     Boolean  @default(false)
+  reconciledAt   DateTime?
+  bankTransaction BankTransaction?
+
   // Audit
   auditLogs ExpenseAuditLog[]
 
@@ -713,4 +718,53 @@ model ExpenseAuditLog {
   before    Json?
   after     Json?
   createdAt DateTime @default(now())
+}
+
+// Bank Feed Integration
+model BankAccount {
+  id           String   @id @default(cuid())
+  accountNumber String  @unique
+  bankName     String
+  apiKey       String?
+  apiSecret    String?
+  webhookUrl   String?
+  autoReconcile Boolean @default(false)
+  categories   Json?    // Bank category mappings
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  transactions BankTransaction[]
+}
+
+model BankTransaction {
+  id             String   @id @default(cuid())
+  accountNumber  String
+  transactionDate DateTime
+  description    String
+  amount         Decimal  @db.Decimal(10, 2)
+  type           String   // 'credit' or 'debit'
+  bankReference  String   @unique
+  category       String?
+  balance        Decimal  @db.Decimal(10, 2)
+  reconciled     Boolean  @default(false)
+  reconciledAt   DateTime?
+  createdAt      DateTime @default(now())
+
+  // Relations
+  bankAccount BankAccount @relation(fields: [accountNumber], references: [accountNumber], onDelete: Cascade)
+  expense     Expense?    @relation(fields: [expenseId], references: [id])
+  expenseId   String?     @unique
+  reconciliationSuggestions ReconciliationSuggestion[]
+}
+
+model ReconciliationSuggestion {
+  id                 String   @id @default(cuid())
+  bankTransactionId  String
+  suggestedExpenseIds String[] // Array of expense IDs
+  confidence         Float
+  createdAt          DateTime @default(now())
+
+  // Relations
+  bankTransaction BankTransaction @relation(fields: [bankTransactionId], references: [id], onDelete: Cascade)
 }
