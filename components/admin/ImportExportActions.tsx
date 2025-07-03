@@ -149,7 +149,7 @@ export default function ImportExportActions() {
           </CardHeader>
           <CardContent className="flex flex-col gap-4 flex-1">
             <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-4">
                 <input
                   ref={fileInputRef}
                   type="file"
