@@ -117,6 +117,14 @@ export async function POST(request: NextRequest) {
 
     // Create order items
     for (const item of items) {
+      // Get product to get cost price
+      const product = await prisma.product.findUnique({
+        where: { id: item.productId },
+        include: { productCosts: { orderBy: { createdAt: 'desc' }, take: 1 } }
+      });
+
+      const costPrice = product?.productCosts[0]?.costPrice || new Decimal(0);
+
       await prisma.orderItem.create({
         data: {
           orderId: order.id,
@@ -124,7 +132,9 @@ export async function POST(request: NextRequest) {
           quantity: item.quantity,
           price: new Decimal(item.price),
           totalPrice: new Decimal(item.price * item.quantity),
+          costPrice: costPrice,
           productName: item.productName,
+          productSku: product?.sku || null,
         },
       });
 

@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
         status: ExpenseStatus.DRAFT,
         vendorName,
         notes,
-        user: { connect: { id: user.id } },
+        userId: user.id,
       },
       include: {
         category: true

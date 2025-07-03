@@ -192,7 +192,7 @@ async function generateDetailedCSV(start: Date, end: Date): Promise<string> {
       expenseDate: { gte: start, lte: end },
       status: { in: [ExpenseStatus.APPROVED, ExpenseStatus.PAID] }
     },
-    include: { category: true, requestedBy: true }
+    include: { category: true }
   });
 
   const data = [

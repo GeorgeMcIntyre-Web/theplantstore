@@ -94,7 +94,7 @@ export async function generateMetadata({
       product.shortDescription ||
       product.description ||
       `Buy ${product.name} online at The House Plant Store. Premium plants delivered across South Africa.`,
-    keywords: `${product.name}, ${product.category.name}, plants, South Africa, plant delivery`,
+    keywords: `${product.name}, ${product.category?.name ?? ""}, plants, South Africa, plant delivery`,
     openGraph: {
       title: product.name,
       description: product.shortDescription || product.description || "",
@@ -114,8 +114,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
     { name: "Home", href: "/" },
     { name: "Shop", href: "/collections" },
     {
-      name: product.category.name,
-      href: `/collections/${product.category.slug}`,
+      name: product.category?.name ?? "Category",
+      href: `/collections/${product.category?.slug ?? ""}`,
     },
     { name: product.name, href: `/products/${product.slug}` },
   ];
