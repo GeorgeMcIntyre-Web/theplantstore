@@ -1,7 +1,7 @@
 "use client";
 export const dynamic = "force-dynamic";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Mail, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
-export default function UnsubscribePage() {
+function UnsubscribeForm() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -183,5 +183,13 @@ export default function UnsubscribePage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function UnsubscribePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center p-4">Loading...</div>}>
+      <UnsubscribeForm />
+    </Suspense>
   );
 } 

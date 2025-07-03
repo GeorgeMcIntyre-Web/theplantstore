@@ -1,7 +1,7 @@
 "use client";
 export const dynamic = "force-dynamic";
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
@@ -23,7 +23,7 @@ interface POItem {
   price: number;
 }
 
-export default function NewPurchaseOrderPage() {
+function PurchaseOrderForm() {
   const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -167,5 +167,13 @@ export default function NewPurchaseOrderPage() {
         </Button>
       </form>
     </div>
+  );
+}
+
+export default function NewPurchaseOrderPage() {
+  return (
+    <Suspense fallback={<div className="container mx-auto px-4 py-8 max-w-2xl">Loading...</div>}>
+      <PurchaseOrderForm />
+    </Suspense>
   );
 } 
