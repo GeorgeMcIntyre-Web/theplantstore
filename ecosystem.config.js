@@ -8,7 +8,7 @@ module.exports = {
       instances: 1,
       autorestart: true,
       watch: false,
-      max_memory_restart: '1G',
+      max_memory_restart: '512M', // Optimized for cost savings
       env: {
         NODE_ENV: 'production',
         PORT: 3000
@@ -30,8 +30,8 @@ module.exports = {
       // Health check
       health_check_grace_period: 3000,
       
-      // Performance
-      node_args: '--max-old-space-size=1024',
+      // Performance - Optimized for cost savings
+      node_args: '--max-old-space-size=512',
       
       // Environment variables (these should be set in your system)
       // DATABASE_URL, NEXTAUTH_SECRET, NEXTAUTH_URL, etc.

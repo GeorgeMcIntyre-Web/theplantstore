@@ -6,9 +6,9 @@
 |---------|---------|------|--------|
 | **Google OAuth** | Customer authentication | Free | ✅ Ready |
 | **Paystack** | Payment processing | 3.5% + R2.00 | ✅ Ready |
-| **SendGrid** | Email delivery | $14.95/month | ✅ Ready |
+| **SendGrid** | Email delivery | R225/month | ✅ Ready |
 | **Cloudinary** | Image storage | Free tier | ✅ Ready |
-| **Azure AD** | Enterprise auth | $6/user/month | ⚠️ Optional |
+| **Azure AD** | Enterprise auth | R90/user/month | ⚠️ Optional |
 
 ---
 
@@ -40,7 +40,7 @@
 ### Alternatives
 - **Yoco**: 2.95% + R0.75 (South Africa)
 - **PayGate**: 3.5% + R1.50 (South Africa)
-- **Stripe**: 2.9% + 30¢ (International)
+- **Stripe**: 2.9% + R4.50 (International)
 
 ---
 
@@ -50,7 +50,7 @@
 - **URL**: https://sendgrid.com
 - **Setup**: Free account → API key → Domain verification
 - **Keys**: `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `SENDGRID_FROM_NAME`
-- **Pricing**: Free (100/day) → $14.95/month (50k emails)
+- **Pricing**: Free (100/day) → R225/month (50k emails)
 
 ### Email Templates Available
 - ✅ Order confirmations
@@ -60,9 +60,9 @@
 - ✅ Expense approvals
 
 ### Alternatives
-- **Mailgun**: $35/month (50k emails)
-- **Amazon SES**: $0.10 per 1k emails
-- **Resend**: $20/month (50k emails)
+- **Mailgun**: R525/month (50k emails)
+- **Amazon SES**: R1.50 per 1k emails
+- **Resend**: R300/month (50k emails)
 
 ---
 
@@ -82,9 +82,9 @@
 - ✅ Category images
 
 ### Alternatives
-- **AWS S3**: $0.023 per GB
-- **Google Cloud Storage**: $0.020 per GB
-- **Azure Blob**: $0.0184 per GB
+- **AWS S3**: R0.35 per GB
+- **Google Cloud Storage**: R0.30 per GB
+- **Azure Blob**: R0.28 per GB
 
 ---
 
@@ -143,16 +143,16 @@ curl http://localhost:3000/api/health
 
 | Service | Plan | Monthly Cost |
 |---------|------|--------------|
-| Google OAuth | Free | $0 |
-| Paystack | Pay-per-use | $50-200 |
-| SendGrid | Essentials | $14.95 |
-| Cloudinary | Free | $0 |
-| **Total** | | **$65-215** |
+| Google OAuth | Free | R0 |
+| Paystack | Pay-per-use | R750-3,000 |
+| SendGrid | Essentials | R225 |
+| Cloudinary | Free | R0 |
+| **Total** | | **R975-3,225** |
 
 ### Annual Costs
-- **Minimum**: ~$780/year
-- **Expected**: ~$1,500/year
-- **High Volume**: ~$2,500/year
+- **Minimum**: ~R11,700/year
+- **Expected**: ~R22,500/year
+- **High Volume**: ~R37,500/year
 
 ---
 

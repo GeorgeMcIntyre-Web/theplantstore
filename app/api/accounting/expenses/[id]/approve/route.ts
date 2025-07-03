@@ -88,12 +88,6 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       // Only create journal entry if approved
       if (status === 'APPROVED') {
         const journalEntry = await createExpenseJournalEntry(updatedExpense, tx);
-        
-        // Link the journal entry back to the expense
-        await tx.expense.update({
-          where: { id: expenseId },
-          data: { journalEntryId: journalEntry.id }
-        });
       }
 
       return updatedExpense;

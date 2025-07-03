@@ -90,11 +90,7 @@ export async function GET(request: NextRequest) {
       prisma.expense.findMany({
         where,
         include: {
-          category: true,
-          requestedBy: { select: { name: true, email: true } },
-          approvals: {
-            include: { approver: { select: { name: true, email: true } } }
-          }
+          category: true
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -163,19 +159,18 @@ export async function POST(request: NextRequest) {
     const newExpense = await prisma.expense.create({
       data: {
         description,
-        amount: totalAmount,
+        amount: Number(totalAmount),
         expenseDate: new Date(expenseDate),
         categoryId,
-        requestedById: user.id,
-        vatAmount: vatAmount.toDecimalPlaces(2),
-        vatRate: vatRateDecimal,
+        vatAmount: Number(vatAmount.toDecimalPlaces(2)),
+        vatRate: Number(vatRateDecimal),
         status: ExpenseStatus.DRAFT,
         vendorName,
         notes,
+        user: { connect: { id: user.id } },
       },
       include: {
-        category: true,
-        requestedBy: { select: { name: true, email: true } }
+        category: true
       }
     });
 

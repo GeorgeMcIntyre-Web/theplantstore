@@ -15,8 +15,8 @@ This guide covers all external service integrations required for The House Plant
 
 #### **Pricing**
 - **Free Tier**: Up to 50,000 users, 10 applications
-- **Premium P1**: $6/user/month - Advanced features
-- **Premium P2**: $9/user/month - Identity protection
+- **Premium P1**: R90/user/month - Advanced features
+- **Premium P2**: R135/user/month - Identity protection
 
 #### **Setup Process**
 
@@ -67,8 +67,8 @@ export const authOptions: NextAuthOptions = {
 ```
 
 #### **Alternatives**
-- **Auth0**: $23/month for 7,500 users
-- **Okta**: $2/user/month
+- **Auth0**: R345/month for 7,500 users
+- **Okta**: R30/user/month
 - **Cognito**: AWS service, pay-per-use
 
 ---
@@ -82,7 +82,7 @@ export const authOptions: NextAuthOptions = {
 
 #### **Pricing**
 - **Free**: Up to 100 users
-- **Google Workspace**: $6/user/month
+- **Google Workspace**: R90/user/month
 
 #### **Setup Process**
 
@@ -203,8 +203,8 @@ export const createTransaction = async (amount: number, email: string) => {
 ```
 
 #### **Alternatives**
-- **Stripe**: 2.9% + 30¢ per transaction
-- **PayPal**: 2.9% + fixed fee
+- **Stripe**: 2.9% + R4.50 per transaction
+- **PayPal**: 2.9% + R4.50 fixed fee
 - **Yoco**: 2.95% + R0.75 (South Africa)
 - **PayGate**: 3.5% + R1.50 (South Africa)
 
@@ -221,8 +221,8 @@ The current email setup uses basic SMTP. For production, we need a reliable emai
 
 **Pricing**
 - **Free**: 100 emails/day
-- **Essentials**: $14.95/month for 50k emails
-- **Pro**: $89.95/month for 100k emails
+- **Essentials**: R225/month for 50k emails
+- **Pro**: R1,350/month for 100k emails
 
 **Setup Process**
 
@@ -283,10 +283,10 @@ export const sendEmail = async (to: string, subject: string, html: string) => {
 ```
 
 #### **Alternatives**
-- **Mailgun**: $35/month for 50k emails
-- **Amazon SES**: $0.10 per 1k emails
-- **Postmark**: $15/month for 10k emails
-- **Resend**: $20/month for 50k emails
+- **Mailgun**: R525/month for 50k emails
+- **Amazon SES**: R1.50 per 1k emails
+- **Postmark**: R225/month for 10k emails
+- **Resend**: R300/month for 50k emails
 
 ---
 
@@ -298,8 +298,8 @@ export const sendEmail = async (to: string, subject: string, html: string) => {
 
 **Pricing**
 - **Free**: 25 GB storage, 25 GB bandwidth
-- **Plus**: $89/month for 225 GB storage
-- **Advanced**: $224/month for 675 GB storage
+- **Plus**: R1,335/month for 225 GB storage
+- **Advanced**: R3,360/month for 675 GB storage
 
 **Setup Process**
 
@@ -343,9 +343,9 @@ export const uploadImage = async (file: Buffer, folder: string) => {
 ```
 
 #### **Alternatives**
-- **AWS S3**: $0.023 per GB
-- **Google Cloud Storage**: $0.020 per GB
-- **Azure Blob Storage**: $0.0184 per GB
+- **AWS S3**: R0.35 per GB
+- **Google Cloud Storage**: R0.30 per GB
+- **Azure Blob Storage**: R0.28 per GB
 
 ---
 
@@ -425,16 +425,16 @@ YOCO_PUBLIC_KEY="pk_test_..."
 
 | Service | Plan | Monthly Cost |
 |---------|------|--------------|
-| Google OAuth | Free | $0 |
-| Paystack | Pay-per-use | ~$50-200 |
-| SendGrid | Essentials | $14.95 |
-| Cloudinary | Free | $0 |
-| **Total** | | **~$65-215** |
+| Google OAuth | Free | R0 |
+| Paystack | Pay-per-use | ~R750-3,000 |
+| SendGrid | Essentials | R225/month |
+| Cloudinary | Free | R0 |
+| **Total** | | **~R975-3,225** |
 
 ### Annual Costs
-- **Minimum**: ~$780/year
-- **Expected**: ~$1,500/year
-- **High Volume**: ~$2,500/year
+- **Minimum**: ~R11,700/year
+- **Expected**: ~R22,500/year
+- **High Volume**: ~R37,500/year
 
 ---
 

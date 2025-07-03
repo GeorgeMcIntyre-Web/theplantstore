@@ -373,7 +373,7 @@ const AuditLogsPage = () => {
             <div className="text-center py-8">
               <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
               <p className="text-red-600 mb-4">{error}</p>
-              <Button onClick={fetchAuditLogs} variant="outline">
+              <Button onClick={() => fetchAuditLogs()} variant="outline">
                 Try Again
               </Button>
             </div>

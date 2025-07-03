@@ -39,9 +39,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       where: { id: params.id },
       data: updateData,
       include: {
-        category: true,
-        requestedBy: { select: { name: true, email: true } },
-        approvals: { include: { approver: { select: { name: true, email: true } } } }
+        category: true
       }
     });
     return NextResponse.json(updated);
