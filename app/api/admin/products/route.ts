@@ -25,6 +25,13 @@ export async function GET() {
           name: true,
         },
       },
+      images: {
+        select: {
+          url: true,
+          isPrimary: true,
+        },
+        orderBy: { sortOrder: "asc" },
+      },
       // Add more fields as needed for the admin table
     },
     orderBy: { name: "asc" },
