@@ -19,6 +19,7 @@ export default function SuppliersPage() {
   const [editing, setEditing] = useState<Supplier | null>(null);
   const [form, setForm] = useState<Partial<Supplier>>({});
   const [saving, setSaving] = useState(false);
+  const [selected, setSelected] = useState<string[]>([]);
 
   useEffect(() => {
     fetch("/api/admin/suppliers")
@@ -62,6 +63,26 @@ export default function SuppliersPage() {
     setSaving(false);
   };
 
+  const handleSelect = (id: string, checked: boolean) => {
+    setSelected((prev) => checked ? [...prev, id] : prev.filter((x) => x !== id));
+  };
+  const handleSelectAll = (checked: boolean) => {
+    setSelected(checked ? suppliers.map((s) => s.id) : []);
+  };
+
+  const handleBatchDelete = async () => {
+    if (!confirm(`Are you sure you want to delete ${selected.length} supplier(s)?`)) return;
+    for (const supplierId of selected) {
+      await fetch(`/api/admin/suppliers`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: supplierId }),
+      });
+    }
+    setSuppliers(suppliers.filter(s => !selected.includes(s.id)));
+    setSelected([]);
+  };
+
   return (
     <div className="w-full h-full flex flex-col p-4">
       <div className="flex items-center gap-2 mb-4">
@@ -80,6 +101,12 @@ export default function SuppliersPage() {
         </button>
         <h1 className="text-2xl font-bold ml-2">Suppliers</h1>
       </div>
+      {selected.length > 0 && (
+        <div className="mb-4 flex gap-4 items-center bg-accent p-3 rounded">
+          <span>{selected.length} selected</span>
+          <Button size="sm" variant="destructive" onClick={handleBatchDelete}>Delete Selected</Button>
+        </div>
+      )}
       {loading ? (
         <div>Loading...</div>
       ) : (
@@ -87,6 +114,13 @@ export default function SuppliersPage() {
           <table className="min-w-full border mb-8">
             <thead>
               <tr className="bg-gray-100">
+                <th className="p-2">
+                  <input
+                    type="checkbox"
+                    checked={selected.length === suppliers.length && suppliers.length > 0}
+                    onChange={e => handleSelectAll(e.target.checked)}
+                  />
+                </th>
                 <th className="p-2 text-left">Name</th>
                 <th className="p-2 text-left">Email</th>
                 <th className="p-2 text-left">Phone</th>
@@ -95,18 +129,28 @@ export default function SuppliersPage() {
               </tr>
             </thead>
             <tbody>
-              {suppliers.map((s) => (
-                <tr key={s.id} className="border-b">
-                  <td className="p-2">{s.name}</td>
-                  <td className="p-2">{s.email || "-"}</td>
-                  <td className="p-2">{s.phone || "-"}</td>
-                  <td className="p-2">{s.address || "-"}</td>
-                  <td className="p-2 space-x-2">
-                    <Button size="sm" onClick={() => handleEdit(s)}>Edit</Button>
-                    <Button size="sm" variant="destructive" onClick={() => handleDelete(s.id)}>Delete</Button>
-                  </td>
-                </tr>
-              ))}
+              {suppliers.map((s) => {
+                const isSelected = selected.includes(s.id);
+                return (
+                  <tr key={s.id} className="border-b">
+                    <td className="p-2">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={e => handleSelect(s.id, e.target.checked)}
+                      />
+                    </td>
+                    <td className="p-2">{s.name}</td>
+                    <td className="p-2">{s.email || "-"}</td>
+                    <td className="p-2">{s.phone || "-"}</td>
+                    <td className="p-2">{s.address || "-"}</td>
+                    <td className="p-2 space-x-2">
+                      <Button size="sm" onClick={() => handleEdit(s)}>Edit</Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleDelete(s.id)}>Delete</Button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           <form className="space-y-4" onSubmit={handleSave}>

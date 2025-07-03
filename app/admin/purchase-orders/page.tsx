@@ -219,9 +219,11 @@ export default function PurchaseOrdersPage() {
           Back
         </button>
         <h1 className="text-2xl font-bold ml-2">Purchase Orders</h1>
-        <Button className="ml-auto" variant="outline" onClick={generateAutoDraftPOs}>
-          Generate Purchase Orders for Low Stock
-        </Button>
+        {pos.length > 0 && (
+          <Button className="ml-auto" variant="outline" onClick={generateAutoDraftPOs}>
+            Generate Purchase Orders for Low Stock
+          </Button>
+        )}
       </div>
       {selected.length > 0 && (
         <div className="mb-4 flex gap-4 items-center bg-accent p-3 rounded">

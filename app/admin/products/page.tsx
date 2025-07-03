@@ -43,6 +43,7 @@ export default function AdminProductsPage() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categories, setCategories] = useState<{ id: string, name: string }[]>([]);
+  const [selected, setSelected] = useState<string[]>([]);
 
   useEffect(() => {
     fetchProducts();
@@ -99,6 +100,24 @@ export default function AdminProductsPage() {
     } catch (error) {
       console.error("Failed to delete product:", error);
     }
+  };
+
+  const handleSelect = (id: string, checked: boolean) => {
+    setSelected((prev) => checked ? [...prev, id] : prev.filter((x) => x !== id));
+  };
+  const handleSelectAll = (checked: boolean) => {
+    setSelected(checked ? filteredProducts.map((p) => p.id) : []);
+  };
+
+  const handleBatchDelete = async () => {
+    if (!confirm(`Are you sure you want to delete ${selected.length} product(s)?`)) return;
+    for (const productId of selected) {
+      await fetch(`/api/admin/products/${productId}`, {
+        method: "DELETE",
+      });
+    }
+    setProducts(products.filter(p => !selected.includes(p.id)));
+    setSelected([]);
   };
 
   if (loading) {
@@ -184,6 +203,14 @@ export default function AdminProductsPage() {
         </CardContent>
       </Card>
 
+      {/* Batch Actions */}
+      {selected.length > 0 && (
+        <div className="mb-4 flex gap-4 items-center bg-accent p-3 rounded">
+          <span>{selected.length} selected</span>
+          <Button size="sm" variant="destructive" onClick={handleBatchDelete}>Delete Selected</Button>
+        </div>
+      )}
+
       {/* Products Table */}
       <Card>
         <CardHeader>
@@ -198,6 +225,13 @@ export default function AdminProductsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>
+                    <input
+                      type="checkbox"
+                      checked={selected.length === filteredProducts.length && filteredProducts.length > 0}
+                      onChange={e => handleSelectAll(e.target.checked)}
+                    />
+                  </TableHead>
                   <TableHead>Image</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Category</TableHead>
@@ -214,9 +248,16 @@ export default function AdminProductsPage() {
                   const cacheBustedUrl = primaryImage && primaryImage.url && primaryImage.url.startsWith('/products/')
                     ? `${primaryImage.url}?v=${Date.now()}`
                     : primaryImage?.url;
-                  
+                  const isSelected = selected.includes(product.id);
                   return (
                     <TableRow key={product.id}>
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={e => handleSelect(product.id, e.target.checked)}
+                        />
+                      </TableCell>
                       <TableCell>
                         {primaryImage ? (
                           <div className="relative w-12 h-12 rounded-md overflow-hidden">

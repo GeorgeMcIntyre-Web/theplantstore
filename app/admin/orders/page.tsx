@@ -41,6 +41,7 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selected, setSelected] = useState<string[]>([]);
 
   useEffect(() => {
     fetchOrders();
@@ -101,6 +102,24 @@ export default function OrdersPage() {
     
     return matchesSearch && matchesStatus;
   });
+
+  const handleSelect = (id: string, checked: boolean) => {
+    setSelected((prev) => checked ? [...prev, id] : prev.filter((x) => x !== id));
+  };
+  const handleSelectAll = (checked: boolean) => {
+    setSelected(checked ? filteredOrders.map((o) => o.id) : []);
+  };
+
+  const handleBatchDelete = async () => {
+    if (!confirm(`Are you sure you want to delete ${selected.length} order(s)?`)) return;
+    for (const orderId of selected) {
+      await fetch(`/api/admin/orders/${orderId}`, {
+        method: "DELETE",
+      });
+    }
+    setOrders(orders.filter(o => !selected.includes(o.id)));
+    setSelected([]);
+  };
 
   if (loading) {
     return (
@@ -170,6 +189,13 @@ export default function OrdersPage() {
         </CardContent>
       </Card>
 
+      {selected.length > 0 && (
+        <div className="mb-4 flex gap-4 items-center bg-accent p-3 rounded">
+          <span>{selected.length} selected</span>
+          <Button size="sm" variant="destructive" onClick={handleBatchDelete}>Delete Selected</Button>
+        </div>
+      )}
+
       {/* Orders Table */}
       <Card>
         <CardHeader>
@@ -184,6 +210,13 @@ export default function OrdersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>
+                    <input
+                      type="checkbox"
+                      checked={selected.length === filteredOrders.length && filteredOrders.length > 0}
+                      onChange={e => handleSelectAll(e.target.checked)}
+                    />
+                  </TableHead>
                   <TableHead>Order #</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Status</TableHead>
@@ -194,29 +227,39 @@ export default function OrdersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredOrders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-medium">{order.orderNumber}</TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{order.user.name}</div>
-                        <div className="text-sm text-muted-foreground">{order.user.email}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(order.status)}</TableCell>
-                    <TableCell>{getPaymentStatusBadge(order.paymentStatus)}</TableCell>
-                    <TableCell className="font-medium">{formatPrice(order.totalAmount)}</TableCell>
-                    <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell className="text-right">
-                      <Link href={`/admin/orders/${order.id}`}>
-                        <Button size="sm" variant="outline">
-                          <Eye className="h-4 w-4 mr-2" />
-                          View
-                        </Button>
-                      </Link>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {filteredOrders.map((order) => {
+                  const isSelected = selected.includes(order.id);
+                  return (
+                    <TableRow key={order.id}>
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={e => handleSelect(order.id, e.target.checked)}
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium">{order.orderNumber}</TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{order.user.name}</div>
+                          <div className="text-sm text-muted-foreground">{order.user.email}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(order.status)}</TableCell>
+                      <TableCell>{getPaymentStatusBadge(order.paymentStatus)}</TableCell>
+                      <TableCell className="font-medium">{formatPrice(order.totalAmount)}</TableCell>
+                      <TableCell>{new Date(order.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-right">
+                        <Link href={`/admin/orders/${order.id}`}>
+                          <Button size="sm" variant="outline">
+                            <Eye className="h-4 w-4 mr-2" />
+                            View
+                          </Button>
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}

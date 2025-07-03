@@ -110,6 +110,25 @@ async function main() {
     },
   });
 
+  // Create suppliers
+  console.log("🚚 Creating suppliers...");
+  const supplier1 = await prisma.supplier.create({
+    data: {
+      name: "GreenGrowers Ltd.",
+      email: "contact@greengrowers.com",
+      phone: "+27 21 123 4567",
+      address: "45 Plant Lane, Cape Town",
+    },
+  });
+  const supplier2 = await prisma.supplier.create({
+    data: {
+      name: "Urban Jungle Supplies",
+      email: "info@urbanjungle.co.za",
+      phone: "+27 11 987 6543",
+      address: "99 Leafy Ave, Johannesburg",
+    },
+  });
+
   // Create indoor plants
   console.log("🏠 Creating indoor plants...");
   const indoorPlants = [
@@ -122,7 +141,8 @@ async function main() {
       price: 299.99,
       compareAtPrice: 349.99,
       sku: "MON-001",
-      stockQuantity: 25,
+      stockQuantity: 5, // Set low stock for testing
+      lowStockThreshold: 10,
       careLevel: CareLevel.MODERATE,
       lightRequirement: LightRequirement.MEDIUM,
       wateringFrequency: WateringFrequency.WEEKLY,
@@ -133,6 +153,7 @@ async function main() {
         "Water when top soil feels dry. Provide bright, indirect light. Wipe leaves regularly to keep them glossy.",
       isFeatured: true,
       sortOrder: 1,
+      supplierId: supplier1.id,
     },
     {
       name: "Snake Plant (Sansevieria)",
@@ -143,7 +164,8 @@ async function main() {
       price: 149.99,
       compareAtPrice: 179.99,
       sku: "SNK-001",
-      stockQuantity: 40,
+      stockQuantity: 8, // Set low stock for testing
+      lowStockThreshold: 15,
       careLevel: CareLevel.EASY,
       lightRequirement: LightRequirement.LOW,
       wateringFrequency: WateringFrequency.BI_WEEKLY,
@@ -154,6 +176,7 @@ async function main() {
         "Water sparingly. Tolerates low light and neglect. Perfect for busy plant parents.",
       isFeatured: true,
       sortOrder: 2,
+      supplierId: supplier2.id,
     },
     {
       name: "Peace Lily",
