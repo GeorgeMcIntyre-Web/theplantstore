@@ -87,7 +87,67 @@ sudo apt install certbot python3-certbot-nginx
 sudo certbot --nginx -d your-domain.com -d www.your-domain.com
 ```
 
-## Step 5: Deployment Pipeline
+## Step 5: Database Seeding (CRITICAL)
+
+**⚠️ IMPORTANT**: Database seeding is fundamental for the application to work properly. This must be done after migrations but before the first user access.
+
+### Seeding Process
+
+```bash
+# 1. Run the main seed script (creates users, categories, products, suppliers)
+npx tsx --require dotenv/config scripts/seed.ts
+
+# 2. Run the accounting seed script (creates expense categories, sample expenses)
+npx tsx --require dotenv/config scripts/seed-accounting.ts
+
+# 3. Verify seeding was successful
+npx prisma studio  # Optional: visual database browser
+```
+
+### What Gets Seeded
+
+#### Main Seed (`scripts/seed.ts`)
+- **Admin Users**: Super Admin, Plant Manager, Order Manager
+- **Sample Customer**: Test customer account
+- **Categories**: Indoor Plants, Outdoor Plants, Succulents, Accessories
+- **Suppliers**: GreenGrowers Ltd., Urban Jungle Supplies
+- **Products**: 15+ sample plants with images, descriptions, pricing
+- **Shipping Rates**: Provincial shipping rates for South Africa
+
+#### Accounting Seed (`scripts/seed-accounting.ts`)
+- **Expense Categories**: 10 standard business categories
+- **Sample Expenses**: 5 realistic expense records
+- **Audit Logs**: Complete audit trail for expenses
+- **Approval Workflows**: Sample approval records
+
+### Seeding Verification
+
+After seeding, verify these exist in your database:
+- [ ] At least 1 Super Admin user
+- [ ] 4 product categories
+- [ ] 2 suppliers
+- [ ] 15+ products with images
+- [ ] 10 expense categories
+- [ ] Sample expense records
+
+### Troubleshooting Seeding
+
+```bash
+# If seeding fails, check:
+# 1. Database connection
+npx prisma db push
+
+# 2. Environment variables
+echo $DATABASE_URL
+
+# 3. Run with verbose logging
+DEBUG=* npx tsx --require dotenv/config scripts/seed.ts
+
+# 4. Check for specific errors
+npx prisma studio
+```
+
+## Step 6: Deployment Pipeline
 
 Your deployment pipeline should:
 
@@ -95,10 +155,11 @@ Your deployment pipeline should:
 2. **Install dependencies**: `npm install`
 3. **Generate Prisma client**: `npx prisma generate`
 4. **Run database migrations**: `npx prisma db push`
-5. **Build the application**: `npm run build`
-6. **Start the application**: `npm start`
+5. **Seed the database**: Run both seed scripts
+6. **Build the application**: `npm run build`
+7. **Start the application**: `npm start`
 
-## Step 6: Nginx Configuration
+## Step 7: Nginx Configuration
 
 Create an Nginx configuration file:
 
@@ -130,7 +191,7 @@ server {
 }
 ```
 
-## Step 7: Process Manager (PM2)
+## Step 8: Process Manager (PM2)
 
 Install and configure PM2 to keep your app running:
 
@@ -148,7 +209,7 @@ pm2 save
 pm2 startup
 ```
 
-## Step 8: Testing Your Deployment
+## Step 9: Testing Your Deployment
 
 1. **Check the application**: Visit `https://your-domain.com`
 2. **Test database connection**: Verify admin panel loads
@@ -216,12 +277,56 @@ npx prisma generate
 - [ ] Optimize images
 - [ ] Set up monitoring (Uptime Robot, etc.)
 
+## DigitalOcean App Platform Deployment (Recommended)
+
+### Option A: DigitalOcean App Platform (Easiest)
+
+1. **Create App Platform App**:
+   - Go to DigitalOcean App Platform
+   - Connect your GitHub repository
+   - Select the `main` branch
+   - Choose Node.js environment
+
+2. **Configure Environment Variables**:
+   ```bash
+   DATABASE_URL=your-postgresql-connection-string
+   NEXTAUTH_SECRET=your-secure-secret
+   NEXTAUTH_URL=https://your-app.ondigitalocean.app
+   NODE_ENV=production
+   ```
+
+3. **Database Setup**:
+   - Create a PostgreSQL database in App Platform
+   - Use the provided connection string
+   - The database will be automatically managed
+
+4. **Build Commands**:
+   ```bash
+   Build Command: npm run build
+   Run Command: npm start
+   ```
+
+5. **Post-Deploy Script** (Add to package.json):
+   ```json
+   {
+     "scripts": {
+       "postdeploy": "npx prisma generate && npx prisma db push && npx tsx --require dotenv/config scripts/seed.ts && npx tsx --require dotenv/config scripts/seed-accounting.ts"
+     }
+   }
+   ```
+
+### Option B: DigitalOcean Droplet (More Control)
+
+Follow the steps above for manual deployment on a droplet.
+
 ## Next Steps After Deployment
 
-1. **Seed the database** with initial data
-2. **Set up monitoring** and alerting
+1. **Verify Database Seeding**: Check that all seed data is present
+2. **Set up monitoring** and alerting (DigitalOcean Monitoring)
 3. **Configure backups** for database and files
 4. **Set up CI/CD** for automated deployments
 5. **Configure analytics** (Google Analytics, etc.)
 6. **Test all features** thoroughly
-7. **Set up email notifications** for orders and users 
+7. **Set up email notifications** for orders and users
+8. **Configure SSL** (automatic with App Platform)
+9. **Set up domain** (custom domain configuration) 

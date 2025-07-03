@@ -6,3 +6,14 @@
 .DS_Store
 dist/
 build/
+
+# Internal development secrets
+.dev-secrets
+.dev-methodology
+internal-notes.md
+development-secrets.md
+
+# Temporary files
+*.tmp
+*.temp
+.cache/

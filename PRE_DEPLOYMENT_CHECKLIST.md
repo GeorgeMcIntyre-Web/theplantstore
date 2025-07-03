@@ -12,6 +12,9 @@
 - [ ] PostgreSQL database is created and accessible
 - [ ] Database user has proper permissions
 - [ ] Connection string is tested and working
+- [ ] Database migrations can be run successfully
+- [ ] Seed scripts are tested locally
+- [ ] Sample data can be created without errors
 
 ### ✅ Domain Configuration
 - [ ] Update `next.config.js` with your actual domain
@@ -68,10 +71,23 @@ chmod +x scripts/deploy.sh
    - Install dependencies
    - Generate Prisma client
    - Run database migrations
+   - **Seed the database** (CRITICAL - creates initial data)
    - Build the application
    - Restart the application
 
 2. The application will be available at your domain
+
+## Database Seeding Verification
+
+After deployment, verify these exist:
+- [ ] Super Admin user: `admin@thehouseplantstore.co.za`
+- [ ] Plant Manager user: `plants@thehouseplantstore.co.za`
+- [ ] Order Manager user: `orders@thehouseplantstore.co.za`
+- [ ] Sample customer: `john@example.com`
+- [ ] Product categories (Indoor, Outdoor, Succulents, Accessories)
+- [ ] Sample products with images
+- [ ] Expense categories (Marketing, Office Supplies, etc.)
+- [ ] Sample expense records
 
 ## Testing After Deployment
 
