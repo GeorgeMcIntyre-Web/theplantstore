@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Supplier {
   id: string;
@@ -42,6 +43,7 @@ export default function PurchaseOrdersPage() {
   const [showBatchSupplier, setShowBatchSupplier] = useState(false);
   const router = useRouter();
   const adminId = session?.user?.id;
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!adminId) return;
@@ -150,6 +152,31 @@ export default function PurchaseOrdersPage() {
       .then((data) => setPOs(data));
   };
 
+  const generateAutoDraftPOs = async () => {
+    if (!adminId) return;
+    try {
+      const res = await fetch("/api/admin/purchase-orders/auto-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast({ title: `Created ${data.created} auto-draft purchase order(s).` });
+        // Refetch
+        setLoading(true);
+        fetch(`/api/admin/purchase-orders?adminId=${adminId}`)
+          .then((res) => res.json())
+          .then((data) => setPOs(data))
+          .finally(() => setLoading(false));
+      } else {
+        toast({ title: "Error", description: data.error || "Failed to generate purchase orders.", variant: "destructive" });
+      }
+    } catch (err) {
+      toast({ title: "Error", description: "Failed to generate purchase orders.", variant: "destructive" });
+    }
+  };
+
   return (
     <div className="w-full h-full flex flex-col p-4">
       <div className="flex items-center gap-2 mb-4">
@@ -167,6 +194,9 @@ export default function PurchaseOrdersPage() {
           Back
         </button>
         <h1 className="text-2xl font-bold ml-2">Purchase Orders</h1>
+        <Button className="ml-auto" variant="outline" onClick={generateAutoDraftPOs}>
+          Generate Purchase Orders for Low Stock
+        </Button>
       </div>
       {selected.length > 0 && (
         <div className="mb-4 flex gap-4 items-center bg-accent p-3 rounded">
@@ -210,7 +240,17 @@ export default function PurchaseOrdersPage() {
       {loading ? (
         <div>Loading...</div>
       ) : pos.length === 0 ? (
-        <div>No purchase orders found.</div>
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="text-lg mb-4">No purchase orders found.</div>
+          <div className="mb-4">
+            <Button onClick={generateAutoDraftPOs}>
+              Generate Purchase Orders for Low Stock
+            </Button>
+          </div>
+          <Link href="/admin/purchase-orders/new">
+            <Button variant="secondary">Create Purchase Order</Button>
+          </Link>
+        </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full border">
