@@ -13,6 +13,14 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 Starting database seeding...");
 
+  console.log("🧹 Cleaning up old data...");
+  await prisma.productImage.deleteMany({});
+  await prisma.product.deleteMany({});
+  await prisma.supplier.deleteMany({});
+  await prisma.shippingRate.deleteMany({});
+  await prisma.orderItem.deleteMany({});
+  await prisma.order.deleteMany({});
+
   // Create categories
   console.log("📁 Creating categories...");
   const indoorCategory = await prisma.category.upsert({
@@ -101,8 +109,10 @@ async function main() {
   });
 
   // Create sample customer
-  const customer = await prisma.user.create({
-    data: {
+  const customer = await prisma.user.upsert({
+    where: { email: "john@example.com" },
+    update: {},
+    create: {
       name: "John Smith",
       email: "john@example.com",
       password: await bcrypt.hash("customer123", 12),
@@ -112,16 +122,20 @@ async function main() {
 
   // Create suppliers
   console.log("🚚 Creating suppliers...");
-  const supplier1 = await prisma.supplier.create({
-    data: {
+  const supplier1 = await prisma.supplier.upsert({
+    where: { name: "GreenGrowers Ltd." },
+    update: {},
+    create: {
       name: "GreenGrowers Ltd.",
       email: "contact@greengrowers.com",
       phone: "+27 21 123 4567",
       address: "45 Plant Lane, Cape Town",
     },
   });
-  const supplier2 = await prisma.supplier.create({
-    data: {
+  const supplier2 = await prisma.supplier.upsert({
+    where: { name: "Urban Jungle Supplies" },
+    update: {},
+    create: {
       name: "Urban Jungle Supplies",
       email: "info@urbanjungle.co.za",
       phone: "+27 11 987 6543",
@@ -242,8 +256,10 @@ async function main() {
   ];
 
   for (const plant of indoorPlants) {
-    const createdPlant = await prisma.product.create({
-      data: {
+    const createdPlant = await prisma.product.upsert({
+      where: { slug: plant.slug },
+      update: {},
+      create: {
         ...plant,
         categoryId: indoorCategory.id,
       },
@@ -457,8 +473,10 @@ async function main() {
   ];
 
   for (const provinceData of provinces) {
-    await prisma.shippingRate.create({
-      data: {
+    await prisma.shippingRate.upsert({
+      where: { province: provinceData.province as any },
+      update: {},
+      create: {
         province: provinceData.province as any,
         rate: provinceData.rate,
         freeThreshold: 500.0,
@@ -509,8 +527,10 @@ async function main() {
   console.log("📦 Creating sample order...");
   const firstProduct = products[0];
   if (firstProduct) {
-    const order = await prisma.order.create({
-      data: {
+    const order = await prisma.order.upsert({
+      where: { orderNumber: "ORD-2024-001" },
+      update: {},
+      create: {
         orderNumber: "ORD-2024-001",
         userId: customer.id,
         status: "DELIVERED",
@@ -534,6 +554,7 @@ async function main() {
         totalPrice: Number(firstProduct.price),
         productName: firstProduct.name,
         productSku: firstProduct.sku,
+        costPrice: Number(firstProduct.price),
       },
     });
   }

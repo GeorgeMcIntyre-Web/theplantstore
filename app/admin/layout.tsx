@@ -44,6 +44,15 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <span><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 7.165 6 9.388 6 12v2.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg></span>
             Notifications
           </Link>
+          {/* Accounting Section - RBAC */}
+          {(userRole === 'FINANCIAL_MANAGER' || userRole === 'ACCOUNTANT' || userRole === 'SUPER_ADMIN') && (
+            <>
+              <div className="mt-4 mb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Accounting</div>
+              <Link href="/admin/accounting" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-accent transition text-base font-medium"><LineChart className="w-5 h-5" /> Dashboard</Link>
+              <Link href="/admin/accounting/expenses" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-accent transition text-base font-medium"><Box className="w-5 h-5" /> Expenses</Link>
+              <Link href="/admin/accounting/reports" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-accent transition text-base font-medium"><Layers className="w-5 h-5" /> Reports</Link>
+            </>
+          )}
         </nav>
       </aside>
       {/* Main Content */}
