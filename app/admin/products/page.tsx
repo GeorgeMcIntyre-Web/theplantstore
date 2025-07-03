@@ -211,6 +211,9 @@ export default function AdminProductsPage() {
                 {filteredProducts.map((product) => {
                   const images = Array.isArray(product.images) ? product.images : [];
                   const primaryImage = images.find(img => img.isPrimary) || images[0];
+                  const cacheBustedUrl = primaryImage && primaryImage.url && primaryImage.url.startsWith('/products/')
+                    ? `${primaryImage.url}?v=${Date.now()}`
+                    : primaryImage?.url;
                   
                   return (
                     <TableRow key={product.id}>
@@ -218,7 +221,7 @@ export default function AdminProductsPage() {
                         {primaryImage ? (
                           <div className="relative w-12 h-12 rounded-md overflow-hidden">
                             <Image
-                              src={primaryImage.url}
+                              src={cacheBustedUrl}
                               alt={product.name}
                               fill
                               className="object-cover"

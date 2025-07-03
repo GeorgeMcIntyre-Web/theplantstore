@@ -164,7 +164,7 @@ export default function ProductImportPage() {
       const added = new Set();
       previewData.forEach((row) => {
         if (row.imageFile && !added.has(row.imageFile.name)) {
-          formData.append(`image-${row.imageFile.name}`, row.imageFile);
+          formData.append('images', row.imageFile);
           added.add(row.imageFile.name);
         }
       });

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import Papa from "papaparse";
 import { Decimal } from "@prisma/client/runtime/library";
+import path from "path";
+import fs from "fs/promises";
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,6 +22,24 @@ export async function POST(req: NextRequest) {
     let created = 0, updated = 0, failed = 0;
     const errors: string[] = [];
     const updateNotes: string[] = [];
+    const imageWarnings: string[] = [];
+    const imageFiles = form.getAll("images") as File[]; // Expect multiple files under 'images'
+    // Build a map of filename -> file object (case-sensitive)
+    const fileMap = new Map<string, File>();
+    for (const f of imageFiles as File[]) {
+      fileMap.set(f.name, f);
+    }
+    // Get a list of all files in public/products for case-sensitive matching
+    const productsDir = path.join(process.cwd(), "public", "products");
+    const existingProductFiles = new Set<string>(
+      (await fs.readdir(productsDir)).map(f => f)
+    );
+    const imageVerificationMap: Record<string, string[]> = {};
+    // Track used uploaded images by index
+    let usedImageIndexes = new Set<number>();
+    // Log all uploaded images received
+    console.log(`Received ${imageFiles.length} uploaded images:`);
+    imageFiles.forEach((f, idx) => console.log(`  [${idx}] ${f.name}`));
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       if (!row.name || !row.slug || !row.price || !row.category) {
@@ -63,15 +83,63 @@ export async function POST(req: NextRequest) {
           isFeatured: row.isFeatured === "true" ? true : false,
           isActive: row.isActive === "true" ? true : false,
         };
-        // Handle imageUrls (comma-separated)
+        // Handle image association
         let images = [];
+        let imageFilenames: string[] = [];
         if (row.imageUrls) {
-          images = row.imageUrls.split(",").map((url: string, idx: number) => ({
-            url: url.trim(),
-            altText: `${row.name} - Image ${idx + 1}`,
-            sortOrder: idx,
-            isPrimary: idx === 0,
-          }));
+          imageFilenames = row.imageUrls.split(",").map((s: string) => (s as string).trim()).filter(Boolean);
+        } else if (row.imageFile) {
+          imageFilenames = [row.imageFile.trim()];
+        }
+        // Always use uploaded image at the same index if available
+        let url = "";
+        if (imageFiles[i]) {
+          const file = imageFiles[i];
+          const destPath = path.join(process.cwd(), "public", "products", file.name);
+          let overwrite = false;
+          try {
+            await fs.access(destPath);
+            overwrite = true;
+          } catch {}
+          const arrayBuffer = await file.arrayBuffer();
+          const buffer = new Uint8Array(arrayBuffer);
+          await fs.writeFile(destPath, buffer);
+          url = `/products/${file.name}`;
+          imageWarnings.push(`Row ${i + 2}: Used uploaded image '${file.name}' for product '${row.name}' (forced userproof order)`);
+          console.log(`Product '${row.name}' (row ${i + 2}): Used uploaded image '${file.name}' - ${overwrite ? 'overwrote existing file' : 'new file'}`);
+        } else {
+          // Fallbacks if no uploaded image for this row
+          const filename = imageFilenames[0] || "";
+          if (filename && fileMap.get(filename)) {
+            const file = fileMap.get(filename)!;
+            const arrayBuffer = await file.arrayBuffer();
+            const buffer = new Uint8Array(arrayBuffer);
+            const destPath = path.join(process.cwd(), "public", "products", filename);
+            await fs.writeFile(destPath, buffer);
+            url = `/products/${filename}`;
+            imageWarnings.push(`Row ${i + 2}: Used uploaded image '${filename}' for product '${row.name}' (filename fallback)`);
+            console.log(`Product '${row.name}' (row ${i + 2}): Used uploaded image '${filename}' (filename fallback)`);
+          } else if (filename && filename.startsWith("http")) {
+            url = filename;
+            imageWarnings.push(`Row ${i + 2}: Used remote URL for product '${row.name}' (no uploaded image)`);
+            console.log(`Product '${row.name}' (row ${i + 2}): Used remote URL '${filename}'`);
+          } else if (filename && existingProductFiles.has(filename)) {
+            url = `/products/${filename}`;
+            imageWarnings.push(`Row ${i + 2}: Used existing file '${filename}' for product '${row.name}' (no uploaded image)`);
+            console.log(`Product '${row.name}' (row ${i + 2}): Used existing file '${filename}'`);
+          } else {
+            imageWarnings.push(`Row ${i + 2}: No image found for product '${row.name}'`);
+            url = "";
+            console.log(`Product '${row.name}' (row ${i + 2}): No image found`);
+          }
+        }
+        if (url) {
+          images.push({
+            url,
+            altText: `${row.name} - Image 1`,
+            sortOrder: 0,
+            isPrimary: true,
+          });
         }
         let where = undefined;
         if (row.id) where = { id: row.id };
@@ -92,15 +160,23 @@ export async function POST(req: NextRequest) {
             });
             updateNotes.push(`Updated images for product: ${row.name} (${row.slug})`);
           }
+          // Verification: fetch and log associated images
+          const verifiedImages = await prisma.productImage.findMany({ where: { productId: existing.id } });
+          updateNotes.push(`Verified images for product: ${row.name} (${row.slug}): ${verifiedImages.map(img => img.url).join(', ')}`);
+          imageVerificationMap[row.slug] = verifiedImages.map(img => img.url);
           updated++;
         } else {
           console.log(`Creating new product: ${row.name}, slug: ${row.slug}`);
-          await prisma.product.create({
+          const createdProduct = await prisma.product.create({
             data: {
               ...data,
               images: images.length > 0 ? { create: images } : undefined,
             },
           });
+          // Verification: fetch and log associated images
+          const verifiedImages = await prisma.productImage.findMany({ where: { productId: createdProduct.id } });
+          updateNotes.push(`Verified images for product: ${row.name} (${row.slug}): ${verifiedImages.map(img => img.url).join(', ')}`);
+          imageVerificationMap[row.slug] = verifiedImages.map(img => img.url);
           created++;
         }
       } catch (e: any) {
@@ -108,7 +184,7 @@ export async function POST(req: NextRequest) {
         errors.push(`Row ${i + 2}: ${e.message}`);
       }
     }
-    return NextResponse.json({ created, updated, failed, errors, updateNotes });
+    return NextResponse.json({ created, updated, failed, errors, updateNotes, imageWarnings, imageVerificationMap });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
