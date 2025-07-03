@@ -22,6 +22,7 @@ interface PurchaseOrder {
   orderNumber: string;
   status: string;
   supplier: Supplier;
+  supplierId?: string;
   items: POItem[];
   total: string;
   createdAt: string;
@@ -34,6 +35,9 @@ export default function PurchaseOrderDetailPage() {
   const [po, setPO] = useState<PurchaseOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [approving, setApproving] = useState(false);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [selectedSupplier, setSelectedSupplier] = useState<string>("");
+  const [savingSupplier, setSavingSupplier] = useState(false);
   const adminId = session?.user?.id;
   const id = params?.id as string;
 
@@ -45,9 +49,17 @@ export default function PurchaseOrderDetailPage() {
       .then((data) => {
         const found = data.find((p: PurchaseOrder) => p.id === id);
         setPO(found || null);
+        setSelectedSupplier(found?.supplier?.id || "");
       })
       .finally(() => setLoading(false));
   }, [id, adminId]);
+
+  useEffect(() => {
+    // Fetch all suppliers
+    fetch("/api/admin/suppliers")
+      .then((res) => res.json())
+      .then((data) => setSuppliers(data));
+  }, []);
 
   const approvePO = async () => {
     setApproving(true);
@@ -58,6 +70,26 @@ export default function PurchaseOrderDetailPage() {
     });
     setApproving(false);
     router.push("/admin/purchase-orders");
+  };
+
+  const updateSupplier = async () => {
+    if (!selectedSupplier || !po) return;
+    setSavingSupplier(true);
+    await fetch(`/api/admin/purchase-orders/${po.id}/supplier`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ supplierId: selectedSupplier }),
+    });
+    setSavingSupplier(false);
+    // Refetch PO
+    setLoading(true);
+    fetch(`/api/admin/purchase-orders?adminId=${adminId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        const found = data.find((p: PurchaseOrder) => p.id === id);
+        setPO(found || null);
+      })
+      .finally(() => setLoading(false));
   };
 
   if (loading) return <div className="p-8">Loading...</div>;
@@ -85,7 +117,29 @@ export default function PurchaseOrderDetailPage() {
         <h1 className="text-2xl font-bold mb-4">Purchase Order {po.orderNumber}</h1>
         <div className="mb-4">
           <div><b>Status:</b> {po.status}</div>
-          <div><b>Supplier:</b> {po.supplier?.name || "-"}</div>
+          <div className="flex items-center gap-2">
+            <b>Supplier:</b>
+            {po.status === "DRAFT" ? (
+              <>
+                <select
+                  className="border p-1 rounded"
+                  value={selectedSupplier}
+                  onChange={e => setSelectedSupplier(e.target.value)}
+                  disabled={savingSupplier}
+                >
+                  <option value="">Select supplier...</option>
+                  {suppliers.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+                <Button size="sm" onClick={updateSupplier} disabled={savingSupplier || !selectedSupplier}>
+                  {savingSupplier ? "Saving..." : "Save Supplier"}
+                </Button>
+              </>
+            ) : (
+              <span>{po.supplier?.name || "-"}</span>
+            )}
+          </div>
           <div><b>Total:</b> R{Number(po.total).toFixed(2)}</div>
           <div><b>Created:</b> {new Date(po.createdAt).toLocaleString()}</div>
         </div>

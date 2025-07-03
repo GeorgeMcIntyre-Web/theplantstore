@@ -39,10 +39,11 @@ export async function POST(req: NextRequest) {
     );
     if (existing) continue;
     // Create draft PO
+    const quantity = Math.max(1, product.lowStockThreshold - product.stockQuantity);
     const items = [{
       productId: product.id,
       name: product.name,
-      quantity: Math.max(1, product.lowStockThreshold - product.stockQuantity + 1),
+      quantity,
       price: product.price,
     }];
     const total = new Decimal(product.price).mul(items[0].quantity);

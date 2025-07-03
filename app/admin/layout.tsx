@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ReactNode } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { LineChart, Box, ShoppingCart, Users, Upload, Mail, Package, Layers } from "lucide-react";
+import { LineChart, Box, ShoppingCart, Users, Upload, Mail, Package, Layers, Truck } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const { data: session } = useSession();
@@ -36,6 +36,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           <Link href="/admin/categories" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-accent transition text-base font-medium"><Layers className="w-5 h-5" /> Categories</Link>
           <Link href="/admin/orders" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-accent transition text-base font-medium"><ShoppingCart className="w-5 h-5" /> Orders</Link>
           <Link href="/admin/purchase-orders" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-accent transition text-base font-medium"><Package className="w-5 h-5" /> Purchase Orders</Link>
+          <Link href="/admin/suppliers" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-accent transition text-base font-medium"><Truck className="w-5 h-5" /> Suppliers</Link>
           <Link href="/admin/customers" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-accent transition text-base font-medium"><Users className="w-5 h-5" /> Customers</Link>
           <Link href="/admin/email" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-accent transition text-base font-medium"><Mail className="w-5 h-5" /> Email</Link>
           <Link href="/admin/importexport" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-accent transition text-base font-medium"><Upload className="w-5 h-5" /> Import/Export</Link>
