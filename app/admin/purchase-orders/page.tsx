@@ -177,6 +177,31 @@ export default function PurchaseOrdersPage() {
     }
   };
 
+  const deleteSelectedDrafts = async () => {
+    if (!adminId || selected.length === 0) return;
+    try {
+      const res = await fetch("/api/admin/purchase-orders/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminId, poIds: selected }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast({ title: `Deleted ${data.deleted} draft purchase order(s).` });
+        setSelected([]);
+        setLoading(true);
+        fetch(`/api/admin/purchase-orders?adminId=${adminId}`)
+          .then((res) => res.json())
+          .then((data) => setPOs(data))
+          .finally(() => setLoading(false));
+      } else {
+        toast({ title: "Error", description: data.error || "Failed to delete purchase orders.", variant: "destructive" });
+      }
+    } catch (err) {
+      toast({ title: "Error", description: "Failed to delete purchase orders.", variant: "destructive" });
+    }
+  };
+
   return (
     <div className="w-full h-full flex flex-col p-4">
       <div className="flex items-center gap-2 mb-4">
@@ -204,6 +229,7 @@ export default function PurchaseOrdersPage() {
           <Button size="sm" onClick={() => setShowBatchQuantity(true)}>Batch Update Quantity</Button>
           <Button size="sm" onClick={() => setShowBatchSupplier(true)}>Batch Update Supplier</Button>
           <Button size="sm" onClick={handleBatchApprove}>Batch Approve</Button>
+          <Button size="sm" variant="destructive" onClick={deleteSelectedDrafts}>Delete Selected</Button>
         </div>
       )}
       {showBatchQuantity && (
