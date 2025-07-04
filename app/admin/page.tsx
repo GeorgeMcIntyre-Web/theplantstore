@@ -95,13 +95,12 @@ export default function AdminDashboard() {
     fetch("/api/products")
       .then((res) => res.json())
       .then((data) => {
-        if (data) {
-          setLowStockProducts(
-            data.filter((p: Product) =>
-              typeof p.stockQuantity === 'number' && typeof p.effectiveLowStockThreshold === 'number' && p.stockQuantity <= p.effectiveLowStockThreshold
-            )
-          );
-        }
+        let products = Array.isArray(data) ? data : Array.isArray(data.products) ? data.products : [];
+        setLowStockProducts(
+          products.filter((p: Product) =>
+            typeof p.stockQuantity === 'number' && typeof p.effectiveLowStockThreshold === 'number' && p.stockQuantity <= p.effectiveLowStockThreshold
+          )
+        );
       });
   }, [dateRange, retryCount]);
 
