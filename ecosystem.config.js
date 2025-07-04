@@ -4,7 +4,7 @@ module.exports = {
       name: 'plant-store',
       script: 'npm',
       args: 'start',
-      cwd: '/path/to/your/app', // Update this path
+      cwd: '/var/www/plant-store',
       instances: 1,
       autorestart: true,
       watch: false,
@@ -41,13 +41,13 @@ module.exports = {
   deploy: {
     production: {
       user: 'root', // or your server user
-      host: 'your-server-ip',
-      ref: 'origin/master',
-      repo: 'your-git-repo-url',
+      host: process.env.SERVER_HOST || 'your-server-ip',
+      ref: 'origin/main',
+      repo: process.env.GITHUB_REPOSITORY || 'your-git-repo-url',
       path: '/var/www/plant-store',
       'pre-deploy-local': '',
-      'post-deploy': 'npm install && npx prisma generate && npx prisma db push && npm run build && pm2 reload ecosystem.config.js --env production',
-      'pre-setup': ''
+      'post-deploy': 'npm ci --production=false && npx prisma generate && npx prisma db push && npm run build && pm2 reload ecosystem.config.js --env production',
+      'pre-setup': 'mkdir -p /var/www/plant-store/logs'
     }
   }
 }; 
