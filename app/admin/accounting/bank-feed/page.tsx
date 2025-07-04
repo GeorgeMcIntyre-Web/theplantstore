@@ -22,7 +22,9 @@ const BankAccountsPage = () => {
     fetch('/api/accounting/bank-feed')
       .then(res => res.json())
       .then(data => {
-        setAccounts(data);
+        // Defensive: handle both array and object response
+        let accountsArray = Array.isArray(data) ? data : Array.isArray(data.accounts) ? data.accounts : [];
+        setAccounts(accountsArray);
         setLoading(false);
       })
       .catch(() => {
