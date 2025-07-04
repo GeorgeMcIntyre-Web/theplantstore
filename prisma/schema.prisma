@@ -1,4 +1,3 @@
-// The House Plant Store Database Schema
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "debian-openssl-3.0.x"]
@@ -9,22 +8,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// NextAuth.js required models
 model Account {
   id                String  @id @default(cuid())
   userId            String
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -45,65 +42,31 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// User Management
-enum UserRole {
-  CUSTOMER
-  SUPER_ADMIN
-  PLANT_MANAGER
-  ORDER_MANAGER
-  FINANCIAL_MANAGER // Can approve expenses, has full accounting access
-  ACCOUNTANT // Can manage expenses, run reports, cannot approve
-  VIEWER
-}
-
 model User {
-  id                   String    @id @default(cuid())
-  name                 String?
-  email                String    @unique
-  emailVerified        DateTime?
-  image                String?
-  password             String?
-  role                 UserRole  @default(CUSTOMER)
-  newsletterSubscribed Boolean   @default(false)
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
-  isActive             Boolean   @default(true)
-
-  // Relations
+  id                    String            @id @default(cuid())
+  name                  String?
+  email                 String            @unique
+  emailVerified         DateTime?
+  image                 String?
+  password              String?
+  role                  UserRole          @default(CUSTOMER)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  newsletterSubscribed  Boolean           @default(false)
+  isActive              Boolean           @default(true)
   accounts              Account[]
-  sessions              Session[]
-  orders                Order[]
-  reviews               Review[]
-  cartItems             CartItem[]
   addresses             Address[]
+  cartItems             CartItem[]
+  requestedExpenses     Expense[]         @relation("ExpenseRequester")
+  expenseApprovals      ExpenseApproval[]
+  auditLogs             ExpenseAuditLog[]
+  notificationsAssigned Notification[]    @relation("NotificationAssignee")
   notifications         Notification[]
-  purchaseOrders        PurchaseOrder[] @relation("AdminPurchaseOrders")
-  notificationsAssigned Notification[]  @relation("NotificationAssignee")
-
-  // Accounting Relations
-  expenses         Expense[]
-  requestedExpenses Expense[] @relation("ExpenseRequester")
-  auditLogs        ExpenseAuditLog[]
-  shrinkageRecords Shrinkage[]
-
-  // New relations
-  approvalSteps     ApprovalStep[]
-  expenseApprovals  ExpenseApproval[]
-  alerts            Alert[]
-  createdCategories ExpenseCategory[] @relation("UserCreatedCategories")
-}
-
-// Address Management for SA Provinces
-enum Province {
-  GAUTENG
-  WESTERN_CAPE
-  KWAZULU_NATAL
-  EASTERN_CAPE
-  LIMPOPO
-  MPUMALANGA
-  NORTH_WEST
-  NORTHERN_CAPE
-  FREE_STATE
+  orders                Order[]
+  purchaseOrders        PurchaseOrder[]   @relation("AdminPurchaseOrders")
+  reviews               Review[]
+  sessions              Session[]
+  shrinkageRecords      Shrinkage[]
 }
 
 model Address {
@@ -122,13 +85,375 @@ model Address {
   isDefault    Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-
-  // Relations
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orders Order[]
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders       Order[]
 }
 
-// Product Management
+model Category {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  slug        String     @unique
+  description String?
+  image       String?
+  parentId    String?
+  isActive    Boolean    @default(true)
+  sortOrder   Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  products    Product[]
+}
+
+model Product {
+  id                String             @id @default(cuid())
+  name              String
+  slug              String             @unique
+  description       String?
+  shortDescription  String?
+  price             Decimal            @db.Decimal(10, 2)
+  compareAtPrice    Decimal?           @db.Decimal(10, 2)
+  sku               String?            @unique
+  stockQuantity     Int                @default(0)
+  lowStockThreshold Int                @default(10)
+  weight            Decimal?           @db.Decimal(8, 2)
+  dimensions        String?
+  isActive          Boolean            @default(true)
+  isFeatured        Boolean            @default(false)
+  sortOrder         Int                @default(0)
+  careLevel         CareLevel?
+  lightRequirement  LightRequirement?
+  wateringFrequency WateringFrequency?
+  isPetSafe         Boolean?
+  plantSize         PlantSize?
+  growthRate        GrowthRate?
+  careInstructions  String?
+  metaTitle         String?
+  metaDescription   String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  categoryId        String?
+  supplierId        String?
+  cartItems         CartItem[]
+  orderItems        OrderItem[]
+  category          Category?          @relation(fields: [categoryId], references: [id])
+  supplier          Supplier?          @relation(fields: [supplierId], references: [id])
+  productCosts      ProductCost[]
+  images            ProductImage[]
+  reviews           Review[]
+  shrinkageRecords  Shrinkage[]
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  productId String
+  url       String
+  altText   String?
+  sortOrder Int     @default(0)
+  isPrimary Boolean @default(false)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}
+
+model Order {
+  id                String         @id @default(cuid())
+  orderNumber       String         @unique
+  userId            String
+  status            OrderStatus    @default(PENDING)
+  paymentMethod     PaymentMethod?
+  paymentStatus     PaymentStatus  @default(PENDING)
+  shippingMethod    ShippingMethod @default(STANDARD)
+  subtotal          Decimal        @db.Decimal(10, 2)
+  shippingCost      Decimal        @default(0) @db.Decimal(10, 2)
+  taxAmount         Decimal        @default(0) @db.Decimal(10, 2)
+  discountAmount    Decimal        @default(0) @db.Decimal(10, 2)
+  totalAmount       Decimal        @db.Decimal(10, 2)
+  shippingAddressId String?
+  trackingNumber    String?
+  shippedAt         DateTime?
+  deliveredAt       DateTime?
+  paymentReference  String?
+  paidAt            DateTime?
+  customerNotes     String?
+  adminNotes        String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  vatAmount         Decimal        @default(0) @db.Decimal(10, 2)
+  vatRate           Decimal        @default(15) @db.Decimal(5, 2)
+  shippingAddress   Address?       @relation(fields: [shippingAddressId], references: [id])
+  user              User           @relation(fields: [userId], references: [id])
+  items             OrderItem[]
+}
+
+model OrderItem {
+  id          String  @id @default(cuid())
+  orderId     String
+  productId   String
+  quantity    Int
+  price       Decimal @db.Decimal(10, 2)
+  totalPrice  Decimal @db.Decimal(10, 2)
+  productName String
+  productSku  String?
+  costPrice   Decimal @db.Decimal(10, 2)
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  userId     String
+  productId  String
+  rating     Int
+  title      String?
+  comment    String?
+  isVerified Boolean  @default(false)
+  isApproved Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}
+
+model Notification {
+  id         String   @id @default(cuid())
+  userId     String
+  type       String
+  message    String
+  link       String?
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  assignedTo String?
+  status     String   @default("pending")
+  assignee   User?    @relation("NotificationAssignee", fields: [assignedTo], references: [id])
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Supplier {
+  id             String          @id @default(cuid())
+  name           String          @unique
+  email          String?
+  phone          String?
+  address        String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  products       Product[]
+  purchaseOrders PurchaseOrder[]
+}
+
+model PurchaseOrder {
+  id          String   @id @default(cuid())
+  orderNumber String   @unique
+  status      String
+  adminId     String
+  supplierId  String
+  items       Json
+  total       Decimal  @db.Decimal(10, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  admin       User     @relation("AdminPurchaseOrders", fields: [adminId], references: [id])
+  supplier    Supplier @relation(fields: [supplierId], references: [id])
+}
+
+model ShippingRate {
+  id            String   @id @default(cuid())
+  province      Province @unique
+  rate          Decimal  @db.Decimal(8, 2)
+  freeThreshold Decimal? @db.Decimal(10, 2)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model ContactForm {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  subject   String
+  message   String
+  status    String   @default("NEW")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Shrinkage {
+  id               String   @id @default(cuid())
+  productId        String
+  quantity         Int
+  reason           String
+  notes            String?
+  recordedById     String
+  costAtTimeOfLoss Decimal  @db.Decimal(10, 2)
+  recordedAt       DateTime @default(now())
+  journalEntryId   String?
+  product          Product  @relation(fields: [productId], references: [id])
+  recordedBy       User     @relation(fields: [recordedById], references: [id])
+}
+
+model ExpenseCategory {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  expenses    Expense[]
+}
+
+model Expense {
+  id             String            @id @default(cuid())
+  description    String
+  amount         Decimal           @db.Decimal(10, 2)
+  expenseDate    DateTime
+  categoryId     String
+  vendorName     String?
+  receiptUrl     String?
+  notes          String?
+  vatAmount      Decimal?          @db.Decimal(10, 2)
+  vatRate        Decimal?          @default(15) @db.Decimal(5, 2)
+  status         ExpenseStatus     @default(DRAFT)
+  requestedById  String
+  journalEntryId String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  category       ExpenseCategory   @relation(fields: [categoryId], references: [id])
+  requester      User              @relation("ExpenseRequester", fields: [requestedById], references: [id])
+  approval       ExpenseApproval[]
+  auditLogs      ExpenseAuditLog[]
+}
+
+model ExpenseApproval {
+  id         String   @id @default(cuid())
+  expenseId  String
+  approverId String
+  status     String
+  comments   String?
+  approvedAt DateTime @default(now())
+  approver   User     @relation(fields: [approverId], references: [id])
+  expense    Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+}
+
+model ProductCost {
+  id            String   @id @default(cuid())
+  productId     String
+  costPrice     Decimal  @db.Decimal(10, 2)
+  effectiveDate DateTime
+  supplierName  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model FinancialYear {
+  id        String   @id @default(cuid())
+  yearName  String   @unique
+  startDate DateTime
+  endDate   DateTime
+  isClosed  Boolean  @default(false)
+}
+
+model TaxPeriod {
+  id        String     @id @default(cuid())
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  isClosed  Boolean    @default(false)
+  vatReturn VatReturn?
+}
+
+model VatReturn {
+  id            String    @id @default(cuid())
+  taxPeriodId   String    @unique
+  totalSales    Decimal   @db.Decimal(12, 2)
+  outputVat     Decimal   @db.Decimal(10, 2)
+  totalExpenses Decimal   @db.Decimal(12, 2)
+  inputVat      Decimal   @db.Decimal(10, 2)
+  netVatPayable Decimal   @db.Decimal(10, 2)
+  status        String    @default("DRAFT")
+  submittedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  taxPeriod     TaxPeriod @relation(fields: [taxPeriodId], references: [id])
+}
+
+model ChartOfAccounts {
+  id           String        @id @default(cuid())
+  accountCode  String        @unique
+  accountName  String
+  accountType  String
+  description  String?
+  isActive     Boolean       @default(true)
+  journalLines JournalLine[]
+}
+
+model JournalEntry {
+  id            String        @id @default(cuid())
+  entryDate     DateTime
+  description   String
+  referenceId   String
+  referenceType String
+  isPosted      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  journalLines  JournalLine[]
+}
+
+model JournalLine {
+  id             String          @id @default(cuid())
+  journalEntryId String
+  accountId      String
+  debitAmount    Decimal         @default(0) @db.Decimal(12, 2)
+  creditAmount   Decimal         @default(0) @db.Decimal(12, 2)
+  account        ChartOfAccounts @relation(fields: [accountId], references: [id])
+  journalEntry   JournalEntry    @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+}
+
+model ExpenseAuditLog {
+  id        String   @id @default(cuid())
+  expenseId String
+  userId    String
+  action    String
+  before    Json?
+  after     Json?
+  createdAt DateTime @default(now())
+  expense   Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+enum UserRole {
+  CUSTOMER
+  SUPER_ADMIN
+  PLANT_MANAGER
+  ORDER_MANAGER
+  VIEWER
+  FINANCIAL_MANAGER
+  ACCOUNTANT
+}
+
+enum Province {
+  GAUTENG
+  WESTERN_CAPE
+  KWAZULU_NATAL
+  EASTERN_CAPE
+  LIMPOPO
+  MPUMALANGA
+  NORTH_WEST
+  NORTHERN_CAPE
+  FREE_STATE
+}
+
 enum CareLevel {
   EASY
   MODERATE
@@ -160,101 +485,6 @@ enum GrowthRate {
   FAST
 }
 
-model Category {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  slug        String   @unique
-  description String?
-  image       String?
-  parentId    String?
-  isActive    Boolean  @default(true)
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children Category[] @relation("CategoryHierarchy")
-  products Product[]
-}
-
-model Product {
-  id                String   @id @default(cuid())
-  name              String
-  slug              String   @unique
-  description       String?
-  shortDescription  String?
-  price             Decimal  @db.Decimal(10, 2)
-  compareAtPrice    Decimal? @db.Decimal(10, 2)
-  sku               String?  @unique
-  stockQuantity     Int      @default(0)
-  lowStockThreshold Int      @default(10)
-  weight            Decimal? @db.Decimal(8, 2)
-  dimensions        String?
-  isActive          Boolean  @default(true)
-  isFeatured        Boolean  @default(false)
-  sortOrder         Int      @default(0)
-
-  // Plant-specific fields
-  careLevel         CareLevel?
-  lightRequirement  LightRequirement?
-  wateringFrequency WateringFrequency?
-  isPetSafe         Boolean?
-  plantSize         PlantSize?
-  growthRate        GrowthRate?
-  careInstructions  String?
-
-  // SEO
-  metaTitle       String?
-  metaDescription String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  category   Category?      @relation(fields: [categoryId], references: [id])
-  categoryId String?
-  supplier   Supplier?      @relation(fields: [supplierId], references: [id])
-  supplierId String?
-  images     ProductImage[]
-  cartItems  CartItem[]
-  orderItems OrderItem[]
-  reviews    Review[]
-
-  // Accounting Relations
-  productCosts     ProductCost[]
-  shrinkageRecords Shrinkage[]
-}
-
-model ProductImage {
-  id        String  @id @default(cuid())
-  productId String
-  url       String
-  altText   String?
-  sortOrder Int     @default(0)
-  isPrimary Boolean @default(false)
-
-  // Relations
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-}
-
-// Shopping Cart
-model CartItem {
-  id        String   @id @default(cuid())
-  userId    String
-  productId String
-  quantity  Int      @default(1)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, productId])
-}
-
-// Order Management
 enum OrderStatus {
   PENDING
   CONFIRMED
@@ -283,502 +513,10 @@ enum ShippingMethod {
   COLLECTION_JHB
 }
 
-model Order {
-  id             String         @id @default(cuid())
-  orderNumber    String         @unique
-  userId         String
-  status         OrderStatus    @default(PENDING)
-  paymentMethod  PaymentMethod?
-  paymentStatus  PaymentStatus  @default(PENDING)
-  shippingMethod ShippingMethod @default(STANDARD)
-
-  // Totals
-  subtotal       Decimal @db.Decimal(10, 2)
-  shippingCost   Decimal @default(0) @db.Decimal(10, 2)
-  taxAmount      Decimal @default(0) @db.Decimal(10, 2)
-  discountAmount Decimal @default(0) @db.Decimal(10, 2)
-  totalAmount    Decimal @db.Decimal(10, 2)
-
-  // VAT Details
-  vatAmount Decimal @default(0) @db.Decimal(10, 2)
-  vatRate   Decimal @default(15) @db.Decimal(5, 2)
-
-  // Shipping Information
-  shippingAddressId String?
-  trackingNumber    String?
-  shippedAt         DateTime?
-  deliveredAt       DateTime?
-
-  // Payment Information
-  paymentReference String?
-  paidAt           DateTime?
-
-  // Notes
-  customerNotes String?
-  adminNotes    String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  user            User        @relation(fields: [userId], references: [id])
-  shippingAddress Address?    @relation(fields: [shippingAddressId], references: [id])
-  items           OrderItem[]
-}
-
-model OrderItem {
-  id         String  @id @default(cuid())
-  orderId    String
-  productId  String
-  quantity   Int
-  price      Decimal @db.Decimal(10, 2)
-  totalPrice Decimal @db.Decimal(10, 2)
-
-  // CRITICAL ADDITION: Snapshot of cost at time of sale for accurate COGS
-  costPrice Decimal @db.Decimal(10, 2)
-
-  // Snapshot of product details at time of order
-  productName String
-  productSku  String?
-
-  // Relations
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-}
-
-// Reviews System
-model Review {
-  id         String   @id @default(cuid())
-  userId     String
-  productId  String
-  rating     Int // 1-5 stars
-  title      String?
-  comment    String?
-  isVerified Boolean  @default(false)
-  isApproved Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  // Relations
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, productId])
-}
-
-model Notification {
-  id        String   @id @default(cuid())
-  userId    String
-  type      String // e.g., "order", "po-draft", "low-stock"
-  message   String
-  link      String?
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  assignedTo String?
-  assignee   User?   @relation("NotificationAssignee", fields: [assignedTo], references: [id])
-  status     String  @default("pending") // e.g., 'pending', 'in_progress', 'completed'
-}
-
-model Supplier {
-  id       String  @id @default(cuid())
-  name     String  @unique
-  email    String?
-  phone    String?
-  address  String?
-  isActive Boolean @default(true)
-
-  // Relations
-  expenses       Expense[]
-  products       Product[]
-  purchaseOrders PurchaseOrder[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model PurchaseOrder {
-  id          String   @id @default(cuid())
-  orderNumber String   @unique
-  status      String // e.g., 'DRAFT', 'APPROVED', 'SENT'
-  adminId     String
-  supplierId  String
-  items       Json // [{ productId, name, quantity, price }]
-  total       Decimal  @db.Decimal(10, 2)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  admin    User     @relation("AdminPurchaseOrders", fields: [adminId], references: [id])
-  supplier Supplier @relation(fields: [supplierId], references: [id])
-}
-
-// Shipping Rates by Province
-model ShippingRate {
-  id            String   @id @default(cuid())
-  province      Province @unique
-  rate          Decimal  @db.Decimal(8, 2)
-  freeThreshold Decimal? @db.Decimal(10, 2) // Free shipping threshold
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-}
-
-// Contact Forms
-model ContactForm {
-  id        String   @id @default(cuid())
-  name      String
-  email     String
-  subject   String
-  message   String
-  status    String   @default("NEW") // NEW, REPLIED, CLOSED
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// ===================================
-// NEW & FINALIZED ACCOUNTING TABLES
-// ===================================
-
-// For plant mortality and loss
-model Shrinkage {
-  id               String   @id @default(cuid())
-  productId        String
-  product          Product  @relation(fields: [productId], references: [id])
-  quantity         Int
-  reason           String // e.g., "Pest Damage", "Died in transit", "Natural Loss"
-  notes            String?
-  recordedById     String
-  recordedBy       User     @relation(fields: [recordedById], references: [id])
-  costAtTimeOfLoss Decimal  @db.Decimal(10, 2)
-  recordedAt       DateTime @default(now())
-  journalEntryId   String? // Link to the financial transaction
-}
-
-// Expense Categories
-model ExpenseCategory {
-  id          String    @id @default(cuid())
-  name        String    @unique
-  description String?
-  isActive    Boolean   @default(true)
-  expenses    Expense[]
-  createdBy   String?
-  creator     User?     @relation("UserCreatedCategories", fields: [createdBy], references: [id])
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-}
-
-// Expense Management with Approval Workflow
 enum ExpenseStatus {
   DRAFT
   PENDING_APPROVAL
   APPROVED
   REJECTED
   PAID
-}
-
-model Expense {
-  id          String          @id @default(cuid())
-  description String
-  amount      Float
-  vatAmount   Float           @default(0)
-  vatRate     Float           @default(15) // Default 15% VAT rate
-  categoryId  String
-  category    ExpenseCategory @relation(fields: [categoryId], references: [id])
-  supplierId  String?
-  supplier    Supplier?       @relation(fields: [supplierId], references: [id])
-  vendorName  String? // Alternative to supplier for external vendors
-  notes       String? // Additional notes about the expense
-  expenseDate DateTime @default(now()) // Date when expense occurred
-  status      ExpenseStatus   @default(DRAFT)
-  requestedById String? // Who requested this expense
-  requester   User?           @relation("ExpenseRequester", fields: [requestedById], references: [id])
-  userId      String
-  user        User            @relation(fields: [userId], references: [id])
-
-  // Approval relation (one-to-one)
-  approval ExpenseApproval?
-
-  // Bank reconciliation
-  reconciled     Boolean  @default(false)
-  reconciledAt   DateTime?
-  bankTransaction BankTransaction?
-
-  // Audit
-  auditLogs ExpenseAuditLog[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([categoryId])
-  @@index([supplierId])
-  @@index([userId])
-  @@index([expenseDate])
-  @@index([status])
-  @@index([createdAt])
-}
-
-model ExpenseApproval {
-  id        String  @id @default(cuid())
-  expenseId String  @unique // Make this unique for one-to-one relation
-  expense   Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
-
-  // Approval workflow
-  currentStep Int            @default(1)
-  maxSteps    Int            @default(1)
-  status      ApprovalStatus @default(PENDING)
-
-  // Approval chain
-  steps ApprovalStep[]
-
-  // Approver information
-  approverId String?
-  approver   User?    @relation(fields: [approverId], references: [id])
-  comments   String? // Approval comments
-
-  // Metadata
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([expenseId])
-  @@index([status])
-  @@index([approverId])
-}
-
-model ApprovalStep {
-  id         String          @id @default(cuid())
-  approvalId String
-  approval   ExpenseApproval @relation(fields: [approvalId], references: [id], onDelete: Cascade)
-
-  // Step details
-  stepNumber   Int
-  approverRole UserRole
-  approverId   String?
-  approver     User?    @relation(fields: [approverId], references: [id])
-
-  // Approval action
-  status     ApprovalStepStatus @default(PENDING)
-  approvedAt DateTime?
-  rejectedAt DateTime?
-  comments   String?
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([approvalId, stepNumber])
-  @@index([approverId])
-  @@index([status])
-}
-
-model Alert {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Alert details
-  type     AlertType
-  title    String
-  message  String
-  severity AlertSeverity @default(INFO)
-
-  // Alert state
-  isRead      Boolean @default(false)
-  isDismissed Boolean @default(false)
-
-  // Metadata
-  metadata  Json? // Store additional data like expenseId, amount, etc.
-  expiresAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId, isRead])
-  @@index([type, severity])
-  @@index([expiresAt])
-}
-
-// Enums
-enum ApprovalStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  CANCELLED
-}
-
-enum ApprovalStepStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  SKIPPED
-}
-
-enum AlertType {
-  LOW_CASH_FLOW
-  OVERDUE_INVOICE
-  BUDGET_OVERRUN
-  UNUSUAL_TRANSACTION
-  TAX_DEADLINE
-  APPROVAL_REQUIRED
-  EXPENSE_THRESHOLD
-  VAT_LIABILITY
-}
-
-enum AlertSeverity {
-  INFO
-  WARNING
-  ERROR
-  CRITICAL
-}
-
-// Product Costing (for COGS)
-model ProductCost {
-  id            String   @id @default(cuid())
-  productId     String
-  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  costPrice     Decimal  @db.Decimal(10, 2)
-  effectiveDate DateTime
-  supplierName  String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-}
-
-// Tax & Financial Periods
-model FinancialYear {
-  id        String   @id @default(cuid())
-  yearName  String   @unique // "2025/2026"
-  startDate DateTime // e.g., 2025-03-01T00:00:00.000Z
-  endDate   DateTime // e.g., 2026-02-28T23:59:59.999Z
-  isClosed  Boolean  @default(false)
-}
-
-model TaxPeriod {
-  id        String     @id @default(cuid())
-  name      String // "VAT Period: Mar/Apr 2025"
-  startDate DateTime
-  endDate   DateTime
-  vatReturn VatReturn?
-  isClosed  Boolean    @default(false)
-}
-
-model VatReturn {
-  id            String    @id @default(cuid())
-  taxPeriodId   String    @unique
-  taxPeriod     TaxPeriod @relation(fields: [taxPeriodId], references: [id])
-  totalSales    Decimal   @db.Decimal(12, 2)
-  outputVat     Decimal   @db.Decimal(10, 2)
-  totalExpenses Decimal   @db.Decimal(12, 2)
-  inputVat      Decimal   @db.Decimal(10, 2)
-  netVatPayable Decimal   @db.Decimal(10, 2)
-  status        String    @default("DRAFT") // DRAFT, SUBMITTED
-  submittedAt   DateTime?
-  createdAt     DateTime  @default(now())
-}
-
-// Double-Entry Bookkeeping System
-model ChartOfAccounts {
-  id           String        @id @default(cuid())
-  accountCode  String        @unique // e.g., "1001", "4000", "5010"
-  accountName  String // e.g., "Cash", "Sales Revenue", "Marketing Expense"
-  accountType  String // ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE
-  description  String?
-  isActive     Boolean       @default(true)
-  journalLines JournalLine[]
-}
-
-model JournalEntry {
-  id            String        @id @default(cuid())
-  entryDate     DateTime
-  description   String // "Sale for Order #1234", "Marketing Expense #567"
-  referenceId   String // The ID of the Order, Expense, or Shrinkage record
-  referenceType String // "ORDER", "EXPENSE", "SHRINKAGE"
-  isPosted      Boolean       @default(true)
-  journalLines  JournalLine[]
-  createdAt     DateTime      @default(now())
-}
-
-model JournalLine {
-  id             String          @id @default(cuid())
-  journalEntryId String
-  journalEntry   JournalEntry    @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
-  accountId      String
-  account        ChartOfAccounts @relation(fields: [accountId], references: [id])
-  debitAmount    Decimal         @default(0) @db.Decimal(12, 2)
-  creditAmount   Decimal         @default(0) @db.Decimal(12, 2)
-}
-
-model ExpenseAuditLog {
-  id        String   @id @default(cuid())
-  expenseId String
-  expense   Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  action    String // CREATE, UPDATE, DELETE, APPROVE, REJECT
-  before    Json?
-  after     Json?
-  createdAt DateTime @default(now())
-}
-
-// Bank Feed Integration
-model BankAccount {
-  id           String   @id @default(cuid())
-  accountNumber String  @unique
-  bankName     String
-  apiKey       String?
-  apiSecret    String?
-  webhookUrl   String?
-  autoReconcile Boolean @default(false)
-  categories   Json?    // Bank category mappings
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  // Relations
-  transactions BankTransaction[]
-}
-
-model BankTransaction {
-  id             String   @id @default(cuid())
-  accountNumber  String
-  transactionDate DateTime
-  description    String
-  amount         Decimal  @db.Decimal(10, 2)
-  type           String   // 'credit' or 'debit'
-  bankReference  String   @unique
-  category       String?
-  balance        Decimal  @db.Decimal(10, 2)
-  reconciled     Boolean  @default(false)
-  reconciledAt   DateTime?
-  createdAt      DateTime @default(now())
-
-  // Relations
-  bankAccount BankAccount @relation(fields: [accountNumber], references: [accountNumber], onDelete: Cascade)
-  expense     Expense?    @relation(fields: [expenseId], references: [id])
-  expenseId   String?     @unique
-  reconciliationSuggestions ReconciliationSuggestion[]
-}
-
-model ReconciliationSuggestion {
-  id                 String   @id @default(cuid())
-  bankTransactionId  String
-  suggestedExpenseIds String[] // Array of expense IDs
-  confidence         Float
-  createdAt          DateTime @default(now())
-
-  // Relations
-  bankTransaction BankTransaction @relation(fields: [bankTransactionId], references: [id], onDelete: Cascade)
-}
-
-// =============================
-// Global Settings Table
-// =============================
-model Setting {
-  id          String   @id @default(cuid())
-  key         String   @unique
-  value       String
-  category    String   // e.g., 'inventory', 'accounting', 'shipping', etc.
-  description String?
-  updatedBy   String?  // User ID of last updater
-  updatedAt   DateTime @updatedAt
-  createdAt   DateTime @default(now())
 }
