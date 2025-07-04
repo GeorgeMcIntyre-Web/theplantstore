@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { prisma } from './db';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -32,4 +33,14 @@ export function levenshtein(a: string, b: string): number {
     }
   }
   return matrix[a.length][b.length];
+}
+
+/**
+ * Fetch a setting value by key from the database.
+ * @param key The setting key
+ * @param fallback The fallback value if not found
+ */
+export async function getSettingValue(key: string, fallback: string): Promise<string> {
+  const setting = await prisma.setting.findUnique({ where: { key } });
+  return setting?.value ?? fallback;
 }

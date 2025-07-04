@@ -53,10 +53,10 @@ export default function AdminDashboard() {
     fetch("/api/products")
       .then((res) => res.json())
       .then((data) => {
-        if (data.products) {
+        if (data) {
           setLowStockProducts(
-            data.products.filter((p: any) =>
-              typeof p.stockQuantity === 'number' && typeof p.lowStockThreshold === 'number' && p.stockQuantity <= p.lowStockThreshold
+            data.filter((p: any) =>
+              typeof p.stockQuantity === 'number' && typeof p.effectiveLowStockThreshold === 'number' && p.stockQuantity <= p.effectiveLowStockThreshold
             )
           );
         }
@@ -148,9 +148,9 @@ export default function AdminDashboard() {
                     <tr key={p.id} className="border-b">
                       <td className="p-2">{p.name}</td>
                       <td className="p-2">{p.stockQuantity}</td>
-                      <td className="p-2">{p.lowStockThreshold}</td>
+                      <td className="p-2">{p.effectiveLowStockThreshold}</td>
                       <td className="p-2">
-                        <Link href={`/admin/purchase-orders/new?productId=${p.id}&quantity=${Math.max(1, p.lowStockThreshold - p.stockQuantity + 1)}`}>
+                        <Link href={`/admin/purchase-orders/new?productId=${p.id}&quantity=${Math.max(1, p.effectiveLowStockThreshold - p.stockQuantity + 1)}`}>
                           <Button size="sm">Create PO</Button>
                         </Link>
                       </td>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { OrderStatus } from "@prisma/client";
 import { startOfDay, endOfDay } from "date-fns";
+import { getSettingValue } from '@/lib/utils';
 
 export async function GET(req: NextRequest) {
   try {
@@ -93,9 +94,10 @@ export async function GET(req: NextRequest) {
       include: { user: { select: { name: true, email: true } } },
       where: { createdAt: { gte: from, lte: to } },
     });
-    // Low inventory (unchanged)
+    // Low inventory (use global threshold)
+    const globalThreshold = parseInt(await getSettingValue('lowStockThreshold', '10'));
     const lowInventory = await prisma.product.findMany({
-      where: { stockQuantity: { lt: 5 } },
+      where: { stockQuantity: { lte: globalThreshold } },
       select: { id: true, name: true, stockQuantity: true },
       take: 3,
     });

@@ -4,13 +4,16 @@ import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/db";
 import { Decimal } from "@prisma/client/runtime/library";
 import { authOptions } from "@/lib/auth";
+import { getSettingValue } from '@/lib/utils';
 
 // This forces the route to be dynamic, which is good practice for admin routes
 export const dynamic = "force-dynamic";
 
 // GET handler to fetch all products
 export async function GET() {
-  const products = await prisma.product.findMany({
+  // Fetch global default low stock threshold
+  const globalThreshold = parseInt(await getSettingValue('lowStockThreshold', '10'));
+  const products: any[] = await prisma.product.findMany({
     select: {
       id: true,
       name: true,
@@ -32,11 +35,17 @@ export async function GET() {
         },
         orderBy: { sortOrder: "asc" },
       },
-      // Add more fields as needed for the admin table
     },
     orderBy: { name: "asc" },
   });
-  return NextResponse.json(products);
+  // Add effectiveLowStockThreshold to each product
+  const productsWithEffectiveThreshold = products.map((p: any) => ({
+    ...p,
+    effectiveLowStockThreshold: typeof p.lowStockThreshold === 'number' && !isNaN(p.lowStockThreshold)
+      ? p.lowStockThreshold
+      : globalThreshold,
+  }));
+  return NextResponse.json(productsWithEffectiveThreshold);
 }
 
 // POST handler to create a new product

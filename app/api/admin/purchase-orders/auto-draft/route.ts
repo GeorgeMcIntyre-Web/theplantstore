@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { Decimal } from '@prisma/client/runtime/library';
+import { getSettingValue } from '@/lib/utils';
 
 // POST: Auto-create draft POs for low stock products
 export async function POST(req: NextRequest) {
@@ -8,7 +9,9 @@ export async function POST(req: NextRequest) {
   const { adminId } = body;
   if (!adminId) return NextResponse.json({ error: 'Missing adminId' }, { status: 400 });
 
-  // Find all low stock products (ensure supplierId is included)
+  // Fetch global default low stock threshold
+  const globalThreshold = parseInt(await getSettingValue('lowStockThreshold', '10'));
+  // Find all products with supplierId
   const products = await prisma.product.findMany({
     select: {
       id: true,
@@ -19,8 +22,11 @@ export async function POST(req: NextRequest) {
       supplierId: true,
     },
   });
+  // Use per-product threshold or global
   const lowStock = products.filter(
-    (p) => typeof p.stockQuantity === 'number' && typeof p.lowStockThreshold === 'number' && p.stockQuantity <= p.lowStockThreshold && p.supplierId
+    (p) => typeof p.stockQuantity === 'number' &&
+      p.supplierId &&
+      p.stockQuantity <= (typeof p.lowStockThreshold === 'number' && !isNaN(p.lowStockThreshold) ? p.lowStockThreshold : globalThreshold)
   );
 
   const createdPOs = [];

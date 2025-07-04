@@ -768,3 +768,17 @@ model ReconciliationSuggestion {
   // Relations
   bankTransaction BankTransaction @relation(fields: [bankTransactionId], references: [id], onDelete: Cascade)
 }
+
+// =============================
+// Global Settings Table
+// =============================
+model Setting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  category    String   // e.g., 'inventory', 'accounting', 'shipping', etc.
+  description String?
+  updatedBy   String?  // User ID of last updater
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+}
