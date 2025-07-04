@@ -23,7 +23,7 @@ async function fixProductCategories() {
       try {
         // Check if the current categoryId is valid (exists in Category table)
         const validCategory = await prisma.category.findUnique({
-          where: { id: product.categoryId }
+          where: { id: product.categoryId ?? undefined }
         });
         
         if (validCategory) {
@@ -36,7 +36,7 @@ async function fixProductCategories() {
         
         // Try to find category by name (assuming categoryId contains the category name)
         const categoryByName = await prisma.category.findUnique({
-          where: { name: product.categoryId }
+          where: { name: product.categoryId ?? undefined }
         });
         
         if (categoryByName) {

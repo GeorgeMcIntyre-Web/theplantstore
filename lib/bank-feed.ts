@@ -190,7 +190,7 @@ class BankFeedService {
       data: {
         reconciled: true,
         reconciledAt: new Date(),
-        bankTransactionId: transaction.id
+        bankTransaction: { connect: { id: transaction.id } }
       }
     });
 
@@ -225,19 +225,21 @@ class BankFeedService {
     const session = await getServerSession(authOptions);
     if (!session?.user) return;
 
-    const category = this.mapBankCategory(transaction.category, config.categories);
+    const categoryName = this.mapBankCategory(transaction.category, config.categories);
+    const categoryRecord = await prisma.expenseCategory.findFirst({ where: { name: categoryName } });
+    if (!categoryRecord) throw new Error(`Expense category '${categoryName}' not found`);
 
     await prisma.expense.create({
       data: {
+        description: transaction.description,
         vendorName: this.extractVendorName(transaction.description),
         amount: transaction.amount,
         expenseDate: transaction.date,
-        category: category,
+        category: { connect: { id: categoryRecord.id } },
         notes: `Auto-created from bank transaction: ${transaction.description}`,
         vatRate: 15,
-        status: 'PENDING',
-        requestedById: session.user.id,
-        bankTransactionId: transaction.id,
+        status: "PENDING_APPROVAL",
+        user: { connect: { id: session.user.id } },
         createdAt: new Date()
       }
     });
@@ -261,7 +263,7 @@ class BankFeedService {
   }
 
   async getUnreconciledTransactions(accountNumber: string): Promise<BankTransaction[]> {
-    return await prisma.bankTransaction.findMany({
+    const results = await prisma.bankTransaction.findMany({
       where: {
         accountNumber: accountNumber,
         reconciled: false
@@ -270,13 +272,27 @@ class BankFeedService {
         transactionDate: 'desc'
       }
     });
+    return results.map(tx => ({
+      id: tx.id,
+      date: tx.transactionDate,
+      description: tx.description,
+      amount: typeof tx.amount === 'object' && 'toNumber' in tx.amount ? tx.amount.toNumber() : tx.amount,
+      type: tx.type === "credit" ? "credit" : "debit",
+      reference: tx.bankReference,
+      category: tx.category ?? undefined,
+      balance: typeof tx.balance === 'object' && 'toNumber' in tx.balance ? tx.balance.toNumber() : tx.balance,
+      createdAt: tx.createdAt,
+      reconciled: tx.reconciled,
+      reconciledAt: tx.reconciledAt,
+      expenseId: tx.expenseId,
+      accountNumber: tx.accountNumber,
+    }));
   }
 
   async getReconciliationSuggestions(): Promise<any[]> {
     return await prisma.reconciliationSuggestion.findMany({
       include: {
-        bankTransaction: true,
-        suggestedExpenses: true
+        bankTransaction: true
       },
       orderBy: {
         createdAt: 'desc'
@@ -302,7 +318,7 @@ class BankFeedService {
         data: {
           reconciled: true,
           reconciledAt: new Date(),
-          bankTransactionId: transactionId
+          bankTransaction: { connect: { id: transactionId } }
         }
       })
     ]);

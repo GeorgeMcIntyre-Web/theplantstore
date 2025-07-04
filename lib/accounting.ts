@@ -188,7 +188,7 @@ export async function createExpenseJournalEntry(
       throw new AccountingError('Bank account not found', 'ACCOUNT_NOT_FOUND');
     }
     
-    const netAmount = expense.amount.minus(expense.vatAmount || 0);
+    const netAmount = expense.amount.minus(expense.vatAmount || new Prisma.Decimal(0));
     
     const entries = [
       {
@@ -272,9 +272,9 @@ export async function createSalesJournalEntry(
       throw new AccountingError('Required accounts not found', 'ACCOUNT_NOT_FOUND');
     }
     
-    const netAmount = order.totalAmount.minus(order.vatAmount || 0);
+    const netAmount = order.totalAmount.minus(order.vatAmount || new Prisma.Decimal(0));
     const totalCost = order.items.reduce((sum: Prisma.Decimal, item: any) => {
-      return sum.plus((item.costPrice || 0) * item.quantity);
+      return sum.plus(new Prisma.Decimal(item.costPrice || 0).times(item.quantity));
     }, new Prisma.Decimal(0));
     
     const entries = [
@@ -401,10 +401,10 @@ export async function getFinancialSummary(
       })
     ]);
     
-    const totalRevenue = revenue._sum?.totalAmount || new Prisma.Decimal(0);
-    const totalExpenses = expenses._sum?.amount || new Prisma.Decimal(0);
-    const totalVATCollected = vatCollected._sum?.vatAmount || new Prisma.Decimal(0);
-    const totalVATPaid = vatPaid._sum?.vatAmount || new Prisma.Decimal(0);
+    const totalRevenue = new Prisma.Decimal(revenue._sum?.totalAmount || 0);
+    const totalExpenses = new Prisma.Decimal(expenses._sum?.amount || 0);
+    const totalVATCollected = new Prisma.Decimal(vatCollected._sum?.vatAmount || 0);
+    const totalVATPaid = new Prisma.Decimal(vatPaid._sum?.vatAmount || 0);
     
     const netProfit = totalRevenue.minus(totalExpenses);
     const vatLiability = totalVATCollected.minus(totalVATPaid);
