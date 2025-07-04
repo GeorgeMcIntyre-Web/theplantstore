@@ -8,18 +8,25 @@ test.describe('Checkout Payment Flow', () => {
 
     // Add a product to the cart (assume first product on homepage)
     const firstAddToCart = page.getByRole('button', { name: /add to cart/i }).first();
-    if (await firstAddToCart.count() > 0) {
-      await firstAddToCart.click();
-    }
+    const addToCartCount = await firstAddToCart.count();
+    console.log('Add to Cart button count:', addToCartCount);
+    expect(addToCartCount).toBeGreaterThan(0);
+    await firstAddToCart.click();
+    await page.waitForTimeout(1000); // Wait for cart to update
     await page.screenshot({ path: 'step2-after-add-to-cart.png', fullPage: true });
 
     // Open cart sheet from header (button with aria-label 'Shopping cart')
     const cartButton = page.getByRole('button', { name: /shopping cart/i });
     await cartButton.click();
+    await page.waitForTimeout(1000); // Wait for cart sheet to open
     await page.screenshot({ path: 'step3-cart-open.png', fullPage: true });
+
+    // Assert cart is not empty
+    await expect(page.getByText(/total/i)).toBeVisible();
 
     // Click the checkout button in the cart sheet
     const checkoutButton = page.getByRole('link', { name: /^checkout$/i });
+    await expect(checkoutButton).toBeVisible();
     await checkoutButton.click();
     await page.screenshot({ path: 'step4-after-checkout-click.png', fullPage: true });
 

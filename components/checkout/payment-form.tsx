@@ -29,13 +29,15 @@ interface PaymentFormProps {
     province: string;
     postalCode: string;
   };
+  yocoSdkOverride?: any;
 }
 
 export function PaymentForm({ 
   onPaymentSuccess, 
   onPaymentError, 
   customerDetails, 
-  shippingDetails 
+  shippingDetails,
+  yocoSdkOverride
 }: PaymentFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [yocoSDK, setYocoSDK] = useState<any>(null);
@@ -43,6 +45,10 @@ export function PaymentForm({
   const { items, totalAmount } = useCart();
 
   useEffect(() => {
+    if (yocoSdkOverride) {
+      setYocoSDK(yocoSdkOverride);
+      return;
+    }
     const script = document.createElement('script');
     script.src = 'https://js.yoco.com/sdk/v1/yoco-sdk-web.js';
     script.async = true;
@@ -59,7 +65,7 @@ export function PaymentForm({
         document.body.removeChild(script);
       }
     };
-  }, []);
+  }, [yocoSdkOverride]);
 
   const handlePayment = async () => {
     if (!yocoSDK) {

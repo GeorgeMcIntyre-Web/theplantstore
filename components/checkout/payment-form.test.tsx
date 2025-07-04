@@ -44,6 +44,11 @@ describe('PaymentForm', () => {
         json: () => Promise.resolve({ orderNumber: 'ORDER123' }),
       })
     ) as jest.Mock;
+
+    // Patch: Set window.YocoSDK and yocoSDK directly to simulate SDK loaded
+    window.YocoSDK = jest.fn().mockImplementation(() => ({
+      showPopup: jest.fn().mockResolvedValue({ token: { id: 'tok_test' } }),
+    }));
   });
 
   it('renders the payment form', () => {
@@ -62,16 +67,18 @@ describe('PaymentForm', () => {
   });
 
   it('submits payment and calls onPaymentSuccess', async () => {
+    const mockYocoSDK = {
+      showPopup: jest.fn().mockResolvedValue({ token: { id: 'tok_test' } }),
+    };
     render(
       <PaymentForm
         onPaymentSuccess={mockOnSuccess}
         onPaymentError={mockOnError}
         customerDetails={customerDetails}
         shippingDetails={shippingDetails}
+        yocoSdkOverride={mockYocoSDK}
       />
     );
-    // Wait for YocoSDK to load
-    await waitFor(() => expect(window.YocoSDK).toBeDefined());
     const payButton = screen.getByRole('button', { name: /pay/i });
     fireEvent.click(payButton);
     await waitFor(() => {
@@ -83,15 +90,19 @@ describe('PaymentForm', () => {
     (global.fetch as jest.Mock).mockImplementationOnce(() =>
       Promise.resolve({ ok: false, json: () => Promise.resolve({ error: 'Payment failed' }) })
     );
+    // Patch: Make showPopup return a token as before
+    const errorYocoSDK = {
+      showPopup: jest.fn().mockResolvedValue({ token: { id: 'tok_test' } }),
+    };
     render(
       <PaymentForm
         onPaymentSuccess={mockOnSuccess}
         onPaymentError={mockOnError}
         customerDetails={customerDetails}
         shippingDetails={shippingDetails}
+        yocoSdkOverride={errorYocoSDK}
       />
     );
-    await waitFor(() => expect(window.YocoSDK).toBeDefined());
     const payButton = screen.getByRole('button', { name: /pay/i });
     fireEvent.click(payButton);
     await waitFor(() => {
