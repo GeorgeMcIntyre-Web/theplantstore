@@ -1,5 +1,5 @@
 import { prisma } from './db';
-import { Prisma, Decimal, UserRole, OrderStatus } from '@prisma/client';
+import { Prisma, UserRole, OrderStatus } from '@prisma/client';
 
 // Enhanced error handling with custom error types
 export class AccountingError extends Error {
@@ -28,9 +28,9 @@ export class InsufficientPermissionsError extends AccountingError {
 }
 
 // Validation functions
-export const validateAmount = (amount: number | string | Decimal): Decimal => {
+export const validateAmount = (amount: number | string | Prisma.Decimal): Prisma.Decimal => {
   try {
-    const decimalAmount = new Decimal(amount);
+    const decimalAmount = new Prisma.Decimal(amount);
     if (decimalAmount.lessThanOrEqualTo(0)) {
       throw new ValidationError('Amount must be greater than zero');
     }
@@ -41,9 +41,9 @@ export const validateAmount = (amount: number | string | Decimal): Decimal => {
   }
 };
 
-export const validateVATRate = (rate: number | string | Decimal): Decimal => {
+export const validateVATRate = (rate: number | string | Prisma.Decimal): Prisma.Decimal => {
   try {
-    const decimalRate = new Decimal(rate);
+    const decimalRate = new Prisma.Decimal(rate);
     if (decimalRate.lessThan(0) || decimalRate.greaterThan(100)) {
       throw new ValidationError('VAT rate must be between 0 and 100');
     }
@@ -63,8 +63,8 @@ export async function createJournalEntry(
     description: string;
     entries: Array<{
       accountId: string;
-      debitAmount?: Decimal;
-      creditAmount?: Decimal;
+      debitAmount?: Prisma.Decimal;
+      creditAmount?: Prisma.Decimal;
     }>;
   },
   tx?: Prisma.TransactionClient
@@ -74,12 +74,12 @@ export async function createJournalEntry(
   try {
     // Validate entries balance
     const totalDebits = data.entries
-      .map(entry => entry.debitAmount || new Decimal(0))
-      .reduce((sum, debit) => sum.plus(debit), new Decimal(0));
+      .map(entry => entry.debitAmount || new Prisma.Decimal(0))
+      .reduce((sum, debit) => sum.plus(debit), new Prisma.Decimal(0));
     
     const totalCredits = data.entries
-      .map(entry => entry.creditAmount || new Decimal(0))
-      .reduce((sum, credit) => sum.plus(credit), new Decimal(0));
+      .map(entry => entry.creditAmount || new Prisma.Decimal(0))
+      .reduce((sum, credit) => sum.plus(credit), new Prisma.Decimal(0));
     
     if (!totalDebits.equals(totalCredits)) {
       throw new ValidationError(
@@ -107,8 +107,8 @@ export async function createJournalEntry(
         journalLines: {
           create: data.entries.map(entry => ({
             accountId: entry.accountId,
-            debitAmount: entry.debitAmount || new Decimal(0),
-            creditAmount: entry.creditAmount || new Decimal(0),
+            debitAmount: entry.debitAmount || new Prisma.Decimal(0),
+            creditAmount: entry.creditAmount || new Prisma.Decimal(0),
           }))
         }
       },
@@ -273,9 +273,9 @@ export async function createSalesJournalEntry(
     }
     
     const netAmount = order.totalAmount.minus(order.vatAmount || 0);
-    const totalCost = order.items.reduce((sum: Decimal, item: any) => {
+    const totalCost = order.items.reduce((sum: Prisma.Decimal, item: any) => {
       return sum.plus((item.costPrice || 0) * item.quantity);
-    }, new Decimal(0));
+    }, new Prisma.Decimal(0));
     
     const entries = [
       // Sales entry
@@ -317,16 +317,16 @@ export async function createSalesJournalEntry(
 }
 
 // Enhanced VAT calculation with validation
-export function calculateVAT(amount: number | string | Decimal, rate: number | string | Decimal = 15): {
-  netAmount: Decimal;
-  vatAmount: Decimal;
-  totalAmount: Decimal;
+export function calculateVAT(amount: number | string | Prisma.Decimal, rate: number | string | Prisma.Decimal = 15): {
+  netAmount: Prisma.Decimal;
+  vatAmount: Prisma.Decimal;
+  totalAmount: Prisma.Decimal;
 } {
   try {
     const totalAmount = validateAmount(amount);
     const vatRate = validateVATRate(rate);
     
-    const vatAmount = totalAmount.dividedBy(new Decimal(1).plus(vatRate.dividedBy(100)))
+    const vatAmount = totalAmount.dividedBy(new Prisma.Decimal(1).plus(vatRate.dividedBy(100)))
       .times(vatRate.dividedBy(100))
       .toDecimalPlaces(2);
     
@@ -401,10 +401,10 @@ export async function getFinancialSummary(
       })
     ]);
     
-    const totalRevenue = revenue._sum?.totalAmount || new Decimal(0);
-    const totalExpenses = expenses._sum?.amount || new Decimal(0);
-    const totalVATCollected = vatCollected._sum?.vatAmount || new Decimal(0);
-    const totalVATPaid = vatPaid._sum?.vatAmount || new Decimal(0);
+    const totalRevenue = revenue._sum?.totalAmount || new Prisma.Decimal(0);
+    const totalExpenses = expenses._sum?.amount || new Prisma.Decimal(0);
+    const totalVATCollected = vatCollected._sum?.vatAmount || new Prisma.Decimal(0);
+    const totalVATPaid = vatPaid._sum?.vatAmount || new Prisma.Decimal(0);
     
     const netProfit = totalRevenue.minus(totalExpenses);
     const vatLiability = totalVATCollected.minus(totalVATPaid);
