@@ -25,20 +25,10 @@ process.on("beforeExit", async () => {
   await prisma.$disconnect();
 });
 
-// Error handling for database connection
-prisma
-  .$connect()
-  .then(() => {
-    console.log("✅ Database connected successfully");
-  })
-  .catch((error) => {
-    console.error("❌ Database connection failed:", error);
-    process.exit(1);
-  });
-
 // Health check function
 export const checkDatabaseHealth = async () => {
   try {
+    await prisma.$connect();
     await prisma.$queryRaw`SELECT 1`;
     return { status: "healthy", timestamp: new Date().toISOString() };
   } catch (error) {
