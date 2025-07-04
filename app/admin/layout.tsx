@@ -6,6 +6,7 @@ import { ReactNode } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { LineChart, Box, ShoppingCart, Users, Upload, Mail, Package, Layers, Truck, Activity, BarChart3, Settings, Bell } from "lucide-react";
+import QuickCalculator from '@/components/ui/quick-calculator';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const { data: session } = useSession();
@@ -30,6 +31,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
         </div>
+        <QuickCalculator />
         <nav className="flex flex-col gap-2">
           <Link href="/admin" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-accent transition text-base font-medium"><LineChart className="w-5 h-5" /> Overview</Link>
           <Link href="/admin/products" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-accent transition text-base font-medium"><Box className="w-5 h-5" /> Products</Link>
