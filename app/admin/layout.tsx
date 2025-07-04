@@ -54,6 +54,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               <Link href="/admin/accounting/categories" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-accent transition text-base font-medium"><Layers className="w-5 h-5" /> Categories</Link>
               <Link href="/admin/accounting/reports" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-accent transition text-base font-medium"><BarChart3 className="w-5 h-5" /> Reports</Link>
               <Link href="/admin/accounting/audit-logs" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-accent transition text-base font-medium"><Activity className="w-5 h-5" /> Audit Logs</Link>
+              <Link href="/admin/accounting/bank-feed" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-accent transition text-base font-medium"><Box className="w-5 h-5" /> Bank Accounts</Link>
+              <Link href="/admin/accounting/bank-transactions" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-accent transition text-base font-medium"><Activity className="w-5 h-5" /> Bank Transactions</Link>
+              <Link href="/admin/accounting/reconciliation" className="flex items-center gap-3 px-4 py-3 rounded hover:bg-accent transition text-base font-medium"><BarChart3 className="w-5 h-5" /> Reconciliation</Link>
             </>
           )}
         </nav>
