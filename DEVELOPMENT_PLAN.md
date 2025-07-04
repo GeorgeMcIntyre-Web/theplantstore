@@ -8,6 +8,8 @@
 - **In-app Config UI:** Planned, not yet implemented
 - **Testing & Polish:** In progress (fixing last build issues, will run tests next)
 - **Documentation:** Comprehensive and up to date
+- **Admin Dashboard & Settings:** Polished for best practices, onboarding, accessibility, and workflow speed (July 2024)
+- **In-app Onboarding:** Role-based onboarding tips and auto-focus for rapid admin workflows implemented (July 2024)
 
 **Next Steps:**
 1. Resolve build environment issue (file lock/Prisma DLL)
@@ -16,6 +18,8 @@
 4. Implement in-app config UI for external keys
 5. Deploy to production
 6. User acceptance testing
+7. Expand in-app onboarding to more admin areas and automate contextual help
+8. Continuous UX polish and admin automation (future)
 
 # 🌱 The Plant Store - Development Plan
 
@@ -28,6 +32,8 @@
 - ✅ Created error handling utilities
 - ✅ Enhanced database connection with pooling
 - 🔄 **Next**: Install dependencies and run initial tests
+- ✅ Polished admin dashboard and settings for onboarding, accessibility, and workflow speed (July 2024)
+- ✅ Added role-based onboarding and auto-focus for admin workflows (July 2024)
 
 ### 2. **Testing Infrastructure**
 

@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
         status: ExpenseStatus.DRAFT,
         vendorName,
         notes,
-        userId: user.id,
+        requestedById: user.id,
       },
       include: {
         category: true

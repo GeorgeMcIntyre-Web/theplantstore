@@ -33,7 +33,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { bankName, accountNumber, autoReconcile, categories } = body;
+    const { bankName, accountNumber, autoReconcile, categories, accountType } = body;
+
+    if (!accountType) {
+      return NextResponse.json({ error: 'Account type is required' }, { status: 400 });
+    }
 
     // Create or update bank account
     const bankAccount = await prisma.bankAccount.upsert({
@@ -42,6 +46,7 @@ export async function POST(request: NextRequest) {
         bankName,
         autoReconcile,
         categories: categories || {},
+        accountType,
         updatedAt: new Date()
       },
       create: {
@@ -49,6 +54,8 @@ export async function POST(request: NextRequest) {
         bankName,
         autoReconcile: autoReconcile || false,
         categories: categories || {},
+        accountType,
+        userId: session.user.id,
         createdAt: new Date(),
         updatedAt: new Date()
       }

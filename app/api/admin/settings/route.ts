@@ -24,8 +24,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const user = await requireAdmin(request);
   if (user instanceof NextResponse) return user;
-  const { key, value, category, description } = await request.json();
-  if (!key || !value || !category) {
+  const { key, value, description } = await request.json();
+  if (!key || !value) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
   try {
@@ -33,9 +33,7 @@ export async function POST(request: NextRequest) {
       data: {
         key,
         value,
-        category,
         description,
-        updatedBy: user.id,
       },
     });
     return NextResponse.json(setting, { status: 201 });
@@ -48,7 +46,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   const user = await requireAdmin(request);
   if (user instanceof NextResponse) return user;
-  const { key, value, category, description } = await request.json();
+  const { key, value, description } = await request.json();
   if (!key || !value) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
@@ -57,9 +55,7 @@ export async function PUT(request: NextRequest) {
       where: { key },
       data: {
         value,
-        category,
         description,
-        updatedBy: user.id,
       },
     });
     return NextResponse.json(setting);

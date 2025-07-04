@@ -6,7 +6,7 @@ import SalesChart from "@/components/admin/SalesChart";
 import CustomerGrowthChart from "@/components/admin/CustomerGrowthChart";
 import TopProductsChart from "@/components/admin/TopProductsChart";
 import RevenueBreakdownChart from "@/components/admin/RevenueBreakdownChart";
-import { Activity, LineChart } from "lucide-react";
+import { Activity, LineChart, Play } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { subDays } from "date-fns";
@@ -19,6 +19,8 @@ import CustomerManagement from '@/components/admin/CustomerManagement';
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { OnboardingTour, AdminTours } from "@/components/ui/onboarding-tour";
+import { HelpTooltip, AdminHelpContent } from "@/components/ui/help-tooltip";
 
 interface AnalyticsData {
   salesData: any;
@@ -69,6 +71,8 @@ export default function AdminDashboard() {
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
   const [suggestingPOs, setSuggestingPOs] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [showTour, setShowTour] = useState(false);
+  const [hasCompletedTour, setHasCompletedTour] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -127,7 +131,12 @@ export default function AdminDashboard() {
     <div className="w-full">
       {/* Onboarding/Welcome Message */}
       {session?.user && (
-        <WelcomeAdminMessage name={session.user.name || "Admin"} role={userRole} />
+        <WelcomeAdminMessage 
+          name={session.user.name || "Admin"} 
+          role={userRole} 
+          onStartTour={() => setShowTour(true)}
+          hasCompletedTour={hasCompletedTour}
+        />
       )}
       {/* Onboarding tip for empty analytics or first visit */}
       {!loading && !error && (!analytics || (analytics && Object.values(analytics).every(val => Array.isArray(val) && val.length === 0))) && (
@@ -225,11 +234,37 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+      
+      {/* Onboarding Tour */}
+      {showTour && userRole && AdminTours[userRole as keyof typeof AdminTours] && (
+        <OnboardingTour
+          steps={AdminTours[userRole as keyof typeof AdminTours]}
+          isOpen={showTour}
+          onClose={() => setShowTour(false)}
+          onComplete={() => {
+            setShowTour(false);
+            setHasCompletedTour(true);
+            // Save to localStorage to remember completion
+            localStorage.setItem('admin-tour-completed', 'true');
+          }}
+          userRole={userRole}
+        />
+      )}
     </div>
   );
 }
 
-function WelcomeAdminMessage({ name, role }: { name: string; role: string }) {
+function WelcomeAdminMessage({ 
+  name, 
+  role, 
+  onStartTour, 
+  hasCompletedTour 
+}: { 
+  name: string; 
+  role: string; 
+  onStartTour?: () => void;
+  hasCompletedTour?: boolean;
+}) {
   return (
     <div className="bg-green-100 border border-green-300 text-green-900 rounded-lg p-4 mb-6 flex items-center justify-between">
       <div>
@@ -243,6 +278,23 @@ function WelcomeAdminMessage({ name, role }: { name: string; role: string }) {
           </ul>
         </div>
       </div>
+      {onStartTour && !hasCompletedTour && (
+        <div className="flex items-center gap-2">
+          <HelpTooltip
+            content={AdminHelpContent[role.toLowerCase() as keyof typeof AdminHelpContent]?.content || "Get help with admin features"}
+            title="Quick Help"
+            variant="info"
+          />
+          <Button
+            size="sm"
+            onClick={onStartTour}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <Play className="h-4 w-4 mr-1" />
+            Start Tour
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

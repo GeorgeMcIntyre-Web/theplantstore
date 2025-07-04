@@ -55,8 +55,10 @@ class BankFeedService {
       create: {
         accountNumber: config.accountNumber,
         bankName: config.bankName,
+        accountType: 'CHECKING', // Default account type
         autoReconcile: config.autoReconcile,
         categories: config.categories as any,
+        userId: 'default-user-id', // This should be passed from the session
         createdAt: new Date(),
         updatedAt: new Date()
       }
@@ -156,7 +158,9 @@ class BankFeedService {
           }
         ],
         status: 'DRAFT',
-        reconciled: false
+        bankTransactions: {
+          none: {} // Not already reconciled
+        }
       },
       orderBy: {
         expenseDate: 'desc'
@@ -188,9 +192,7 @@ class BankFeedService {
     await prisma.expense.update({
       where: { id: expense.id },
       data: {
-        reconciled: true,
-        reconciledAt: new Date(),
-        bankTransaction: { connect: { id: transaction.id } }
+        bankTransactions: { connect: { id: transaction.id } }
       }
     });
 
@@ -235,11 +237,11 @@ class BankFeedService {
         vendorName: this.extractVendorName(transaction.description),
         amount: transaction.amount,
         expenseDate: transaction.date,
-        category: { connect: { id: categoryRecord.id } },
+        categoryId: categoryRecord.id,
         notes: `Auto-created from bank transaction: ${transaction.description}`,
         vatRate: 15,
         status: "PENDING_APPROVAL",
-        user: { connect: { id: session.user.id } },
+        requestedById: session.user.id,
         createdAt: new Date()
       }
     });

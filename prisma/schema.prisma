@@ -67,6 +67,7 @@ model User {
   reviews               Review[]
   sessions              Session[]
   shrinkageRecords      Shrinkage[]
+  bankAccounts          BankAccount[]
 }
 
 model Address {
@@ -334,6 +335,7 @@ model Expense {
   requester      User              @relation("ExpenseRequester", fields: [requestedById], references: [id])
   approval       ExpenseApproval[]
   auditLogs      ExpenseAuditLog[]
+  bankTransactions BankTransaction[]
 }
 
 model ExpenseApproval {
@@ -430,6 +432,50 @@ model ExpenseAuditLog {
   createdAt DateTime @default(now())
   expense   Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id])
+}
+
+model Setting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model BankAccount {
+  id            String   @id @default(cuid())
+  userId        String
+  bankName      String
+  accountNumber String   @unique
+  accountType   String
+  balance       Decimal  @default(0) @db.Decimal(14, 2)
+  autoReconcile Boolean  @default(false)
+  categories    Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions  BankTransaction[]
+}
+
+model BankTransaction {
+  id              String   @id @default(cuid())
+  accountNumber   String
+  transactionDate DateTime
+  description     String
+  amount          Decimal  @db.Decimal(12, 2)
+  type            String   // 'credit' or 'debit'
+  bankReference   String   @unique
+  category        String?
+  balance         Decimal  @db.Decimal(14, 2)
+  reconciled      Boolean  @default(false)
+  reconciledAt    DateTime?
+  expenseId       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  bankAccount     BankAccount @relation(fields: [accountNumber], references: [accountNumber], onDelete: Cascade)
+  expense         Expense? @relation(fields: [expenseId], references: [id])
 }
 
 enum UserRole {
