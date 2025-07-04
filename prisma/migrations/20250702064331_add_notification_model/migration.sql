@@ -1,3 +1,6 @@
+-- Drop existing table if it exists
+DROP TABLE IF EXISTS "Notification" CASCADE;
+
 -- CreateTable
 CREATE TABLE "Notification" (
     "id" TEXT NOT NULL,

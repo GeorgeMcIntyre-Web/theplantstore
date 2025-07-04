@@ -1,3 +1,7 @@
+-- Drop existing tables if they exist
+DROP TABLE IF EXISTS "PurchaseOrder" CASCADE;
+DROP TABLE IF EXISTS "Supplier" CASCADE;
+
 -- AlterTable
 ALTER TABLE "Product" ADD COLUMN     "supplierId" TEXT;
 
