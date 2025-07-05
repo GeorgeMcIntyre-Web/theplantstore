@@ -170,6 +170,7 @@ export async function POST(request: NextRequest) {
         vendorName,
         notes,
         requestedById: user.id,
+        userId: user.id,
       },
       include: {
         category: true

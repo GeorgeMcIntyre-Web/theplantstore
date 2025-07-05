@@ -320,7 +320,7 @@ class BankFeedService {
         data: {
           reconciled: true,
           reconciledAt: new Date(),
-          bankTransaction: { connect: { id: transactionId } }
+          bankTransactions: { connect: { id: transactionId } }
         }
       })
     ]);
