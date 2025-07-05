@@ -8,8 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, TrendingUp, TrendingDown, DollarSign, Receipt, AlertCircle, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
-import { NavSection, NavItem } from '@/components/ui/nav';
-import { DashboardIcon, ExpensesIcon, CategoriesIcon, BankIcon, TransactionIcon, ReconcileIcon, ReportIcon, AuditIcon } from 'lucide-react';
 
 interface FinancialSummary {
   period: {
