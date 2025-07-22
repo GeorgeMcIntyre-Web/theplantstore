@@ -1,10 +1,9 @@
 name = "houseplantstore"
 compatibility_date = "2025-07-22"
-main = "src/index.ts"
-workers_dev = true
 
-[site]
-bucket = "./public"
+# For Next.js deployment on Cloudflare Pages
+[build]
+command = "npm run build:cf"
 
 [[d1_databases]]
 binding = "DB"
