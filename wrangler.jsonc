@@ -1,0 +1,7 @@
+{
+  "name": "plantstore",
+  "compatibility_date": "2025-07-22",
+  "build": {
+    "command": "npm run build"
+  }
+} 
