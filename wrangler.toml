@@ -6,6 +6,8 @@ workers_dev = true
 [site]
 bucket = "./public"
 
+pages_build_output_dir = "./public"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "houseplantstore_db"
