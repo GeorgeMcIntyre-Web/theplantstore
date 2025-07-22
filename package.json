@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:cf": "npx @cloudflare/next-on-pages",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
@@ -16,7 +15,6 @@
     "db:seed": "wrangler d1 execute plant-store-db --file=./scripts/seed.sql"
   },
   "dependencies": {
-    "@cloudflare/next-on-pages": "^1.8.5",
     "@cloudflare/workers-types": "^4.20241218.0",
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.0.18",
