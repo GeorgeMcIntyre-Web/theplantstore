@@ -1,0 +1,25 @@
+name = "houseplantstore"
+compatibility_date = "2025-07-22"
+main = "src/index.ts"
+workers_dev = true
+
+[site]
+bucket = "./public"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "houseplantstore_db"
+database_id = "your-d1-database-id"
+
+[[r2_buckets]]
+binding = "PRODUCT_IMAGES"
+bucket_name = "houseplantstore-images"
+preview_bucket_name = "houseplantstore-images-dev"
+
+[env.production]
+name = "houseplantstore"
+route = "thehouseplantstore.com/*"
+
+[env.staging]
+name = "houseplantstore-staging"
+route = "staging.thehouseplantstore.com/*" 
