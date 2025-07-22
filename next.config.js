@@ -20,6 +20,10 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   generateEtags: false,
+  // Exclude API routes from static build
+  experimental: {
+    excludeDefaultMomentLocales: true,
+  },
   async headers() {
     return [
       {
