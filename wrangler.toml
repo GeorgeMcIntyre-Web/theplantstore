@@ -8,7 +8,7 @@ command = "npm run build:cf"
 [[d1_databases]]
 binding = "DB"
 database_name = "houseplantstore_db"
-database_id = "your-d1-database-id"
+database_id = "b4117a97-7ef0-424a-93f7-eb1a4efe2cde"
 
 [[r2_buckets]]
 binding = "PRODUCT_IMAGES"
