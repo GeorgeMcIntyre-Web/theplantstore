@@ -1,27 +1,24 @@
-name = "theplantstore-api"
+name = "theplantstore"
 main = "functions/api/products.js"
 compatibility_date = "2024-01-01"
 
-[env.production]
-name = "theplantstore-api"
-
-[[env.production.d1_databases]]
+# D1 Database binding
+[[d1_databases]]
 binding = "DB"
 database_name = "houseplantstore-db"
-database_id = "b4117a97-7ef0-424a-93f7-..." # Replace with your actual database ID
+database_id = "b4117a97-7ef0-424a-93f7-..." # You'll get this from the binding setup
 
-[env.staging]
-name = "theplantstore-api-staging"
-
-[[env.staging.d1_databases]]
-binding = "DB"
-database_name = "houseplantstore-db-staging"
-database_id = "" # Create a staging database if needed
+# Environment variables
+[vars]
+NEXT_PUBLIC_SITE_URL = "https://thehouseplantstore.com"
+NEXT_PUBLIC_SITE_NAME = "The Plant Store"
+NEXT_PUBLIC_CONTACT_EMAIL = "info@theplantstore.com"
+NEXT_PUBLIC_PHONE = "+27 11 123 4567"
 
 # Functions configuration
 [functions]
 directory = "functions"
 
-# Pages configuration
+# Pages configuration (for static site)
 [pages]
 directory = "out" 
