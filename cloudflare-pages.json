@@ -12,7 +12,7 @@
     "preview_deployments": true
   },
   "environment_variables": {
-    "NEXT_PUBLIC_SITE_URL": "https://thehouseplantstore.co.za",
+    "NEXT_PUBLIC_SITE_URL": "https://thehouseplantstore.com",
     "NEXT_PUBLIC_SITE_NAME": "The Plant Store",
     "NEXT_PUBLIC_SITE_DESCRIPTION": "Beautiful plants for your home and garden",
     "NEXT_PUBLIC_CONTACT_EMAIL": "info@theplantstore.com",
@@ -34,6 +34,16 @@
     {
       "source": "/home",
       "destination": "/",
+      "status": 301
+    },
+    {
+      "source": "/index.html",
+      "destination": "/",
+      "status": 301
+    },
+    {
+      "source": "https://thehouseplantstore.co.za/*",
+      "destination": "https://thehouseplantstore.com/:splat",
       "status": 301
     }
   ],
