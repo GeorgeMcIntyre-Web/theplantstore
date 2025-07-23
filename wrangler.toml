@@ -1,0 +1,27 @@
+name = "theplantstore-api"
+main = "functions/api/products.js"
+compatibility_date = "2024-01-01"
+
+[env.production]
+name = "theplantstore-api"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "houseplantstore-db"
+database_id = "b4117a97-7ef0-424a-93f7-..." # Replace with your actual database ID
+
+[env.staging]
+name = "theplantstore-api-staging"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "houseplantstore-db-staging"
+database_id = "" # Create a staging database if needed
+
+# Functions configuration
+[functions]
+directory = "functions"
+
+# Pages configuration
+[pages]
+directory = "out" 
