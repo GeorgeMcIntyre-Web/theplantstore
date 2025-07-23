@@ -42,6 +42,101 @@ var products_default = {
       return new Response(null, { headers: corsHeaders });
     }
     try {
+      if (path === "/api/health" && request.method === "GET") {
+        return new Response(JSON.stringify({
+          success: true,
+          message: "API is running",
+          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          environment: "production"
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+      if (path === "/api/query" && request.method === "POST") {
+        const body = await request.json();
+        const { query, params = [], type = "all" } = body;
+        if (!query) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: "Query is required"
+          }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+        try {
+          const prepared = env.DB.prepare(query);
+          const bound = params.length > 0 ? prepared.bind(...params) : prepared;
+          let result;
+          switch (type) {
+            case "first":
+              result = await bound.first();
+              return new Response(JSON.stringify({
+                success: true,
+                data: result
+              }), {
+                headers: { ...corsHeaders, "Content-Type": "application/json" }
+              });
+            case "run":
+              result = await bound.run();
+              return new Response(JSON.stringify({
+                success: true,
+                data: result
+              }), {
+                headers: { ...corsHeaders, "Content-Type": "application/json" }
+              });
+            case "all":
+            default:
+              result = await bound.all();
+              return new Response(JSON.stringify({
+                success: true,
+                data: result.results
+              }), {
+                headers: { ...corsHeaders, "Content-Type": "application/json" }
+              });
+          }
+        } catch (error) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: "Database query failed",
+            message: error.message
+          }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+      }
+      if (path === "/api/exec" && request.method === "POST") {
+        const body = await request.json();
+        const { query } = body;
+        if (!query) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: "Query is required"
+          }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+        try {
+          const result = await env.DB.exec(query);
+          return new Response(JSON.stringify({
+            success: true,
+            data: result
+          }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        } catch (error) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: "Database exec failed",
+            message: error.message
+          }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+      }
       if (path === "/api/products" && request.method === "GET") {
         const { searchParams } = url;
         const category = searchParams.get("category");
@@ -108,16 +203,6 @@ var products_default = {
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         });
       }
-      if (path === "/api/health" && request.method === "GET") {
-        return new Response(JSON.stringify({
-          success: true,
-          message: "API is running",
-          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-          environment: "production"
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
-      }
       return new Response(JSON.stringify({
         success: false,
         error: "Endpoint not found",
@@ -126,7 +211,9 @@ var products_default = {
           "/api/products?featured=true",
           "/api/products/{slug}",
           "/api/categories",
-          "/api/health"
+          "/api/health",
+          "/api/query (POST)",
+          "/api/exec (POST)"
         ]
       }), {
         status: 404,

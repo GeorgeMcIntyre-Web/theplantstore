@@ -1,124 +1,69 @@
-export const dynamic = "force-dynamic";
+import { NextRequest, NextResponse } from 'next/server';
 
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
-import { authOptions } from "@/lib/auth";
+// D1 Database client for local development
+const D1_API_URL = process.env.NODE_ENV === 'development' 
+  ? 'http://localhost:8787' 
+  : 'https://theplantstore.fractalnexustech.workers.dev';
+
+async function queryD1(query: string, params: any[] = [], type: 'first' | 'all' | 'run' = 'all') {
+  const response = await fetch(`${D1_API_URL}/api/query`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query, params, type })
+  });
+  
+  if (!response.ok) {
+    throw new Error(`D1 query failed: ${response.statusText}`);
+  }
+  
+  const result = await response.json();
+  return result.data;
+}
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "12");
-    const category = searchParams.get("category");
-    const careLevel = searchParams.get("careLevel");
-    const lightRequirement = searchParams.get("lightRequirement");
-    const isPetSafe = searchParams.get("isPetSafe");
-    const plantSize = searchParams.get("plantSize");
-    const sortBy = searchParams.get("sortBy") || "name";
-    const sortOrder = searchParams.get("sortOrder") || "asc";
-    const minPrice = searchParams.get("minPrice");
-    const maxPrice = searchParams.get("maxPrice");
+    const category = searchParams.get('category');
+    const featured = searchParams.get('featured');
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const offset = parseInt(searchParams.get('offset') || '0');
 
-    const skip = (page - 1) * limit;
-
-    // Build where clause
-    const where: any = {
-      isActive: true,
-    };
+    let query = `
+      SELECT p.*, c.name as category_name 
+      FROM products p 
+      LEFT JOIN categories c ON p.category_id = c.id 
+      WHERE p.is_active = 1
+    `;
+    const params: any[] = [];
 
     if (category) {
-      where.category = {
-        slug: category,
-      };
+      query += ' AND c.slug = ?';
+      params.push(category);
     }
 
-    if (careLevel) {
-      if (careLevel.includes(",")) {
-        where.careLevel = { in: careLevel.split(",") };
-      } else {
-        where.careLevel = careLevel;
-      }
+    if (featured === 'true') {
+      query += ' AND p.is_featured = 1';
     }
 
-    if (lightRequirement) {
-      if (lightRequirement.includes(",")) {
-        where.lightRequirement = { in: lightRequirement.split(",") };
-      } else {
-        where.lightRequirement = lightRequirement;
-      }
-    }
+    query += ' ORDER BY p.created_at DESC LIMIT ? OFFSET ?';
+    params.push(limit, offset);
 
-    if (isPetSafe !== null && isPetSafe !== undefined) {
-      where.isPetSafe = isPetSafe === "true";
-    }
-
-    if (plantSize) {
-      where.plantSize = plantSize;
-    }
-
-    if (minPrice || maxPrice) {
-      where.price = {};
-      if (minPrice) where.price.gte = parseFloat(minPrice);
-      if (maxPrice) where.price.lte = parseFloat(maxPrice);
-    }
-
-    // Build order clause
-    const orderBy: any = {};
-    if (sortBy === "price") {
-      orderBy.price = sortOrder;
-    } else if (sortBy === "created") {
-      orderBy.createdAt = sortOrder;
-    } else {
-      orderBy.name = sortOrder;
-    }
-
-    const [products, total] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        include: {
-          category: true,
-          images: {
-            orderBy: { sortOrder: "asc" },
-          },
-          reviews: {
-            where: { isApproved: true },
-            select: { rating: true },
-          },
-        },
-        orderBy,
-        skip,
-        take: limit,
-      }),
-      prisma.product.count({ where }),
-    ]);
-
-    // Calculate average ratings
-    const productsWithRatings = products.map((product: any) => ({
-      ...product,
-      averageRating:
-        product.reviews.length > 0
-          ? product.reviews.reduce(
-              (acc: number, review: any) => acc + review.rating,
-              0,
-            ) / product.reviews.length
-          : 0,
-      reviewCount: product.reviews.length,
-    }));
-
+    const products = await queryD1(query, params, 'all');
+    
     return NextResponse.json({
-      products: productsWithRatings,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      success: true,
+      data: products,
+      total: products.length
     });
   } catch (error) {
-    console.error("Products fetch error:", error);
+    console.error('Products API Error:', error);
     return NextResponse.json(
-      { error: "Failed to fetch products" },
-      { status: 500 },
+      { 
+        success: false, 
+        error: 'Failed to fetch products',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
     );
   }
 }

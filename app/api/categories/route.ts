@@ -1,18 +1,42 @@
-﻿export const dynamic = "force-dynamic";
-import { NextResponse, NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
+﻿import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET() {
+// D1 Database client for local development
+const D1_API_URL = process.env.NODE_ENV === 'development' 
+  ? 'http://localhost:8787' 
+  : 'https://theplantstore.fractalnexustech.workers.dev';
+
+async function queryD1(query: string, params: any[] = [], type: 'first' | 'all' | 'run' = 'all') {
+  const response = await fetch(`${D1_API_URL}/api/query`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query, params, type })
+  });
+  
+  if (!response.ok) {
+    throw new Error(`D1 query failed: ${response.statusText}`);
+  }
+  
+  const result = await response.json();
+  return result.data;
+}
+
+export async function GET(request: NextRequest) {
   try {
-    const categories = await prisma.category.findMany({
-      where: { isActive: true },
-      orderBy: { sortOrder: "asc" },
+    const categories = await queryD1('SELECT * FROM categories ORDER BY name', [], 'all');
+    
+    return NextResponse.json({
+      success: true,
+      data: categories
     });
-    return NextResponse.json({ categories });
   } catch (error) {
+    console.error('Categories API Error:', error);
     return NextResponse.json(
-      { error: "Failed to fetch categories" },
-      { status: 500 },
+      { 
+        success: false, 
+        error: 'Failed to fetch categories',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
     );
   }
 }
@@ -31,9 +55,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
     const slug = generateSlug(name);
-    const category = await prisma.category.create({
-      data: { name, slug, isActive, sortOrder },
-    });
+    const category = await queryD1('INSERT INTO categories (name, slug, isActive, sortOrder) VALUES (?, ?, ?, ?)', [name, slug, isActive, sortOrder], 'first');
     return NextResponse.json({ category }, { status: 201 });
   } catch (error) {
     return NextResponse.json(
@@ -54,10 +76,7 @@ export async function PUT(request: NextRequest) {
       data.name = name;
       data.slug = generateSlug(name);
     }
-    const category = await prisma.category.update({
-      where: { id },
-      data,
-    });
+    const category = await queryD1('UPDATE categories SET ? WHERE id = ?', [data, id], 'first');
     return NextResponse.json({ category });
   } catch (error) {
     return NextResponse.json(
@@ -73,7 +92,7 @@ export async function DELETE(request: NextRequest) {
     if (!id) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
-    await prisma.category.delete({ where: { id } });
+    await queryD1('DELETE FROM categories WHERE id = ?', [id]);
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(
