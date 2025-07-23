@@ -1,0 +1,43 @@
+{
+  "build": {
+    "command": "npm run build",
+    "output": "out",
+    "environment": {
+      "NODE_VERSION": "18",
+      "NPM_VERSION": "9"
+    }
+  },
+  "deploy": {
+    "auto_deploy": true,
+    "preview_deployments": true
+  },
+  "environment_variables": {
+    "NEXT_PUBLIC_SITE_URL": "https://thehouseplantstore.co.za",
+    "NEXT_PUBLIC_SITE_NAME": "The Plant Store",
+    "NEXT_PUBLIC_SITE_DESCRIPTION": "Beautiful plants for your home and garden",
+    "NEXT_PUBLIC_CONTACT_EMAIL": "info@theplantstore.com",
+    "NEXT_PUBLIC_PHONE": "+27 11 123 4567",
+    "NEXT_PUBLIC_ADDRESS": "Johannesburg, South Africa"
+  },
+  "headers": {
+    "/*": {
+      "Cache-Control": "public, max-age=31536000, immutable"
+    },
+    "/_next/static/*": {
+      "Cache-Control": "public, max-age=31536000, immutable"
+    },
+    "/images/*": {
+      "Cache-Control": "public, max-age=31536000, immutable"
+    }
+  },
+  "redirects": [
+    {
+      "source": "/home",
+      "destination": "/",
+      "status": 301
+    }
+  ],
+  "functions": {
+    "directory": "functions"
+  }
+} 
