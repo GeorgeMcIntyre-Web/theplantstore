@@ -6,11 +6,12 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
-    // CORS headers
+    // CORS headers - allow both local and production domains
     const corsHeaders = {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Max-Age': '86400',
     };
 
     // Handle preflight requests
@@ -101,10 +102,29 @@ export default {
         });
       }
 
+      // Health check endpoint
+      if (path === '/api/health' && request.method === 'GET') {
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'API is running',
+          timestamp: new Date().toISOString(),
+          environment: 'production'
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
       // Default response
       return new Response(JSON.stringify({
         success: false,
-        error: 'Endpoint not found'
+        error: 'Endpoint not found',
+        available_endpoints: [
+          '/api/products',
+          '/api/products?featured=true',
+          '/api/products/{slug}',
+          '/api/categories',
+          '/api/health'
+        ]
       }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -114,7 +134,8 @@ export default {
       console.error('API Error:', error);
       return new Response(JSON.stringify({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
+        message: error.message
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
