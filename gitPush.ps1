@@ -1,0 +1,1 @@
+git add . && git commit -m "Fix Package.json" && git push
