@@ -1,8 +1,12 @@
-name = "theplantstore-pages"
+name = "theplantstore"
+main = "functions/api/products.js"
 compatibility_date = "2024-01-01"
 
-# Pages configuration
-pages_build_output_dir = "out"
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "houseplantstore-db"
+database_id = "b4117a97-7ef0-424a-93f7-eb1a4efe2cde"
 
 # Environment variables
 [vars]
