@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get all newsletter subscribers
+    const prisma = getPrismaClient();
     const subscribers = await prisma.user.findMany({
       where: {
         newsletterSubscribed: true,
@@ -120,6 +121,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const prisma = getPrismaClient();
     const subscriberCount = await prisma.user.count({
       where: {
         newsletterSubscribed: true,

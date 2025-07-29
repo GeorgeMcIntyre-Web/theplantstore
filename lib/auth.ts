@@ -1,13 +1,13 @@
 import { NextAuthOptions } from "next-auth";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import { prisma } from "./db";
+import { getPrismaClient } from "./db";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import AzureADProvider from "next-auth/providers/azure-ad";
 import bcrypt from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  adapter: PrismaAdapter(getPrismaClient()),
   providers: [
     // Google OAuth
     GoogleProvider({
@@ -36,6 +36,7 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        const prisma = getPrismaClient();
         const user = await prisma.user.findUnique({
           where: { email: credentials.email }
         });
