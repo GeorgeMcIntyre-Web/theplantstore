@@ -13,12 +13,6 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
         images: {
           orderBy: { sortOrder: 'asc' },
         },
-        variants: {
-          where: { isActive: true },
-          include: {
-            images: true,
-          },
-        },
         reviews: {
           where: { isApproved: true },
           include: {

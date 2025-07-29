@@ -45,7 +45,7 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
           </SheetTitle>
         </SheetHeader>
 
-        {items.length === 0 ? (
+        {!items || items.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center space-y-4">
             <div className="rounded-full bg-muted p-6">
               <ShoppingBag className="h-12 w-12 text-muted-foreground" />
@@ -82,7 +82,7 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
                 <Button
                   className="w-full"
                   asChild
-                  disabled={isLoading || items.length === 0}
+                  disabled={isLoading || !items || items.length === 0}
                 >
                   <Link href="/checkout" onClick={() => onOpenChange(false)}>
                     Checkout

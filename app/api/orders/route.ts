@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPrismaClient } from '@/lib/db';
+import { OrderStatus } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
   try {
@@ -7,7 +8,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
-    const status = searchParams.get('status');
+    const status = searchParams.get('status') as OrderStatus | null;
 
     const where = status ? { status } : {};
 
@@ -20,7 +21,6 @@ export async function GET(request: NextRequest) {
           },
         },
         shippingAddress: true,
-        billingAddress: true,
       },
       orderBy: {
         createdAt: 'desc',
@@ -53,6 +53,7 @@ function generateOrderNumber() {
 
 export async function POST(request: NextRequest) {
   try {
+    const prisma = getPrismaClient();
     const body = await request.json();
     const { name, email, address, city, province, postalCode, items } = body;
     if (!name || !email || !address || !city || !province || !postalCode || !items || items.length === 0) {
@@ -60,15 +61,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Find or create user
-    let user = await getPrismaClient().user.findUnique({ where: { email } });
+    let user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      user = await getPrismaClient().user.create({
+      user = await prisma.user.create({
         data: { name, email },
       });
     }
 
     // Create shipping address
-    const shippingAddress = await getPrismaClient().address.create({
+    const shippingAddress = await prisma.address.create({
       data: {
         userId: user.id,
         firstName: name.split(' ')[0] || name,
@@ -83,18 +84,18 @@ export async function POST(request: NextRequest) {
 
     // Fetch product info for all items
     const productIds = items.map((item: any) => item.productId);
-    const products = await getPrismaClient().product.findMany({
+    const products = await prisma.product.findMany({
       where: { id: { in: productIds } },
     });
 
     // Build order items and calculate totals
-    let subtotal = 0; // Changed from Decimal to number
+    let subtotal = 0;
     const orderItems = items.map((item: any) => {
       const product = products.find((p) => p.id === item.productId);
       if (!product) throw new Error(`Product not found: ${item.productId}`);
-      const price = product.price; // Changed from Decimal to number
-      const totalPrice = price * item.quantity; // Changed from Decimal to number
-      subtotal += totalPrice; // Changed from Decimal to number
+      const price = Number(product.price);
+      const totalPrice = price * item.quantity;
+      subtotal += totalPrice;
       return {
         productId: product.id,
         quantity: item.quantity,
@@ -112,7 +113,7 @@ export async function POST(request: NextRequest) {
     const totalAmount = subtotal + shippingCost + taxAmount - discountAmount; // Changed from Decimal to number
 
     // Create order
-    const order = await getPrismaClient().order.create({
+    const order = await prisma.order.create({
       data: {
         orderNumber: generateOrderNumber(),
         userId: user.id,
@@ -134,7 +135,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Find admin users to notify
-    const admins = await getPrismaClient().user.findMany({
+    const admins = await prisma.user.findMany({
       where: {
         OR: [
           { role: "SUPER_ADMIN" },
@@ -145,7 +146,7 @@ export async function POST(request: NextRequest) {
 
     // Create notifications for each admin
     await Promise.all(admins.map((admin) =>
-      getPrismaClient().notification.create({
+      prisma.notification.create({
         data: {
           userId: admin.id,
           type: "order",

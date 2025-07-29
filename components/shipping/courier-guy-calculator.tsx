@@ -27,7 +27,7 @@ export function CourierGuyCalculator({
   const [error, setError] = useState<string>('');
 
   useEffect(() => {
-    if (deliveryAddress && cartItems.length > 0) {
+    if (deliveryAddress && cartItems && cartItems.length > 0) {
       calculateRates();
     }
   }, [deliveryAddress, cartItems]);

@@ -115,12 +115,14 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
             </div>
 
             <ScrollArea className="max-h-96">
-              {results.length > 0 ? (
+              {results && results.length > 0 ? (
                 <div className="space-y-2">
                   {results.map((product) => {
                     const primaryImage =
-                      product.images.find((img) => img.isPrimary) ||
-                      product.images[0];
+                      product.images && product.images.length > 0
+                        ? (product.images.find((img) => img.isPrimary) ||
+                          product.images[0])
+                        : null;
                     return (
                       <Link
                         key={product.id}
@@ -152,7 +154,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
                               {formatPrice(product.price)}
                             </span>
                             <Badge variant="secondary" className="text-xs">
-                              {product.category.name}
+                              {product.category?.name || 'Uncategorized'}
                             </Badge>
                           </div>
                         </div>
@@ -171,7 +173,7 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
               )}
             </ScrollArea>
 
-            {results.length > 0 && (
+            {results && results.length > 0 && (
               <div className="pt-2 border-t">
                 <Button
                   variant="outline"

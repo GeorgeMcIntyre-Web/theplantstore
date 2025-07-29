@@ -26,7 +26,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
   const totalAmount = items.reduce(
-    (total, item) => total + item.product.price * item.quantity,
+    (total, item) => total + (item.product?.price || 0) * item.quantity,
     0,
   );
 
@@ -61,7 +61,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const prevItems = [...items];
     let updated = false;
     const newItems = items.map(item => {
-      if (item.product.id === productId) {
+      if (item.product?.id === productId) {
         updated = true;
         return { ...item, quantity: item.quantity + quantity };
       }

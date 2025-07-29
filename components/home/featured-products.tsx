@@ -86,7 +86,9 @@ export function FeaturedProducts() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {products.slice(0, 8).map((product, index) => {
             const primaryImage =
-              product.images.find((img) => img.isPrimary) || product.images[0];
+              product.images && product.images.length > 0
+                ? (product.images.find((img) => img.isPrimary) || product.images[0])
+                : null;
             const discountPercent = product.compareAtPrice
               ? Math.round(
                   ((product.compareAtPrice - product.price) /

@@ -11,6 +11,14 @@ import {
 } from "recharts";
 
 export default function SalesChart({ data }: { data: any[] }) {
+  if (!data || data.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64 text-muted-foreground">
+        No sales data available
+      </div>
+    );
+  }
+
   return (
     <ResponsiveContainer width="100%" height={250}>
       <ReLineChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>

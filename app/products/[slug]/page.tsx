@@ -64,7 +64,7 @@ async function getProduct(slug: string) {
 
     // Calculate average rating
     const averageRating =
-      product.reviews.length > 0
+      product.reviews && product.reviews.length > 0
         ? product.reviews.reduce(
             (acc: number, review: any) => acc + review.rating,
             0,
@@ -74,7 +74,7 @@ async function getProduct(slug: string) {
     return {
       ...product,
       averageRating,
-      reviewCount: product.reviews.length,
+      reviewCount: product.reviews?.length || 0,
       relatedProducts,
     };
   } catch (error) {
@@ -148,7 +148,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <ProductTabs product={product as any} />
 
           {/* Related Products */}
-          {product.relatedProducts.length > 0 && (
+          {product.relatedProducts && product.relatedProducts.length > 0 && (
             <RelatedProducts products={product.relatedProducts as any} />
           )}
         </div>

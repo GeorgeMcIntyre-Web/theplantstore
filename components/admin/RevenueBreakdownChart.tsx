@@ -12,13 +12,21 @@ import {
 const COLORS = ["#22c55e", "#3b82f6", "#f59e42", "#ef4444", "#a855f7", "#fbbf24", "#10b981", "#6366f1"];
 
 export default function RevenueBreakdownChart({ data }: { data: any[] }) {
+  if (!data || data.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64 text-muted-foreground">
+        No revenue data available
+      </div>
+    );
+  }
+
   return (
     <ResponsiveContainer width="100%" height={250}>
       <PieChart>
         <Pie
           data={data}
           dataKey="revenue"
-          nameKey="category"
+          nameKey="productId"
           cx="50%"
           cy="50%"
           outerRadius={80}

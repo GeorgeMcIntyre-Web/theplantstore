@@ -63,7 +63,7 @@ export function ProductTabs({ product }: ProductTabsProps) {
         <TabsTrigger value="description">Description</TabsTrigger>
         <TabsTrigger value="care">Care Guide</TabsTrigger>
         <TabsTrigger value="reviews">
-          Reviews ({product.reviews.length})
+          Reviews ({product.reviews?.length || 0})
         </TabsTrigger>
       </TabsList>
 
@@ -247,7 +247,7 @@ export function ProductTabs({ product }: ProductTabsProps) {
           <CardContent className="p-6">
             <h3 className="text-xl font-semibold mb-6">Customer Reviews</h3>
 
-            {product.reviews.length === 0 ? (
+            {!product.reviews || product.reviews.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">No reviews yet.</p>
                 <p className="text-sm text-muted-foreground mt-1">

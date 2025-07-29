@@ -1,4 +1,4 @@
-import { prisma } from './db';
+import { getPrismaClient } from './db';
 import { Prisma, UserRole, OrderStatus } from '@prisma/client';
 
 // Enhanced error handling with custom error types
@@ -69,7 +69,7 @@ export async function createJournalEntry(
   },
   tx?: Prisma.TransactionClient
 ): Promise<any> {
-  const client = tx || prisma;
+  const client = tx || getPrismaClient();
   
   try {
     // Validate entries balance
@@ -134,7 +134,7 @@ export async function createExpenseJournalEntry(
   expense: any,
   tx?: Prisma.TransactionClient
 ): Promise<any> {
-  const client = tx || prisma;
+  const client = tx || getPrismaClient();
   
   try {
     // Validate expense data
@@ -224,7 +224,7 @@ export async function createSalesJournalEntry(
   order: any,
   tx?: Prisma.TransactionClient
 ): Promise<any> {
-  const client = tx || prisma;
+  const client = tx || getPrismaClient();
   
   try {
     // Validate order data
@@ -365,7 +365,7 @@ export async function getFinancialSummary(
     
     const [revenue, expenses, vatCollected, vatPaid] = await Promise.all([
       // Revenue
-      prisma.order.aggregate({
+      getPrismaClient().order.aggregate({
         where: {
           createdAt: { gte: startDate, lte: endDate },
           status: OrderStatus.DELIVERED
@@ -374,7 +374,7 @@ export async function getFinancialSummary(
       }),
       
       // Expenses
-      prisma.expense.aggregate({
+      getPrismaClient().expense.aggregate({
         where: {
           expenseDate: { gte: startDate, lte: endDate },
           status: 'APPROVED'
@@ -383,7 +383,7 @@ export async function getFinancialSummary(
       }),
       
       // VAT Collected
-      prisma.order.aggregate({
+      getPrismaClient().order.aggregate({
         where: {
           createdAt: { gte: startDate, lte: endDate },
           status: OrderStatus.DELIVERED
@@ -392,7 +392,7 @@ export async function getFinancialSummary(
       }),
       
       // VAT Paid
-      prisma.expense.aggregate({
+      getPrismaClient().expense.aggregate({
         where: {
           expenseDate: { gte: startDate, lte: endDate },
           status: 'APPROVED'
@@ -459,7 +459,7 @@ export async function getChartData(
     
     const [revenueData, expenseData] = await Promise.all([
       // Revenue data
-      prisma.$queryRaw`
+      getPrismaClient().$queryRaw`
         SELECT 
           DATE_TRUNC(${groupBy}, "createdAt") as period,
           SUM("totalAmount") as revenue,
@@ -472,7 +472,7 @@ export async function getChartData(
       `,
       
       // Expense data
-      prisma.$queryRaw`
+      getPrismaClient().$queryRaw`
         SELECT 
           DATE_TRUNC(${groupBy}, "expenseDate") as period,
           SUM(amount) as expenses,
@@ -501,7 +501,7 @@ export async function getChartData(
 export async function initializeAccountingSystem(): Promise<void> {
   try {
     // Check if already initialized
-    const existingAccounts = await prisma.chartOfAccounts.count();
+    const existingAccounts = await getPrismaClient().chartOfAccounts.count();
     if (existingAccounts > 0) {
       console.log('Accounting system already initialized');
       return;
@@ -535,7 +535,7 @@ export async function initializeAccountingSystem(): Promise<void> {
       { accountCode: '5400', accountName: 'Shipping Expenses', accountType: 'EXPENSE', description: 'Shipping and delivery costs' },
     ];
     
-    await prisma.chartOfAccounts.createMany({
+    await getPrismaClient().chartOfAccounts.createMany({
       data: accounts
     });
     

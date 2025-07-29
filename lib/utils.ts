@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { prisma } from './db';
+import { getPrismaClient } from './db';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -41,6 +41,6 @@ export function levenshtein(a: string, b: string): number {
  * @param fallback The fallback value if not found
  */
 export async function getSettingValue(key: string, fallback: string): Promise<string> {
-  const setting = await prisma.setting.findUnique({ where: { key } });
+  const setting = await getPrismaClient().setting.findUnique({ where: { key } });
   return setting?.value ?? fallback;
 }

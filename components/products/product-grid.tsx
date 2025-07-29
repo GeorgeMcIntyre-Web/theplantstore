@@ -113,7 +113,7 @@ export function ProductGrid({ category, searchParams }: ProductGridProps) {
       {/* Sort Controls */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Showing {products.length} of {pagination.total} products
+          Showing {products?.length || 0} of {pagination?.total || 0} products
         </p>
         <Select
           value={`${sortBy}-${sortOrder}`}
@@ -134,7 +134,7 @@ export function ProductGrid({ category, searchParams }: ProductGridProps) {
       </div>
 
       {/* Products Grid */}
-      {products.length === 0 ? (
+      {!products || products.length === 0 ? (
         <div className="text-center py-12">
           <div className="rounded-full bg-muted p-6 mx-auto w-fit mb-4">
             <ShoppingCart className="h-12 w-12 text-muted-foreground" />
@@ -148,7 +148,9 @@ export function ProductGrid({ category, searchParams }: ProductGridProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {products.map((product) => {
             const primaryImage =
-              product.images.find((img) => img.isPrimary) || product.images[0];
+              product.images && product.images.length > 0
+                ? (product.images.find((img) => img.isPrimary) || product.images[0])
+                : null;
             const discountPercent = product.compareAtPrice
               ? Math.round(
                   ((product.compareAtPrice - product.price) /

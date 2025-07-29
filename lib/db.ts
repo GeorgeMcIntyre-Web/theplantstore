@@ -4,24 +4,34 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-// Only create Prisma client if DATABASE_URL is available
+// Only create Prisma client if DATABASE_URL is available and we're on the server
 const createPrismaClient = () => {
+  // Don't create client on client side
+  if (typeof window !== 'undefined') {
+    return null;
+  }
+  
   if (!process.env.DATABASE_URL) {
     console.warn('DATABASE_URL not found - Prisma client will not be initialized');
     return null;
   }
   
-  return new PrismaClient({
-    log:
-      process.env.NODE_ENV === "development"
-        ? ["query", "error", "warn"]
-        : ["error"],
-    datasources: {
-      db: {
-        url: process.env.DATABASE_URL,
+  try {
+    return new PrismaClient({
+      log:
+        process.env.NODE_ENV === "development"
+          ? ["query", "error", "warn"]
+          : ["error"],
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL,
+        },
       },
-    },
-  });
+    });
+  } catch (error) {
+    console.error('Failed to create Prisma client:', error);
+    return null;
+  }
 };
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
@@ -31,7 +41,7 @@ if (process.env.NODE_ENV !== "production" && prisma) globalForPrisma.prisma = pr
 // Helper function to safely access prisma in API routes
 export const getPrismaClient = () => {
   if (!prisma) {
-    throw new Error('Database not available - DATABASE_URL not configured');
+    throw new Error('Database not available - DATABASE_URL not configured or client-side execution');
   }
   return prisma;
 };
@@ -48,7 +58,7 @@ export const checkDatabaseHealth = async () => {
   if (!prisma) {
     return {
       status: "unhealthy",
-      error: "Prisma client not initialized - DATABASE_URL missing",
+      error: "Prisma client not initialized - DATABASE_URL missing or client-side execution",
       timestamp: new Date().toISOString(),
     };
   }

@@ -4,6 +4,7 @@ import { HeroSection } from "@/components/home/hero-section";
 import { FeaturedCategories } from "@/components/home/featured-categories";
 import { FeaturedProducts } from "@/components/home/featured-products";
 import { PlantCareSection } from "@/components/home/plant-care-section";
+import { InstagramShowcase } from "@/components/home/instagram-showcase";
 import { NewsletterSection } from "@/components/home/newsletter-section";
 
 export default function HomePage() {
@@ -15,6 +16,7 @@ export default function HomePage() {
         <FeaturedCategories />
         <FeaturedProducts />
         <PlantCareSection />
+        <InstagramShowcase />
         <NewsletterSection />
       </main>
       <Footer />

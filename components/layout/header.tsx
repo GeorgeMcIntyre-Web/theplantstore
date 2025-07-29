@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { ShoppingCart, User, Search, Menu, Leaf, Bell, CheckCircle, AlertCircle, FileText } from "lucide-react";
+import { ShoppingCart, User, Search, Menu, Leaf, Bell, CheckCircle, AlertCircle, FileText, Instagram } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { NavigationMenu } from "@/components/layout/navigation-menu";
@@ -24,11 +24,12 @@ export function Header() {
   const userRole = session?.user?.role;
   const isAdmin = userRole === "SUPER_ADMIN" || userRole === "PLANT_MANAGER";
   const { notifications = [], isLoading, markAsRead, refetch } = useNotifications(isAdmin ? userId : undefined);
-  const unreadCount = Array.isArray(notifications) ? notifications.filter(n => !n.read).length : 0;
+  const unreadCount = Array.isArray(notifications) ? notifications.filter(n => n && !n.read).length : 0;
   const [showNotifications, setShowNotifications] = useState(false);
 
   const markAllAsRead = async () => {
-    await Promise.all(notifications.filter(n => !n.read).map(n => markAsRead(n.id)));
+    if (!Array.isArray(notifications)) return;
+    await Promise.all(notifications.filter(n => n && !n.read).map(n => markAsRead(n.id)));
     refetch();
   };
 
@@ -93,10 +94,10 @@ export function Header() {
                     </div>
                     {isLoading ? (
                       <div className="p-4 text-center text-gray-500">Loading...</div>
-                    ) : notifications.length === 0 ? (
+                    ) : !Array.isArray(notifications) || notifications.length === 0 ? (
                       <div className="p-4 text-center text-gray-500">No notifications</div>
                     ) : (
-                      notifications.map((n) => (
+                      notifications.filter(n => n).map((n) => (
                         <div key={n.id} className={`flex items-start gap-2 p-2 border-b last:border-b-0 ${!n.read ? 'bg-gray-100' : ''}`}>
                           <span className="mt-1">{getIcon(n.type)}</span>
                           <div className="flex-1">
@@ -119,7 +120,7 @@ export function Header() {
                       ))
                     )}
                     {/* Add link to full notifications page */}
-                    {notifications.length > 0 && (
+                    {Array.isArray(notifications) && notifications.length > 0 && (
                       <div className="p-2 border-t text-center">
                         <Link href="/admin/notifications" className="text-primary hover:underline text-sm">
                           View all notifications
@@ -130,6 +131,14 @@ export function Header() {
                 )}
               </div>
             )}
+            {/* Instagram */}
+            <Link href="https://www.instagram.com/houseplantstoresa/" target="_blank" rel="noopener noreferrer">
+              <Button variant="ghost" size="sm" className="hidden sm:flex">
+                <Instagram className="h-4 w-4" />
+                <span className="sr-only">Instagram</span>
+              </Button>
+            </Link>
+            
             {/* Search */}
             <Button
               variant="ghost"

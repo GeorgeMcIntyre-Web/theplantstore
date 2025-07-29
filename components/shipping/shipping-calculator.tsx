@@ -141,7 +141,7 @@ export function ShippingCalculator({
           <div className="text-red-600 text-sm">{error}</div>
         )}
 
-        {rates.length > 0 && (
+        {rates && rates.length > 0 && (
           <div className="space-y-3">
             <h4 className="font-semibold">Available Shipping Options:</h4>
             {rates.map((rate, index) => (

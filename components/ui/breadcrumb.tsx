@@ -13,6 +13,10 @@ interface BreadcrumbProps {
 }
 
 export function Breadcrumb({ items, className }: BreadcrumbProps) {
+  if (!items || items.length === 0) {
+    return null;
+  }
+
   return (
     <nav
       className={cn(

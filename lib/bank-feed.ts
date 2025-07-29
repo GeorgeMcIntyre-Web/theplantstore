@@ -1,4 +1,4 @@
-import { prisma } from './db';
+import { getPrismaClient } from './db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
@@ -44,7 +44,7 @@ class BankFeedService {
     this.configs.set(config.accountNumber, config);
     
     // Store in database for persistence
-    await prisma.bankAccount.upsert({
+    await getPrismaClient().bankAccount.upsert({
       where: { accountNumber: config.accountNumber },
       update: {
         bankName: config.bankName,
@@ -76,7 +76,7 @@ class BankFeedService {
 
     for (const transaction of transactions) {
       // Check if transaction already exists
-      const existing = await prisma.bankTransaction.findFirst({
+      const existing = await getPrismaClient().bankTransaction.findFirst({
         where: {
           bankReference: transaction.reference,
           accountNumber: accountNumber
@@ -86,7 +86,7 @@ class BankFeedService {
       if (existing) continue;
 
       // Store transaction
-      await prisma.bankTransaction.create({
+      await getPrismaClient().bankTransaction.create({
         data: {
           accountNumber: accountNumber,
           transactionDate: transaction.date,
@@ -133,7 +133,7 @@ class BankFeedService {
   private async findMatchingExpenses(transaction: BankTransaction) {
     const searchTerms = this.extractSearchTerms(transaction.description);
     
-    return await prisma.expense.findMany({
+    return await getPrismaClient().expense.findMany({
       where: {
         OR: [
           {
@@ -183,14 +183,14 @@ class BankFeedService {
     transaction: BankTransaction, 
     expense: any
   ): Promise<void> {
-    await prisma.expense.update({
+    await getPrismaClient().expense.update({
       where: { id: expense.id },
       data: {
         bankTransactions: { connect: { id: transaction.id } }
       }
     });
 
-    await prisma.bankTransaction.update({
+    await getPrismaClient().bankTransaction.update({
       where: { id: transaction.id },
       data: {
         reconciled: true,
@@ -204,7 +204,7 @@ class BankFeedService {
     transaction: BankTransaction,
     expenses: any[]
   ): Promise<void> {
-    await prisma.reconciliationSuggestion.create({
+    await getPrismaClient().reconciliationSuggestion.create({
       data: {
         bankTransactionId: transaction.id,
         suggestedExpenseIds: expenses.map(e => e.id),
@@ -222,10 +222,10 @@ class BankFeedService {
     if (!session?.user) return;
 
     const categoryName = this.mapBankCategory(transaction.category, config.categories);
-    const categoryRecord = await prisma.expenseCategory.findFirst({ where: { name: categoryName } });
+    const categoryRecord = await getPrismaClient().expenseCategory.findFirst({ where: { name: categoryName } });
     if (!categoryRecord) throw new Error(`Expense category '${categoryName}' not found`);
 
-    await prisma.expense.create({
+    await getPrismaClient().expense.create({
       data: {
         description: transaction.description,
         vendorName: this.extractVendorName(transaction.description),
@@ -260,7 +260,7 @@ class BankFeedService {
   }
 
   async getUnreconciledTransactions(accountNumber: string): Promise<BankTransaction[]> {
-    const results = await prisma.bankTransaction.findMany({
+    const results = await getPrismaClient().bankTransaction.findMany({
       where: {
         accountNumber: accountNumber,
         reconciled: false
@@ -287,7 +287,7 @@ class BankFeedService {
   }
 
   async getReconciliationSuggestions(): Promise<any[]> {
-    return await prisma.reconciliationSuggestion.findMany({
+    return await getPrismaClient().reconciliationSuggestion.findMany({
       include: {
         bankTransaction: true
       },
@@ -301,8 +301,8 @@ class BankFeedService {
     transactionId: string, 
     expenseId: string
   ): Promise<void> {
-    await prisma.$transaction([
-      prisma.bankTransaction.update({
+    await getPrismaClient().$transaction([
+      getPrismaClient().bankTransaction.update({
         where: { id: transactionId },
         data: {
           reconciled: true,
@@ -310,7 +310,7 @@ class BankFeedService {
           expenseId: expenseId
         }
       }),
-      prisma.expense.update({
+      getPrismaClient().expense.update({
         where: { id: expenseId },
         data: {
           reconciled: true,
@@ -322,7 +322,7 @@ class BankFeedService {
   }
 
   async getBankAccounts(): Promise<any[]> {
-    return await prisma.bankAccount.findMany({
+    return await getPrismaClient().bankAccount.findMany({
       orderBy: {
         createdAt: 'desc'
       }
@@ -332,7 +332,7 @@ class BankFeedService {
   async deleteBankAccount(accountNumber: string): Promise<void> {
     this.configs.delete(accountNumber);
     
-    await prisma.bankAccount.delete({
+    await getPrismaClient().bankAccount.delete({
       where: { accountNumber: accountNumber }
     });
   }

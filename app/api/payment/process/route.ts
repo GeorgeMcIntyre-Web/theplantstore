@@ -6,6 +6,8 @@ import { authOptions } from '@/lib/auth';
 import { Decimal } from '@prisma/client/runtime/library';
 
 export async function POST(request: NextRequest) {
+  const prisma = getPrismaClient();
+  
   try {
     const session = await getServerSession(authOptions);
     

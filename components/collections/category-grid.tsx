@@ -84,7 +84,7 @@ export function CategoryGrid() {
 
                       {/* Featured Items */}
                       <div className="flex flex-wrap gap-1 mb-4">
-                        {category.featured.slice(0, 3).map((item) => (
+                        {category.featured && category.featured.slice(0, 3).map((item) => (
                           <span
                             key={item}
                             className="text-xs bg-white/20 px-2 py-1 rounded"
@@ -92,7 +92,7 @@ export function CategoryGrid() {
                             {item}
                           </span>
                         ))}
-                        {category.featured.length > 3 && (
+                        {category.featured && category.featured.length > 3 && (
                           <span className="text-xs bg-white/20 px-2 py-1 rounded">
                             +{category.featured.length - 3} more
                           </span>

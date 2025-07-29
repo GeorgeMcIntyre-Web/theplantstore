@@ -6,7 +6,9 @@ import { getPrismaClient } from '@/lib/db';
 export async function GET(request: NextRequest) {
   try {
     const prisma = getPrismaClient();
-    const featuredProducts = await prisma.product.findMany({
+    
+    // First try to get featured products
+    let featuredProducts = await prisma.product.findMany({
       where: {
         isFeatured: true,
         isActive: true,
@@ -14,14 +16,26 @@ export async function GET(request: NextRequest) {
       include: {
         images: true,
         category: true,
-        variants: {
-          where: {
-            isActive: true,
-          },
-        },
       },
       take: 8,
     });
+
+    // If no featured products found, get some active products as fallback
+    if (featuredProducts.length === 0) {
+      featuredProducts = await prisma.product.findMany({
+        where: {
+          isActive: true,
+        },
+        include: {
+          images: true,
+          category: true,
+        },
+        take: 8,
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+    }
 
     return NextResponse.json(featuredProducts);
   } catch (error) {

@@ -31,7 +31,102 @@ export async function GET(request: NextRequest) {
     });
     const totalProducts = await prisma.product.count();
 
+    // Get recent orders
+    const recentOrders = await prisma.order.findMany({
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: { name: true }
+        }
+      }
+    });
+
+    // Get sales data for the last 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const salesData = await prisma.order.groupBy({
+      by: ['createdAt'],
+      where: {
+        createdAt: {
+          gte: thirtyDaysAgo
+        }
+      },
+      _sum: {
+        totalAmount: true
+      },
+      orderBy: {
+        createdAt: 'asc'
+      }
+    });
+
+    // Get customer growth data
+    const customerGrowthData = await prisma.user.groupBy({
+      by: ['createdAt'],
+      where: {
+        role: 'CUSTOMER',
+        createdAt: {
+          gte: thirtyDaysAgo
+        }
+      },
+      _count: true,
+      orderBy: {
+        createdAt: 'asc'
+      }
+    });
+
+    // Get top products
+    const topProductsData = await prisma.orderItem.groupBy({
+      by: ['productId'],
+      _sum: {
+        quantity: true
+      },
+      orderBy: {
+        _sum: {
+          quantity: 'desc'
+        }
+      },
+      take: 5
+    });
+
+    // Get revenue by category
+    const revenueByCategoryData = await prisma.orderItem.groupBy({
+      by: ['productId'],
+      _sum: {
+        price: true
+      },
+      orderBy: {
+        _sum: {
+          price: 'desc'
+        }
+      },
+      take: 5
+    });
+
     const analyticsData = {
+      salesData: salesData.map(item => ({
+        date: item.createdAt.toISOString().split('T')[0],
+        sales: item._sum.totalAmount || 0
+      })),
+      customerGrowthData: customerGrowthData.map(item => ({
+        date: item.createdAt.toISOString().split('T')[0],
+        customers: item._count
+      })),
+      topProductsData: topProductsData.map(item => ({
+        productId: item.productId,
+        quantity: item._sum.quantity || 0
+      })),
+      revenueByCategoryData: revenueByCategoryData.map(item => ({
+        productId: item.productId,
+        revenue: item._sum.price || 0
+      })),
+      recentOrders: recentOrders.map(order => ({
+        id: order.id,
+        orderNumber: order.orderNumber,
+        createdAt: order.createdAt,
+        user: order.user
+      })),
       totalOrders,
       totalRevenue: totalRevenue._sum.totalAmount || 0,
       totalCustomers,

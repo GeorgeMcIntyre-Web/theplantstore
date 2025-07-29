@@ -6,8 +6,21 @@ import GoogleProvider from "next-auth/providers/google";
 import AzureADProvider from "next-auth/providers/azure-ad";
 import bcrypt from "bcryptjs";
 
+// Only initialize adapter on server side and only if DATABASE_URL exists
+const createAdapter = () => {
+  if (typeof window !== 'undefined') return undefined;
+  if (!process.env.DATABASE_URL) return undefined;
+  
+  try {
+    return PrismaAdapter(getPrismaClient());
+  } catch (error) {
+    console.warn('Failed to create Prisma adapter:', error);
+    return undefined;
+  }
+};
+
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(getPrismaClient()),
+  adapter: createAdapter(),
   providers: [
     // Google OAuth
     GoogleProvider({
@@ -36,30 +49,35 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const prisma = getPrismaClient();
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
-        });
+        try {
+          const prisma = getPrismaClient();
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email }
+          });
 
-        if (!user || !user.password) {
+          if (!user || !user.password) {
+            return null;
+          }
+
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password,
+            user.password
+          );
+
+          if (!isPasswordValid) {
+            return null;
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name || "",
+            role: user.role,
+          };
+        } catch (error) {
+          console.error('Auth error:', error);
           return null;
         }
-
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
-
-        if (!isPasswordValid) {
-          return null;
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name || "",
-          role: user.role,
-        };
       }
     })
   ],

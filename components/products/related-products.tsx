@@ -25,7 +25,7 @@ export function RelatedProducts({ products }: RelatedProductsProps) {
     }).format(price);
   };
 
-  if (products.length === 0) {
+  if (!products || products.length === 0) {
     return null;
   }
 

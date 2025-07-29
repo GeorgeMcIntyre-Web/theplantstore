@@ -3,6 +3,8 @@ import { getPrismaClient } from '@/lib/db';
 import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
+  const prisma = getPrismaClient();
+  
   try {
     const body = await request.text();
     const signature = request.headers.get('x-courier-guy-signature');
@@ -38,6 +40,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function handleTrackingUpdate(data: any) {
+  const prisma = getPrismaClient();
   const { waybill_number, status_code, status_description, location } = data;
 
   const order = await prisma.order.findFirst({
@@ -75,6 +78,7 @@ async function handleTrackingUpdate(data: any) {
 }
 
 async function handleDeliveryConfirmation(data: any) {
+  const prisma = getPrismaClient();
   const { waybill_number, delivered_at, recipient_name } = data;
 
   const order = await prisma.order.findFirst({

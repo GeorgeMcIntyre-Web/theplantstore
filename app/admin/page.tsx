@@ -74,6 +74,18 @@ export default function AdminDashboard() {
   const [showTour, setShowTour] = useState(false);
   const [hasCompletedTour, setHasCompletedTour] = useState(false);
 
+  // Check if tour was completed before
+  useEffect(() => {
+    try {
+      const completed = localStorage.getItem('admin-tour-completed');
+      if (completed === 'true') {
+        setHasCompletedTour(true);
+      }
+    } catch (error) {
+      console.warn('Could not access localStorage:', error);
+    }
+  }, []);
+
   useEffect(() => {
     setLoading(true);
     setError(null);
@@ -86,7 +98,22 @@ export default function AdminDashboard() {
       .then((res) => res.json())
       .then((data) => {
         if (data.error) setError(data.error);
-        else setAnalytics(data);
+        else {
+          // Ensure all required properties exist
+          const safeData = {
+            salesData: data.salesData || [],
+            customerGrowthData: data.customerGrowthData || [],
+            topProductsData: data.topProductsData || [],
+            revenueByCategoryData: data.revenueByCategoryData || [],
+            recentOrders: data.recentOrders || [],
+            totalOrders: data.totalOrders || 0,
+            totalRevenue: data.totalRevenue || 0,
+            totalCustomers: data.totalCustomers || 0,
+            totalProducts: data.totalProducts || 0,
+            generatedAt: data.generatedAt || new Date().toISOString(),
+          };
+          setAnalytics(safeData);
+        }
       })
       .catch((_) => setError("Failed to fetch analytics"))
       .finally(() => setLoading(false));
@@ -101,6 +128,10 @@ export default function AdminDashboard() {
             typeof p.stockQuantity === 'number' && typeof p.effectiveLowStockThreshold === 'number' && p.stockQuantity <= p.effectiveLowStockThreshold
           )
         );
+      })
+      .catch((error) => {
+        console.warn('Failed to fetch products for low stock check:', error);
+        setLowStockProducts([]);
       });
   }, [dateRange, retryCount]);
 
@@ -138,7 +169,7 @@ export default function AdminDashboard() {
         />
       )}
       {/* Onboarding tip for empty analytics or first visit */}
-      {!loading && !error && (!analytics || (analytics && Object.values(analytics).every(val => Array.isArray(val) && val.length === 0))) && (
+      {!loading && !error && (!analytics || (analytics && (!analytics.recentOrders || analytics.recentOrders.length === 0) && (!analytics.salesData || analytics.salesData.length === 0))) && (
         <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded-lg p-4 mb-6">
           <div className="font-semibold mb-1">Welcome to your Admin Dashboard!</div>
           <div className="text-sm">
@@ -181,7 +212,7 @@ export default function AdminDashboard() {
             <RevenueBreakdownChart data={analytics.revenueByCategoryData} />
           </CardSection>
           <CardSection title="Recent Activity" icon={<Activity className="h-5 w-5" />}>
-            {analytics.recentOrders.length === 0 ? (
+            {!analytics.recentOrders || analytics.recentOrders.length === 0 ? (
               <div className="text-muted-foreground">No recent orders.</div>
             ) : (
               <ul className="divide-y divide-muted">
@@ -235,7 +266,7 @@ export default function AdminDashboard() {
       )}
       
       {/* Onboarding Tour */}
-      {showTour && userRole && AdminTours[userRole as keyof typeof AdminTours] && (
+      {showTour && userRole && AdminTours[userRole as keyof typeof AdminTours] && Array.isArray(AdminTours[userRole as keyof typeof AdminTours]) && (
         <OnboardingTour
           steps={AdminTours[userRole as keyof typeof AdminTours]}
           isOpen={showTour}
@@ -244,7 +275,11 @@ export default function AdminDashboard() {
             setShowTour(false);
             setHasCompletedTour(true);
             // Save to localStorage to remember completion
-            localStorage.setItem('admin-tour-completed', 'true');
+            try {
+              localStorage.setItem('admin-tour-completed', 'true');
+            } catch (error) {
+              console.warn('Could not save to localStorage:', error);
+            }
           }}
           userRole={userRole}
         />
@@ -280,7 +315,7 @@ function WelcomeAdminMessage({
       {onStartTour && !hasCompletedTour && (
         <div className="flex items-center gap-2">
           <HelpTooltip
-            content={AdminHelpContent[role.toLowerCase() as keyof typeof AdminHelpContent]?.content || "Get help with admin features"}
+            content={AdminHelpContent[role === 'SUPER_ADMIN' ? 'products' : role === 'FINANCIAL_MANAGER' ? 'accounting' : 'products']?.content || "Get help with admin features"}
             title="Quick Help"
             variant="info"
           />

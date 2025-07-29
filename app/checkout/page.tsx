@@ -85,7 +85,7 @@ export default function CheckoutPage() {
     });
   };
 
-  if (items.length === 0) {
+  if (!items || items.length === 0) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />

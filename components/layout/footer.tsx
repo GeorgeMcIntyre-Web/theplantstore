@@ -28,12 +28,13 @@ export function Footer() {
                 South Africa's premier destination for beautiful indoor plants,
                 outdoor plants, and succulents. Bringing nature to your home.
               </p>
-              <div className="flex space-x-2">
+              <div className="flex space-x-4">
+                <Link href="https://www.instagram.com/houseplantstoresa/" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary">
+                  <Instagram className="h-5 w-5" />
+                  <span className="sr-only">Instagram</span>
+                </Link>
                 <Button variant="ghost" size="sm">
                   <Facebook className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="sm">
-                  <Instagram className="h-4 w-4" />
                 </Button>
                 <Button variant="ghost" size="sm">
                   <Twitter className="h-4 w-4" />

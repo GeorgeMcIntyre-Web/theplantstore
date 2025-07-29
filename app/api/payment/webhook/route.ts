@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function handlePaymentSucceeded(paymentData: any) {
+  const prisma = getPrismaClient();
   const order = await prisma.order.findFirst({
     where: { paymentReference: paymentData.id },
   });
@@ -67,6 +68,7 @@ async function handlePaymentSucceeded(paymentData: any) {
 }
 
 async function handlePaymentFailed(paymentData: any) {
+  const prisma = getPrismaClient();
   const order = await prisma.order.findFirst({
     where: { paymentReference: paymentData.id },
   });
@@ -83,6 +85,7 @@ async function handlePaymentFailed(paymentData: any) {
 }
 
 async function handlePaymentRefunded(paymentData: any) {
+  const prisma = getPrismaClient();
   const order = await prisma.order.findFirst({
     where: { paymentReference: paymentData.id },
   });
