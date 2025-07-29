@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { prisma } from '@/lib/db';
+import { getPrismaClient } from '@/lib/db';
 import { getFinancialSummary } from '@/lib/accounting';
 import { UserRole } from '@prisma/client';
 

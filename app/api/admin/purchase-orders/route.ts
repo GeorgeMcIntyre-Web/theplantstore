@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { getPrismaClient } from '@/lib/db';
 import { Decimal } from '@prisma/client/runtime/library';
 
 function generatePONumber() {

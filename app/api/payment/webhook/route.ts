@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { getPrismaClient } from '@/lib/db';
 import { yocoService } from '@/lib/yoco';
 
 export async function POST(request: NextRequest) {

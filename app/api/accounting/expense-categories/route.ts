@@ -1,25 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { prisma } from '@/lib/db';
+import { getPrismaClient } from '@/lib/db';
 import { UserRole } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const user = await prisma.user.findUnique({ 
-    where: { email: session.user.email } 
-  });
-  
-  const allowedRoles: UserRole[] = [UserRole.FINANCIAL_MANAGER, UserRole.ACCOUNTANT, UserRole.SUPER_ADMIN];
-  if (!user || !allowedRoles.includes(user.role)) {
-    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
-  }
-
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const prisma = getPrismaClient();
+    const user = await prisma.user.findUnique({ 
+      where: { email: session.user.email } 
+    });
+    
+    const allowedRoles: UserRole[] = [UserRole.FINANCIAL_MANAGER, UserRole.ACCOUNTANT, UserRole.SUPER_ADMIN];
+    if (!user || !allowedRoles.includes(user.role)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
     const categories = await prisma.expenseCategory.findMany({
       include: {
         _count: {
@@ -32,26 +33,33 @@ export async function GET() {
     return NextResponse.json(categories);
   } catch (error) {
     console.error('Error fetching expense categories:', error);
+    if (error instanceof Error && error.message.includes('Database not available')) {
+      return NextResponse.json(
+        { error: 'Database not available' },
+        { status: 503 }
+      );
+    }
     return NextResponse.json({ error: 'Failed to fetch expense categories' }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const user = await prisma.user.findUnique({ 
-    where: { email: session.user.email } 
-  });
-  
-  const allowedRoles: UserRole[] = [UserRole.FINANCIAL_MANAGER, UserRole.SUPER_ADMIN];
-  if (!user || !allowedRoles.includes(user.role)) {
-    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
-  }
-
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const prisma = getPrismaClient();
+    const user = await prisma.user.findUnique({ 
+      where: { email: session.user.email } 
+    });
+    
+    const allowedRoles: UserRole[] = [UserRole.FINANCIAL_MANAGER, UserRole.SUPER_ADMIN];
+    if (!user || !allowedRoles.includes(user.role)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
     const data = await request.json();
     
     if (!data.name || !data.name.trim()) {
@@ -83,6 +91,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(newCategory, { status: 201 });
   } catch (error) {
     console.error('Error creating expense category:', error);
+    if (error instanceof Error && error.message.includes('Database not available')) {
+      return NextResponse.json(
+        { error: 'Database not available' },
+        { status: 503 }
+      );
+    }
     return NextResponse.json({ error: 'Failed to create expense category' }, { status: 500 });
   }
 } 

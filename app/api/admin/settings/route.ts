@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { prisma } from '@/lib/db';
+import { getPrismaClient } from '@/lib/db';
 import { authOptions } from '@/lib/auth';
 
 // Helper: Only allow SUPER_ADMIN or FINANCIAL_MANAGER

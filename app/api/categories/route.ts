@@ -1,4 +1,4 @@
-﻿export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 import { NextResponse, NextRequest } from "next/server";
 import { getPrismaClient } from "@/lib/db";
 

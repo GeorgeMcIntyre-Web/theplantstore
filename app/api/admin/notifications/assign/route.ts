@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { getPrismaClient } from '@/lib/db';
 
 // POST: Assign notifications to a user and update status
 export async function POST(req: NextRequest) {

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { emailService } from '@/lib/email/email-service';
-import { prisma } from '@/lib/db';
+import { getPrismaClient } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {

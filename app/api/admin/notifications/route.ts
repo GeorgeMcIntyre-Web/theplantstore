@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { getPrismaClient } from '@/lib/db';
 // import { getSessionUserId } from '@/lib/auth'; // Placeholder for user context
 
 // GET: Fetch all notifications for admin view
