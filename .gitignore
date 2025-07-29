@@ -17,3 +17,4 @@ development-secrets.md
 *.tmp
 *.temp
 .cache/
+.vercel
