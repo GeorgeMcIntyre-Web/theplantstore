@@ -30,14 +30,23 @@ export interface PaystackVerifyResponse {
 }
 
 class PaystackService {
-  private secretKey: string;
-  private publicKey: string;
+  private secretKey: string | undefined;
+  private publicKey: string | undefined;
   private baseUrl: string;
 
   constructor() {
-    this.secretKey = process.env.PAYSTACK_SECRET_KEY!;
-    this.publicKey = process.env.PAYSTACK_PUBLIC_KEY!;
+    this.secretKey = process.env.PAYSTACK_SECRET_KEY;
+    this.publicKey = process.env.PAYSTACK_PUBLIC_KEY;
     this.baseUrl = 'https://api.paystack.co';
+  }
+
+  private checkConfig() {
+    if (!this.secretKey) {
+      throw new Error('PAYSTACK_SECRET_KEY is required');
+    }
+    if (!this.publicKey) {
+      throw new Error('PAYSTACK_PUBLIC_KEY is required');
+    }
   }
 
   /**
@@ -50,6 +59,8 @@ class PaystackService {
     callback_url?: string;
     currency?: string;
   }): Promise<PaystackInitializeResponse> {
+    this.checkConfig();
+    
     const payload = {
       amount: data.amount * 100, // Convert to kobo
       email: data.email,
@@ -80,6 +91,8 @@ class PaystackService {
    * Verify a transaction
    */
   async verifyTransaction(reference: string): Promise<PaystackVerifyResponse> {
+    this.checkConfig();
+    
     try {
       const response = await fetch(`${this.baseUrl}/transaction/verify/${reference}`, {
         method: 'GET',
@@ -107,6 +120,8 @@ class PaystackService {
     from?: string;
     to?: string;
   } = {}): Promise<any> {
+    this.checkConfig();
+    
     const queryParams = new URLSearchParams();
     
     if (params.page) queryParams.append('page', params.page.toString());
@@ -141,6 +156,8 @@ class PaystackService {
     last_name?: string;
     phone?: string;
   }): Promise<any> {
+    this.checkConfig();
+    
     try {
       const response = await fetch(`${this.baseUrl}/customer`, {
         method: 'POST',
@@ -163,8 +180,10 @@ class PaystackService {
    * Verify webhook signature
    */
   verifyWebhookSignature(payload: string, signature: string): boolean {
+    this.checkConfig();
+    
     const hash = crypto
-      .createHmac('sha512', this.secretKey)
+      .createHmac('sha512', this.secretKey!)
       .update(payload)
       .digest('hex');
     
@@ -184,6 +203,9 @@ class PaystackService {
    * Get public key for client-side use
    */
   getPublicKey(): string {
+    if (!this.publicKey) {
+      throw new Error('Public key not available. Please ensure PAYSTACK_PUBLIC_KEY is set.');
+    }
     return this.publicKey;
   }
 

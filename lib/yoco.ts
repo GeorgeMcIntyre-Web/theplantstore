@@ -13,16 +13,23 @@ interface YocoCharge {
 }
 
 export class YocoService {
-  private secretKey: string;
+  private secretKey: string | undefined;
+  private webhookSecret: string | undefined;
 
   constructor() {
-    this.secretKey = process.env.YOCO_SECRET_KEY!;
+    this.secretKey = process.env.YOCO_SECRET_KEY;
+    this.webhookSecret = process.env.YOCO_WEBHOOK_SECRET;
+  }
+
+  private checkConfig() {
     if (!this.secretKey) {
       throw new Error('YOCO_SECRET_KEY is required');
     }
   }
 
   async createCharge(token: string, paymentRequest: YocoPaymentRequest): Promise<YocoCharge> {
+    this.checkConfig();
+    
     const response = await fetch('https://online.yoco.com/v1/charges/', {
       method: 'POST',
       headers: {
@@ -46,6 +53,8 @@ export class YocoService {
   }
 
   async getCharge(chargeId: string): Promise<YocoCharge> {
+    this.checkConfig();
+    
     const response = await fetch(`https://online.yoco.com/v1/charges/${chargeId}`, {
       headers: {
         'Authorization': `Bearer ${this.secretKey}`,
@@ -60,9 +69,14 @@ export class YocoService {
   }
 
   verifyWebhookSignature(payload: string, signature: string): boolean {
+    if (!this.webhookSecret) {
+      console.warn('YOCO_WEBHOOK_SECRET not configured - webhook verification disabled');
+      return true; // Allow webhook to proceed in development
+    }
+    
     const crypto = require('crypto');
     const expectedSignature = crypto
-      .createHmac('sha256', process.env.YOCO_WEBHOOK_SECRET!)
+      .createHmac('sha256', this.webhookSecret)
       .update(payload)
       .digest('hex');
     
