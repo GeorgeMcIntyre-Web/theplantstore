@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { prisma } from '@/lib/db';
+import { getPrismaClient } from '@/lib/db';
 import { UserRole } from '@prisma/client';
 import { z } from 'zod';
 
@@ -20,6 +20,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   if (!session?.user?.email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+  const prisma = getPrismaClient();
   const user = await prisma.user.findUnique({ where: { email: session.user.email } });
   const allowedRoles: UserRole[] = [UserRole.FINANCIAL_MANAGER, UserRole.ACCOUNTANT, UserRole.SUPER_ADMIN];
   if (!user || !allowedRoles.includes(user.role)) {
@@ -54,6 +55,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   if (!session?.user?.email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+  const prisma = getPrismaClient();
   const user = await prisma.user.findUnique({ where: { email: session.user.email } });
   const allowedRoles: UserRole[] = [UserRole.FINANCIAL_MANAGER, UserRole.ACCOUNTANT, UserRole.SUPER_ADMIN];
   if (!user || !allowedRoles.includes(user.role)) {

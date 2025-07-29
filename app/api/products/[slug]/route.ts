@@ -1,61 +1,46 @@
 export const dynamic = "force-dynamic";
 
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { NextRequest, NextResponse } from 'next/server';
+import { getPrismaClient } from '@/lib/db';
 
-// Define interfaces for type safety
-interface ReviewWithRating {
-  rating: number;
-  [key: string]: any;
-}
-
-interface ProductWithReviews {
-  reviews: ReviewWithRating[];
-  [key: string]: any;
-}
-
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest, { params }: { params: { slug: string } }) {
   try {
-    const products = await prisma.product.findMany({
-      where: {
-        isFeatured: true,
-        isActive: true,
-      },
+    const prisma = getPrismaClient();
+    const product = await prisma.product.findUnique({
+      where: { slug: params.slug },
       include: {
         category: true,
         images: {
-          where: { isPrimary: true },
-          take: 1,
+          orderBy: { sortOrder: 'asc' },
+        },
+        variants: {
+          where: { isActive: true },
+          include: {
+            images: true,
+          },
         },
         reviews: {
           where: { isApproved: true },
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
         },
       },
-      take: 8,
-      orderBy: { createdAt: "desc" },
     });
 
-    // Calculate average ratings
-    const productsWithRatings = products.map((product: any) => ({
-      ...product,
-      averageRating:
-        product.reviews.length > 0
-          ? product.reviews.reduce(
-              (acc: number, review: ReviewWithRating) => acc + review.rating,
-              0,
-            ) / product.reviews.length
-          : 0,
-      reviewCount: product.reviews.length,
-    }));
+    if (!product) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    }
 
-    return NextResponse.json({
-      products: productsWithRatings,
-    });
-  } catch (error: any) {
-    console.error("Featured products fetch error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch featured products" },
-      { status: 500 },
-    );
+    return NextResponse.json(product);
+  } catch (error) {
+    console.error('Error fetching product:', error);
+    return NextResponse.json({ error: 'Failed to fetch product' }, { status: 500 });
   }
 }

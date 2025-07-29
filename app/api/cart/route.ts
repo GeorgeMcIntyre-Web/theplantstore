@@ -1,46 +1,49 @@
 export const dynamic = "force-dynamic";
 
-import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { prisma } from "@/lib/db";
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { getPrismaClient } from '@/lib/db';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession();
-
     if (!session?.user?.email) {
-      return NextResponse.json({ items: [] });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const prisma = getPrismaClient();
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-    });
-
-    if (!user) {
-      return NextResponse.json({ items: [] });
-    }
-
-    const cartItems = await prisma.cartItem.findMany({
-      where: { userId: user.id },
       include: {
-        product: {
+        cart: {
           include: {
-            images: {
-              orderBy: { sortOrder: "asc" },
+            items: {
+              include: {
+                product: {
+                  include: {
+                    images: true,
+                  },
+                },
+              },
             },
           },
         },
       },
-      orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json({ items: cartItems });
+    if (!user || !user.cart) {
+      return NextResponse.json({ items: [], total: 0 });
+    }
+
+    const total = user.cart.items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+
+    return NextResponse.json({
+      items: user.cart.items,
+      total,
+    });
   } catch (error) {
-    console.error("Cart fetch error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch cart" },
-      { status: 500 },
-    );
+    console.error('Error fetching cart:', error);
+    return NextResponse.json({ error: 'Failed to fetch cart' }, { status: 500 });
   }
 }
 
@@ -54,6 +57,7 @@ export async function POST(request: NextRequest) {
 
     const { productId, quantity = 1 } = await request.json();
 
+    const prisma = getPrismaClient();
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
     });
@@ -133,6 +137,7 @@ export async function PUT(request: NextRequest) {
 
     const { itemId, quantity } = await request.json();
 
+    const prisma = getPrismaClient();
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
     });
@@ -197,6 +202,7 @@ export async function DELETE(request: NextRequest) {
 
     const { itemId } = await request.json();
 
+    const prisma = getPrismaClient();
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
     });

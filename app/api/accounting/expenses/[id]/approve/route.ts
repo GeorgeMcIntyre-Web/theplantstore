@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { prisma } from '@/lib/db';
+import { getPrismaClient } from '@/lib/db';
 import { createExpenseJournalEntry } from '@/lib/accounting';
 import { UserRole, ExpenseStatus } from '@prisma/client';
 import { z } from 'zod';
@@ -19,6 +19,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const prisma = getPrismaClient();
   const user = await prisma.user.findUnique({ 
     where: { email: session.user.email } 
   });

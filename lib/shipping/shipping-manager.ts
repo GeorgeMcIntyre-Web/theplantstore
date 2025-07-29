@@ -3,7 +3,7 @@ import { CourierGuyProvider } from './providers/courier-guy';
 import { AramexProvider } from './providers/aramex';
 import { PostNetProvider } from './providers/postnet';
 import { LocalDeliveryProvider } from './providers/local-delivery';
-import { prisma } from '@/lib/db';
+import { getPrismaClient } from '@/lib/db';
 
 export class ShippingManager {
   private providers: ShippingProvider[] = [
@@ -53,6 +53,7 @@ export class ShippingManager {
     selectedCourier: string,
     selectedService: string
   ): Promise<{ trackingNumber: string; cost: number }> {
+    const prisma = getPrismaClient();
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {

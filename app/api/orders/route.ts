@@ -1,32 +1,48 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { prisma } from "@/lib/db";
-import { Decimal } from '@prisma/client/runtime/library';
+import { NextRequest, NextResponse } from 'next/server';
+import { getPrismaClient } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession();
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
+    const prisma = getPrismaClient();
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const status = searchParams.get('status');
+
+    const where = status ? { status } : {};
+
     const orders = await prisma.order.findMany({
-      where: { userId: user.id },
+      where,
       include: {
-        items: { include: { product: true } },
+        items: {
+          include: {
+            product: true,
+          },
+        },
         shippingAddress: true,
+        billingAddress: true,
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      skip: (page - 1) * limit,
+      take: limit,
     });
-    return NextResponse.json({ orders });
+
+    const total = await prisma.order.count({ where });
+
+    return NextResponse.json({
+      orders,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    });
   } catch (error) {
-    console.error("User orders fetch error:", error);
-    return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 });
+    console.error('Error fetching orders:', error);
+    return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 });
   }
 }
 
@@ -44,15 +60,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Find or create user
-    let user = await prisma.user.findUnique({ where: { email } });
+    let user = await getPrismaClient().user.findUnique({ where: { email } });
     if (!user) {
-      user = await prisma.user.create({
+      user = await getPrismaClient().user.create({
         data: { name, email },
       });
     }
 
     // Create shipping address
-    const shippingAddress = await prisma.address.create({
+    const shippingAddress = await getPrismaClient().address.create({
       data: {
         userId: user.id,
         firstName: name.split(' ')[0] || name,
@@ -67,18 +83,18 @@ export async function POST(request: NextRequest) {
 
     // Fetch product info for all items
     const productIds = items.map((item: any) => item.productId);
-    const products = await prisma.product.findMany({
+    const products = await getPrismaClient().product.findMany({
       where: { id: { in: productIds } },
     });
 
     // Build order items and calculate totals
-    let subtotal = new Decimal(0);
+    let subtotal = 0; // Changed from Decimal to number
     const orderItems = items.map((item: any) => {
       const product = products.find((p) => p.id === item.productId);
       if (!product) throw new Error(`Product not found: ${item.productId}`);
-      const price = new Decimal(product.price);
-      const totalPrice = price.mul(item.quantity);
-      subtotal = subtotal.add(totalPrice);
+      const price = product.price; // Changed from Decimal to number
+      const totalPrice = price * item.quantity; // Changed from Decimal to number
+      subtotal += totalPrice; // Changed from Decimal to number
       return {
         productId: product.id,
         quantity: item.quantity,
@@ -90,13 +106,13 @@ export async function POST(request: NextRequest) {
     });
 
     // Calculate shipping, tax, discount (set to 0 for now)
-    const shippingCost = new Decimal(0);
-    const taxAmount = new Decimal(0);
-    const discountAmount = new Decimal(0);
-    const totalAmount = subtotal.add(shippingCost).add(taxAmount).sub(discountAmount);
+    const shippingCost = 0; // Changed from Decimal to number
+    const taxAmount = 0; // Changed from Decimal to number
+    const discountAmount = 0; // Changed from Decimal to number
+    const totalAmount = subtotal + shippingCost + taxAmount - discountAmount; // Changed from Decimal to number
 
     // Create order
-    const order = await prisma.order.create({
+    const order = await getPrismaClient().order.create({
       data: {
         orderNumber: generateOrderNumber(),
         userId: user.id,
@@ -118,7 +134,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Find admin users to notify
-    const admins = await prisma.user.findMany({
+    const admins = await getPrismaClient().user.findMany({
       where: {
         OR: [
           { role: "SUPER_ADMIN" },
@@ -129,7 +145,7 @@ export async function POST(request: NextRequest) {
 
     // Create notifications for each admin
     await Promise.all(admins.map((admin) =>
-      prisma.notification.create({
+      getPrismaClient().notification.create({
         data: {
           userId: admin.id,
           type: "order",

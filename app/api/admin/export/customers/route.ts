@@ -1,29 +1,31 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
-
-function toCSV(rows: any[], columns: string[]): string {
-  const header = columns.join(",");
-  const data = rows.map(row => columns.map(col => JSON.stringify(row[col] ?? "")).join(",")).join("\n");
-  return header + "\n" + data;
-}
+import { getPrismaClient } from '@/lib/db';
+import { NextResponse } from 'next/server';
 
 export async function GET() {
-  const customers = await prisma.user.findMany({ where: { role: "CUSTOMER" } });
-  const columns = [
-    "id", "name", "email", "createdAt", "updatedAt"
-  ];
-  const rows = customers.map(c => ({
-    id: c.id,
-    name: c.name,
-    email: c.email,
-    createdAt: c.createdAt.toISOString(),
-    updatedAt: c.updatedAt.toISOString(),
-  }));
-  const csv = toCSV(rows, columns);
-  return new Response(csv, {
-    headers: {
-      "Content-Type": "text/csv",
-      "Content-Disposition": "attachment; filename=customers.csv"
-    }
-  });
+  try {
+    const prisma = getPrismaClient();
+    const customers = await prisma.user.findMany({
+      include: {
+        orders: true,
+        addresses: true,
+      },
+    });
+
+    const csvData = customers.map(customer => ({
+      id: customer.id,
+      name: customer.name,
+      email: customer.email,
+      role: customer.role,
+      totalOrders: customer.orders.length,
+      totalSpent: customer.orders.reduce((sum, order) => sum + Number(order.totalAmount), 0),
+      addresses: customer.addresses.length,
+      createdAt: customer.createdAt,
+      updatedAt: customer.updatedAt,
+    }));
+
+    return NextResponse.json(csvData);
+  } catch (error) {
+    console.error('Error exporting customers:', error);
+    return NextResponse.json({ error: 'Failed to export customers' }, { status: 500 });
+  }
 } 

@@ -1,27 +1,27 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { getPrismaClient } from '@/lib/db';
+import { NextResponse } from 'next/server';
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(req.url);
-    const category = searchParams.get("category");
-    let where = {};
-    if (category) {
-      where = {
-        category: {
-          slug: category,
-        },
-      };
-    }
-    const [min, max] = await Promise.all([
-      prisma.product.aggregate({ _min: { price: true }, where }),
-      prisma.product.aggregate({ _max: { price: true }, where }),
-    ]);
+    const prisma = getPrismaClient();
+    const priceRange = await prisma.product.aggregate({
+      where: {
+        isActive: true,
+      },
+      _min: {
+        price: true,
+      },
+      _max: {
+        price: true,
+      },
+    });
+
     return NextResponse.json({
-      minPrice: min._min.price ?? 0,
-      maxPrice: max._max.price ?? 1000,
+      minPrice: priceRange._min.price || 0,
+      maxPrice: priceRange._max.price || 0,
     });
   } catch (error) {
+    console.error('Error fetching price range:', error);
     return NextResponse.json({ error: 'Failed to fetch price range' }, { status: 500 });
   }
 } 

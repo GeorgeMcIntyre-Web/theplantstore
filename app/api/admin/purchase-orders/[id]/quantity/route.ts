@@ -1,37 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
-import { Decimal } from "@prisma/client/runtime/library";
+import { getPrismaClient } from '@/lib/db';
+import { NextRequest, NextResponse } from 'next/server';
 
-interface POItem {
-  productId: string;
-  name: string;
-  quantity: number;
-  price: number;
-}
-
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const { quantity } = await req.json();
-  const { id } = params;
-  if (!id || !quantity || quantity < 1) {
-    return NextResponse.json({ error: "Missing or invalid purchase order ID or quantity" }, { status: 400 });
-  }
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    // Get the PO
-    const po = await prisma.purchaseOrder.findUnique({ where: { id } });
-    if (!po) return NextResponse.json({ error: "Purchase order not found" }, { status: 404 });
-    let items: POItem[] = Array.isArray(po.items)
-      ? (po.items as unknown as POItem[])
-      : JSON.parse(po.items as any);
-    if (!items[0]) return NextResponse.json({ error: "No items in PO" }, { status: 400 });
-    items[0].quantity = quantity;
-    // Recalculate total
-    const total = new Decimal(items[0].price).mul(quantity);
-    const updated = await prisma.purchaseOrder.update({
-      where: { id },
-      data: { items: JSON.stringify(items), total },
+    const prisma = getPrismaClient();
+    const { quantity } = await request.json();
+
+    const updatedOrder = await prisma.purchaseOrder.update({
+      where: { id: params.id },
+      data: { quantity: parseInt(quantity) },
     });
-    return NextResponse.json({ success: true, purchaseOrder: updated });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+
+    return NextResponse.json(updatedOrder);
+  } catch (error) {
+    console.error('Error updating purchase order quantity:', error);
+    return NextResponse.json({ error: 'Failed to update quantity' }, { status: 500 });
   }
 } 
