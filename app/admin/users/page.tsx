@@ -1,4 +1,3 @@
-"use client";
 // app/admin/users/page.tsx
 
 // This line tells Next.js to render this page dynamically
@@ -12,44 +11,43 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { prisma } from "@/lib/db";
+import { getPrismaClient } from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
-import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 async function getUsers() {
-  return prisma.user.findMany({
-    where: {
-      role: {
-        not: "CUSTOMER",
+  try {
+    const prisma = getPrismaClient();
+    return await prisma.user.findMany({
+      where: {
+        role: {
+          not: "CUSTOMER",
+        },
       },
-    },
-    orderBy: {
-      role: "asc",
-    },
-  });
+      orderBy: {
+        role: "asc",
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    return [];
+  }
 }
 
 export default async function UsersPage() {
-  const router = useRouter();
   const users = await getUsers();
 
   return (
     <div className="w-full h-full flex flex-col p-4">
       <div className="flex items-center gap-2 mb-4">
-        <button
-          onClick={() => {
-            if (window.history.length > 1) {
-              router.back();
-            } else {
-              router.push("/admin");
-            }
-          }}
+        <Link
+          href="/admin"
           className="flex items-center text-primary hover:underline"
         >
           <ArrowLeft className="w-4 h-4 mr-1" />
           Back
-        </button>
+        </Link>
         <h1 className="text-2xl font-bold ml-2">Admin Users</h1>
       </div>
       <div className="mt-8">

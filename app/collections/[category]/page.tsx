@@ -5,7 +5,7 @@ import { Footer } from "@/components/layout/footer";
 import { ProductGrid } from "@/components/products/product-grid";
 import { ProductFilters } from "@/components/products/product-filters";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
-import { prisma } from "@/lib/db";
+import { getPrismaClient } from "@/lib/db";
 
 interface CategoryPageProps {
   params: {
@@ -25,18 +25,24 @@ interface CategoryPageProps {
 }
 
 async function getCategory(slug: string) {
-  const category = await prisma.category.findFirst({
-    where: {
-      slug: slug,
-      isActive: true,
-    },
-    include: {
-      parent: true,
-      children: true,
-    },
-  });
+  try {
+    const prisma = getPrismaClient();
+    const category = await prisma.category.findFirst({
+      where: {
+        slug: slug,
+        isActive: true,
+      },
+      include: {
+        parent: true,
+        children: true,
+      },
+    });
 
-  return category;
+    return category;
+  } catch (error) {
+    console.error('Error fetching category:', error);
+    return null;
+  }
 }
 
 export async function generateMetadata({

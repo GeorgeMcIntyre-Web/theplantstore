@@ -7,7 +7,7 @@ import { ProductImages } from "@/components/products/product-images";
 import { ProductTabs } from "@/components/products/product-tabs";
 import { RelatedProducts } from "@/components/products/related-products";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
-import { prisma } from "@/lib/db";
+import { getPrismaClient } from "@/lib/db";
 
 interface ProductPageProps {
   params: {
@@ -16,64 +16,71 @@ interface ProductPageProps {
 }
 
 async function getProduct(slug: string) {
-  const product = await prisma.product.findUnique({
-    where: {
-      slug: slug,
-      isActive: true,
-    },
-    include: {
-      category: true,
-      images: {
-        orderBy: { sortOrder: "asc" },
+  try {
+    const prisma = getPrismaClient();
+    
+    const product = await prisma.product.findUnique({
+      where: {
+        slug: slug,
+        isActive: true,
       },
-      reviews: {
-        where: { isApproved: true },
-        include: {
-          user: {
-            select: {
-              name: true,
-              image: true,
+      include: {
+        category: true,
+        images: {
+          orderBy: { sortOrder: "asc" },
+        },
+        reviews: {
+          where: { isApproved: true },
+          include: {
+            user: {
+              select: {
+                name: true,
+                image: true,
+              },
             },
           },
+          orderBy: { createdAt: "desc" },
         },
-        orderBy: { createdAt: "desc" },
       },
-    },
-  });
+    });
 
-  if (!product) return null;
+    if (!product) return null;
 
-  // Get related products
-  const relatedProducts = await prisma.product.findMany({
-    where: {
-      categoryId: product.categoryId,
-      id: { not: product.id },
-      isActive: true,
-    },
-    include: {
-      images: {
-        where: { isPrimary: true },
-        take: 1,
+    // Get related products
+    const relatedProducts = await prisma.product.findMany({
+      where: {
+        categoryId: product.categoryId,
+        id: { not: product.id },
+        isActive: true,
       },
-    },
-    take: 4,
-  });
+      include: {
+        images: {
+          where: { isPrimary: true },
+          take: 1,
+        },
+      },
+      take: 4,
+    });
 
-  // Calculate average rating
-  const averageRating =
-    product.reviews.length > 0
-      ? product.reviews.reduce(
-          (acc: number, review: any) => acc + review.rating,
-          0,
-        ) / product.reviews.length
-      : 0;
+    // Calculate average rating
+    const averageRating =
+      product.reviews.length > 0
+        ? product.reviews.reduce(
+            (acc: number, review: any) => acc + review.rating,
+            0,
+          ) / product.reviews.length
+        : 0;
 
-  return {
-    ...product,
-    averageRating,
-    reviewCount: product.reviews.length,
-    relatedProducts,
-  };
+    return {
+      ...product,
+      averageRating,
+      reviewCount: product.reviews.length,
+      relatedProducts,
+    };
+  } catch (error) {
+    console.error('Error fetching product:', error);
+    return null;
+  }
 }
 
 export async function generateMetadata({
