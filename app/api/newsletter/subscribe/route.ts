@@ -23,6 +23,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const prisma = getPrismaClient();
+
     // Check if user already exists
     let user = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
@@ -104,7 +106,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Newsletter subscription error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to subscribe to newsletter' },
       { status: 500 }
     );
   }
