@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { prisma } from '@/lib/db';
+import { getPrismaClient } from '@/lib/db';
 import { UserRole } from '@prisma/client';
 import { z } from 'zod';
 
@@ -15,21 +15,22 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const session = await getServerSession();
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const user = await prisma.user.findUnique({ 
-    where: { email: session.user.email } 
-  });
-  
-  const allowedRoles: UserRole[] = [UserRole.FINANCIAL_MANAGER, UserRole.ACCOUNTANT, UserRole.SUPER_ADMIN];
-  if (!user || !allowedRoles.includes(user.role)) {
-    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
-  }
-
   try {
+    const session = await getServerSession();
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const prisma = getPrismaClient();
+    const user = await prisma.user.findUnique({ 
+      where: { email: session.user.email } 
+    });
+    
+    const allowedRoles: UserRole[] = [UserRole.FINANCIAL_MANAGER, UserRole.ACCOUNTANT, UserRole.SUPER_ADMIN];
+    if (!user || !allowedRoles.includes(user.role)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
     const category = await prisma.expenseCategory.findUnique({
       where: { id: params.id },
       include: {
@@ -46,6 +47,12 @@ export async function GET(
     return NextResponse.json(category);
   } catch (error) {
     console.error('Error fetching category:', error);
+    if (error instanceof Error && error.message.includes('Database not available')) {
+      return NextResponse.json(
+        { error: 'Database not available' },
+        { status: 503 }
+      );
+    }
     return NextResponse.json({ error: 'Failed to fetch category' }, { status: 500 });
   }
 }
@@ -54,21 +61,22 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const session = await getServerSession();
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const user = await prisma.user.findUnique({ 
-    where: { email: session.user.email } 
-  });
-  
-  const allowedRoles: UserRole[] = [UserRole.FINANCIAL_MANAGER, UserRole.ACCOUNTANT, UserRole.SUPER_ADMIN];
-  if (!user || !allowedRoles.includes(user.role)) {
-    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
-  }
-
   try {
+    const session = await getServerSession();
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const prisma = getPrismaClient();
+    const user = await prisma.user.findUnique({ 
+      where: { email: session.user.email } 
+    });
+    
+    const allowedRoles: UserRole[] = [UserRole.FINANCIAL_MANAGER, UserRole.ACCOUNTANT, UserRole.SUPER_ADMIN];
+    if (!user || !allowedRoles.includes(user.role)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
     const body = await request.json();
     
     // Validate request body
@@ -123,6 +131,12 @@ export async function PATCH(
     return NextResponse.json(updatedCategory);
   } catch (error) {
     console.error('Error updating category:', error);
+    if (error instanceof Error && error.message.includes('Database not available')) {
+      return NextResponse.json(
+        { error: 'Database not available' },
+        { status: 503 }
+      );
+    }
     return NextResponse.json({ error: 'Failed to update category' }, { status: 500 });
   }
 }
@@ -131,21 +145,22 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const session = await getServerSession();
-  if (!session?.user?.email) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const user = await prisma.user.findUnique({ 
-    where: { email: session.user.email } 
-  });
-  
-  const allowedRoles: UserRole[] = [UserRole.FINANCIAL_MANAGER, UserRole.ACCOUNTANT, UserRole.SUPER_ADMIN];
-  if (!user || !allowedRoles.includes(user.role)) {
-    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
-  }
-
   try {
+    const session = await getServerSession();
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const prisma = getPrismaClient();
+    const user = await prisma.user.findUnique({ 
+      where: { email: session.user.email } 
+    });
+    
+    const allowedRoles: UserRole[] = [UserRole.FINANCIAL_MANAGER, UserRole.ACCOUNTANT, UserRole.SUPER_ADMIN];
+    if (!user || !allowedRoles.includes(user.role)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
     // Check if category exists and has associated expenses
     const category = await prisma.expenseCategory.findUnique({
       where: { id: params.id },
@@ -175,6 +190,12 @@ export async function DELETE(
     return NextResponse.json({ message: 'Category deleted successfully' });
   } catch (error) {
     console.error('Error deleting category:', error);
+    if (error instanceof Error && error.message.includes('Database not available')) {
+      return NextResponse.json(
+        { error: 'Database not available' },
+        { status: 503 }
+      );
+    }
     return NextResponse.json({ error: 'Failed to delete category' }, { status: 500 });
   }
 } 
