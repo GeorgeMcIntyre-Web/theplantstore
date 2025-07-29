@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/db';
+import { getPrismaClient } from '@/lib/db';
 
 export async function GET() {
   try {
@@ -9,6 +9,8 @@ export async function GET() {
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const prisma = getPrismaClient();
 
     // Get bank accounts
     const bankAccounts = await prisma.bankAccount.findMany({
@@ -18,6 +20,12 @@ export async function GET() {
     return NextResponse.json({ bankAccounts });
   } catch (error) {
     console.error('Error fetching bank accounts:', error);
+    if (error instanceof Error && error.message.includes('Database not available')) {
+      return NextResponse.json(
+        { error: 'Database not available' },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { error: 'Failed to fetch bank accounts' },
       { status: 500 }
@@ -31,6 +39,8 @@ export async function POST(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const prisma = getPrismaClient();
 
     const body = await request.json();
     const { bankName, accountNumber, autoReconcile, categories } = body;
@@ -57,6 +67,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ bankAccount });
   } catch (error) {
     console.error('Error creating bank account:', error);
+    if (error instanceof Error && error.message.includes('Database not available')) {
+      return NextResponse.json(
+        { error: 'Database not available' },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { error: 'Failed to create bank account' },
       { status: 500 }
