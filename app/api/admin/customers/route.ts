@@ -1,41 +1,63 @@
 export const dynamic = "force-dynamic";
 
-import { NextResponse, NextRequest } from "next/server";
-import { getServerSession } from "next-auth";
-import { prisma } from "@/lib/db";
-import { authOptions } from "@/lib/auth";
-import bcrypt from "bcryptjs";
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { getPrismaClient } from '@/lib/db';
+import { UserRole } from '@prisma/client';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const session = await getServerSession();
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userRole = (session.user as unknown as { role: string }).role;
-    if (userRole !== "SUPER_ADMIN" && userRole !== "PLANT_MANAGER") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const customers = await prisma.user.findMany({
-      where: { role: "CUSTOMER" },
-      orderBy: { createdAt: "desc" },
+    const prisma = getPrismaClient();
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
     });
 
-    return NextResponse.json(customers);
+    if (!user || user.role !== UserRole.ADMIN) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+
+    const customers = await prisma.user.findMany({
+      where: { role: 'CUSTOMER' },
+      include: {
+        orders: true,
+        addresses: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    const total = await prisma.user.count({
+      where: { role: 'CUSTOMER' },
+    });
+
+    return NextResponse.json({
+      customers,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch customers" },
-      { status: 500 },
-    );
+    console.error('Error fetching customers:', error);
+    return NextResponse.json({ error: 'Failed to fetch customers' }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -47,12 +69,12 @@ export async function POST(request: NextRequest) {
     if (!name || !email || !password) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const existing = await getPrismaClient().user.findUnique({ where: { email } });
     if (existing) {
       return NextResponse.json({ error: "Email already in use" }, { status: 400 });
     }
     const hashedPassword = await bcrypt.hash(password, 12);
-    const user = await prisma.user.create({
+    const user = await getPrismaClient().user.create({
       data: { name, email, password: hashedPassword, role: "CUSTOMER" },
       select: { id: true, name: true, email: true, role: true, createdAt: true, isActive: true },
     });
@@ -64,7 +86,7 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -76,7 +98,7 @@ export async function PUT(request: NextRequest) {
     if (!id) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
-    const user = await prisma.user.update({
+    const user = await getPrismaClient().user.update({
       where: { id },
       data: { name, isActive },
       select: { id: true, name: true, email: true, role: true, createdAt: true, isActive: true },
@@ -89,7 +111,7 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -101,7 +123,7 @@ export async function DELETE(request: NextRequest) {
     if (!id) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
-    await prisma.user.delete({ where: { id } });
+    await getPrismaClient().user.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: "Failed to delete customer" }, { status: 500 });

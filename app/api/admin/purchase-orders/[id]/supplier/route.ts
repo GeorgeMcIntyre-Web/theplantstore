@@ -1,19 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { getPrismaClient } from '@/lib/db';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const { supplierId } = await req.json();
-  const { id } = params;
-  if (!id || !supplierId) {
-    return NextResponse.json({ error: "Missing purchase order ID or supplierId" }, { status: 400 });
-  }
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const po = await prisma.purchaseOrder.update({
-      where: { id },
+    const prisma = getPrismaClient();
+    const { supplierId } = await request.json();
+
+    const updatedOrder = await prisma.purchaseOrder.update({
+      where: { id: params.id },
       data: { supplierId },
     });
-    return NextResponse.json({ success: true, purchaseOrder: po });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+
+    return NextResponse.json(updatedOrder);
+  } catch (error) {
+    console.error('Error updating purchase order supplier:', error);
+    return NextResponse.json({ error: 'Failed to update supplier' }, { status: 500 });
   }
 } 
