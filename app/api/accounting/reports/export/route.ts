@@ -72,6 +72,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const prisma = getPrismaClient();
   const user = await prisma.user.findUnique({ 
     where: { email: session.user.email } 
   });
@@ -111,19 +112,19 @@ export async function GET(request: NextRequest) {
 
     switch (type) {
       case 'summary':
-        csvData = await generateSummaryCSV(start, end);
+        csvData = await generateSummaryCSV(start, end, prisma);
         filename = `financial-summary-${period}-${new Date().toISOString().slice(0, 10)}.csv`;
         break;
       case 'detailed':
-        csvData = await generateDetailedCSV(start, end);
+        csvData = await generateDetailedCSV(start, end, prisma);
         filename = `financial-detailed-${period}-${new Date().toISOString().slice(0, 10)}.csv`;
         break;
       case 'vat':
-        csvData = await generateVATCSV(start, end);
+        csvData = await generateVATCSV(start, end, prisma);
         filename = `vat-report-${period}-${new Date().toISOString().slice(0, 10)}.csv`;
         break;
       case 'trends':
-        csvData = await generateTrendsCSV(start, end);
+        csvData = await generateTrendsCSV(start, end, prisma);
         filename = `financial-trends-${period}-${new Date().toISOString().slice(0, 10)}.csv`;
         break;
       default:
@@ -143,7 +144,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-async function generateSummaryCSV(start: Date, end: Date): Promise<string> {
+async function generateSummaryCSV(start: Date, end: Date, prisma: any): Promise<string> {
   const orders = await prisma.order.findMany({
     where: {
       createdAt: { gte: start, lte: end },
@@ -180,7 +181,7 @@ async function generateSummaryCSV(start: Date, end: Date): Promise<string> {
   return generateCSV(data, headers);
 }
 
-async function generateDetailedCSV(start: Date, end: Date): Promise<string> {
+async function generateDetailedCSV(start: Date, end: Date, prisma: any): Promise<string> {
   const orders = await prisma.order.findMany({
     where: {
       createdAt: { gte: start, lte: end },
@@ -226,7 +227,7 @@ async function generateDetailedCSV(start: Date, end: Date): Promise<string> {
   return generateCSV(data, headers);
 }
 
-async function generateVATCSV(start: Date, end: Date): Promise<string> {
+async function generateVATCSV(start: Date, end: Date, prisma: any): Promise<string> {
   const orders = await prisma.order.findMany({
     where: {
       createdAt: { gte: start, lte: end },
@@ -260,7 +261,7 @@ async function generateVATCSV(start: Date, end: Date): Promise<string> {
   return generateCSV(data, headers);
 }
 
-async function generateTrendsCSV(start: Date, end: Date): Promise<string> {
+async function generateTrendsCSV(start: Date, end: Date, prisma: any): Promise<string> {
   const currentDate = new Date();
   const data = [];
 
