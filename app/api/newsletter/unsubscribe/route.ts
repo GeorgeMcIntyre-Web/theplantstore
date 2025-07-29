@@ -15,6 +15,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const prisma = getPrismaClient();
+
     // Find user and update newsletter subscription
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
@@ -65,6 +67,8 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    const prisma = getPrismaClient();
 
     // Find user and update newsletter subscription
     const user = await prisma.user.findUnique({
