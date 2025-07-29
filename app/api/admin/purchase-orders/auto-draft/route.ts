@@ -9,6 +9,8 @@ export async function POST(req: NextRequest) {
   const { adminId } = body;
   if (!adminId) return NextResponse.json({ error: 'Missing adminId' }, { status: 400 });
 
+  const prisma = getPrismaClient();
+  
   // Fetch global default low stock threshold
   const globalThreshold = parseInt(await getSettingValue('lowStockThreshold', '10'));
   // Find all products with supplierId

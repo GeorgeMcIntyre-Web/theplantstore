@@ -13,7 +13,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       include: {
         category: true,
         images: true,
-        variants: true,
         reviews: true,
       },
     });
@@ -41,7 +40,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       where: { email: session.user.email },
     });
 
-    if (!user || user.role !== UserRole.ADMIN) {
+    if (!user || user.role !== UserRole.SUPER_ADMIN) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
@@ -52,7 +51,6 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       include: {
         category: true,
         images: true,
-        variants: true,
       },
     });
 
@@ -75,7 +73,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       where: { email: session.user.email },
     });
 
-    if (!user || user.role !== UserRole.ADMIN) {
+    if (!user || user.role !== UserRole.SUPER_ADMIN) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 

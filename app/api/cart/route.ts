@@ -15,15 +15,11 @@ export async function GET(request: NextRequest) {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: {
-        cart: {
+        cartItems: {
           include: {
-            items: {
+            product: {
               include: {
-                product: {
-                  include: {
-                    images: true,
-                  },
-                },
+                images: true,
               },
             },
           },
@@ -31,14 +27,14 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    if (!user || !user.cart) {
+    if (!user || !user.cartItems) {
       return NextResponse.json({ items: [], total: 0 });
     }
 
-    const total = user.cart.items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+    const total = user.cartItems.reduce((sum, item) => sum + (Number(item.product.price) * item.quantity), 0);
 
     return NextResponse.json({
-      items: user.cart.items,
+      items: user.cartItems,
       total,
     });
   } catch (error) {

@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { getPrismaClient } from '@/lib/db';
 import { UserRole } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
       where: { email: session.user.email },
     });
 
-    if (!user || user.role !== UserRole.ADMIN) {
+    if (!user || user.role !== UserRole.SUPER_ADMIN) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 

@@ -12,7 +12,6 @@ export async function GET() {
           },
         },
         shippingAddress: true,
-        billingAddress: true,
         user: true,
       },
     });

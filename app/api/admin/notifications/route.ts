@@ -5,6 +5,7 @@ import { getPrismaClient } from '@/lib/db';
 // GET: Fetch all notifications for admin view
 export async function GET(req: NextRequest) {
   try {
+    const prisma = getPrismaClient();
     const notifications = await prisma.notification.findMany({
       include: {
         user: {
@@ -34,6 +35,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
     
+    const prisma = getPrismaClient();
     const notification = await prisma.notification.create({
       data: { 
         userId, 
@@ -60,6 +62,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Missing notification id' }, { status: 400 });
     }
     
+    const prisma = getPrismaClient();
     const notification = await prisma.notification.update({
       where: { id },
       data: { read: true },

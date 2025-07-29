@@ -6,6 +6,8 @@ export async function POST(req: NextRequest) {
   if (!adminId || !Array.isArray(poIds) || poIds.length === 0) {
     return NextResponse.json({ error: 'Missing adminId or poIds' }, { status: 400 });
   }
+  
+  const prisma = getPrismaClient();
   // Only delete DRAFT POs belonging to this admin
   const result = await prisma.purchaseOrder.deleteMany({
     where: {

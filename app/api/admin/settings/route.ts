@@ -16,6 +16,8 @@ async function requireAdmin(request: NextRequest): Promise<{ id: string; email: 
 export async function GET(request: NextRequest) {
   const user = await requireAdmin(request);
   if (user instanceof NextResponse) return user;
+  
+  const prisma = getPrismaClient();
   const settings = await prisma.setting.findMany();
   return NextResponse.json(settings);
 }
@@ -29,6 +31,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
   try {
+    const prisma = getPrismaClient();
     const setting = await prisma.setting.create({
       data: {
         key,
@@ -52,6 +55,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
   try {
+    const prisma = getPrismaClient();
     const setting = await prisma.setting.update({
       where: { key },
       data: {
@@ -75,6 +79,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Missing key' }, { status: 400 });
   }
   try {
+    const prisma = getPrismaClient();
     await prisma.setting.delete({ where: { key } });
     return NextResponse.json({ success: true });
   } catch (error) {

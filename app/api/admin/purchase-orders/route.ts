@@ -10,6 +10,8 @@ function generatePONumber() {
 export async function GET(req: NextRequest) {
   const adminId = req.nextUrl.searchParams.get('adminId'); // TEMP: for testing
   if (!adminId) return NextResponse.json({ error: 'Missing adminId' }, { status: 400 });
+  
+  const prisma = getPrismaClient();
   const pos = await prisma.purchaseOrder.findMany({
     where: { adminId },
     include: { supplier: true },
@@ -25,6 +27,8 @@ export async function POST(req: NextRequest) {
   if (!adminId || !supplierId || !items || items.length === 0) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
+  
+  const prisma = getPrismaClient();
   // Calculate total
   let total = new Decimal(0);
   items.forEach((item: any) => {
@@ -58,6 +62,8 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json();
   const { id, adminId } = body;
   if (!id || !adminId) return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
+  
+  const prisma = getPrismaClient();
   const po = await prisma.purchaseOrder.update({
     where: { id },
     data: { status: 'APPROVED' },

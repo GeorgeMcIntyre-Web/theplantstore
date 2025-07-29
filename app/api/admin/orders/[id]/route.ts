@@ -17,7 +17,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
           },
         },
         shippingAddress: true,
-        billingAddress: true,
         user: true,
       },
     });
@@ -45,7 +44,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       where: { email: session.user.email },
     });
 
-    if (!user || user.role !== UserRole.ADMIN) {
+    if (!user || user.role !== UserRole.SUPER_ADMIN) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
@@ -60,7 +59,6 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
           },
         },
         shippingAddress: true,
-        billingAddress: true,
         user: true,
       },
     });

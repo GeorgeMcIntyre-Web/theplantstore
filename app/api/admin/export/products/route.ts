@@ -8,7 +8,6 @@ export async function GET() {
       include: {
         category: true,
         images: true,
-        variants: true,
       },
     });
 

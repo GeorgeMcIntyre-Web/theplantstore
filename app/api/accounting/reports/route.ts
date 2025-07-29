@@ -56,6 +56,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const prisma = getPrismaClient();
   const user = await prisma.user.findUnique({ 
     where: { email: session.user.email } 
   });
@@ -112,11 +113,11 @@ export async function GET(request: NextRequest) {
     });
 
     // Calculate revenue metrics
-    const totalRevenue = orders.reduce((sum, order) => {
+    const totalRevenue = orders.reduce((sum: number, order: any) => {
       return sum + Number(order.totalAmount);
     }, 0);
 
-    const vatCollected = orders.reduce((sum, order) => {
+    const vatCollected = orders.reduce((sum: number, order: any) => {
       return sum + Number(order.totalAmount) * 0.15 / 1.15; // Assuming 15% VAT
     }, 0);
 
@@ -125,11 +126,11 @@ export async function GET(request: NextRequest) {
     const averageOrderValue = orderCount > 0 ? totalRevenue / orderCount : 0;
 
     // Calculate expense metrics
-    const totalExpenses = expenses.reduce((sum, expense) => {
+    const totalExpenses = expenses.reduce((sum: number, expense: any) => {
       return sum + Number(expense.amount);
     }, 0);
 
-    const vatPaid = expenses.reduce((sum, expense) => {
+    const vatPaid = expenses.reduce((sum: number, expense: any) => {
       return sum + Number(expense.vatAmount || 0);
     }, 0);
 
@@ -144,7 +145,7 @@ export async function GET(request: NextRequest) {
     const vatLiability = vatCollected - vatPaid;
 
     // Group expenses by category
-    const expensesByCategory = expenses.reduce((acc, expense) => {
+    const expensesByCategory = expenses.reduce((acc: Record<string, { amount: number; count: number }>, expense: any) => {
       const categoryName = expense.category.name;
       if (!acc[categoryName]) {
         acc[categoryName] = { amount: 0, count: 0 };
@@ -163,8 +164,8 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => b.amount - a.amount);
 
     // Calculate top products
-    const productSales = orders.reduce((acc, order) => {
-      order.items.forEach(item => {
+    const productSales = orders.reduce((acc: Record<string, { revenue: number; quantity: number; cost: number }>, order: any) => {
+      order.items.forEach((item: any) => {
         const productName = item.product.name;
         if (!acc[productName]) {
           acc[productName] = { revenue: 0, quantity: 0, cost: 0 };

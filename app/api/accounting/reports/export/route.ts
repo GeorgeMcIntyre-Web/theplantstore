@@ -160,8 +160,8 @@ async function generateSummaryCSV(start: Date, end: Date, prisma: any): Promise<
     include: { category: true }
   });
 
-  const totalRevenue = orders.reduce((sum, order) => sum + Number(order.totalAmount), 0);
-  const totalExpenses = expenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+  const totalRevenue = orders.reduce((sum: number, order: any) => sum + Number(order.totalAmount), 0);
+  const totalExpenses = expenses.reduce((sum: number, expense: any) => sum + Number(expense.amount), 0);
   const profit = totalRevenue - totalExpenses;
 
   const data = [
@@ -200,7 +200,7 @@ async function generateDetailedCSV(start: Date, end: Date, prisma: any): Promise
 
   const data = [
     // Revenue section
-    ...orders.map(order => ({
+    ...orders.map((order: any) => ({
       'Type': 'Revenue',
       'Date': order.createdAt.toLocaleDateString(),
       'Reference': order.orderNumber,
@@ -211,7 +211,7 @@ async function generateDetailedCSV(start: Date, end: Date, prisma: any): Promise
       'Net Amount': (Number(order.totalAmount) - Number(order.vatAmount)).toFixed(2)
     })),
     // Expense section
-    ...expenses.map(expense => ({
+    ...expenses.map((expense: any) => ({
       'Type': 'Expense',
       'Date': expense.expenseDate.toLocaleDateString(),
       'Reference': expense.id,
@@ -242,8 +242,8 @@ async function generateVATCSV(start: Date, end: Date, prisma: any): Promise<stri
     }
   });
 
-  const vatCollected = orders.reduce((sum, order) => sum + Number(order.vatAmount), 0);
-  const vatPaid = expenses.reduce((sum, expense) => sum + Number(expense.vatAmount || 0), 0);
+  const vatCollected = orders.reduce((sum: number, order: any) => sum + Number(order.vatAmount), 0);
+  const vatPaid = expenses.reduce((sum: number, expense: any) => sum + Number(expense.vatAmount || 0), 0);
   const vatLiability = vatCollected - vatPaid;
 
   const data = [
@@ -283,8 +283,8 @@ async function generateTrendsCSV(start: Date, end: Date, prisma: any): Promise<s
       }
     });
 
-    const revenue = monthOrders.reduce((sum, order) => sum + Number(order.totalAmount), 0);
-    const expenses = monthExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+    const revenue = monthOrders.reduce((sum: number, order: any) => sum + Number(order.totalAmount), 0);
+    const expenses = monthExpenses.reduce((sum: number, expense: any) => sum + Number(expense.amount), 0);
     const profit = revenue - expenses;
 
     data.push({

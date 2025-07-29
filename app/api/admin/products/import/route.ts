@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       where: { email: session.user.email },
     });
 
-    if (!user || user.role !== UserRole.ADMIN) {
+    if (!user || user.role !== UserRole.SUPER_ADMIN) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
