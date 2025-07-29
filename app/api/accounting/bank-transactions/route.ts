@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/db';
+import { getPrismaClient } from '@/lib/db';
 import { UserRole } from '@prisma/client';
 import { z } from 'zod';
 
@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const prisma = getPrismaClient();
     const user = await prisma.user.findUnique({
       where: { email: session.user.email }
     });
@@ -106,6 +107,12 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching bank transactions:', error);
+    if (error instanceof Error && error.message.includes('Database not available')) {
+      return NextResponse.json(
+        { error: 'Database not available' },
+        { status: 503 }
+      );
+    }
     return NextResponse.json({ error: 'Failed to fetch transactions' }, { status: 500 });
   }
 }
@@ -117,6 +124,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const prisma = getPrismaClient();
     const user = await prisma.user.findUnique({
       where: { email: session.user.email }
     });
