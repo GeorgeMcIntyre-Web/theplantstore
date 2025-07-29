@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { getPrismaClient } from "@/lib/db";
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ products: [] });
     }
 
+    const prisma = getPrismaClient();
     const products = await prisma.product.findMany({
       where: {
         isActive: true,
@@ -55,6 +56,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ products });
   } catch (error) {
     console.error("Search error:", error);
+    if (error instanceof Error && error.message.includes('Database not available')) {
+      return NextResponse.json(
+        { error: 'Database not available' },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { error: "Failed to search products" },
       { status: 500 },

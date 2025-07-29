@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { getPrismaClient } from "@/lib/db";
 import { authOptions } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
@@ -20,6 +20,8 @@ export async function GET(request: NextRequest) {
     const maxPrice = searchParams.get("maxPrice");
 
     const skip = (page - 1) * limit;
+
+    const prisma = getPrismaClient();
 
     // Build where clause
     const where: any = {
