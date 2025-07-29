@@ -54,6 +54,11 @@ model User {
   updatedAt                    DateTime          @updatedAt
   newsletterSubscribed         Boolean           @default(false)
   isActive                     Boolean           @default(true)
+  // 2FA fields (optional, backward compatible)
+  twoFactorEnabled             Boolean           @default(false)
+  twoFactorSecret              String?
+  backupCodes                  String[]          @default([])
+  twoFactorVerified            Boolean           @default(false)
   accounts                     Account[]
   addresses                    Address[]
   Alert                        Alert[]

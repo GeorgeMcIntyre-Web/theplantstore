@@ -197,18 +197,17 @@ async function listUsers() {
   const prisma = getPrismaClient();
   
   try {
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        isActive: true,
-        createdAt: true,
-        lastLoginAt: true
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+          const users = await prisma.user.findMany({
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          isActive: true,
+          createdAt: true
+        },
+        orderBy: { createdAt: 'desc' }
+      });
 
     console.log('👥 Current Users:\n');
     
