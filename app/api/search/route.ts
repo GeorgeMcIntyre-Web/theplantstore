@@ -19,20 +19,17 @@ export async function GET(request: NextRequest) {
           {
             name: {
               contains: query,
-              mode: "insensitive",
             },
           },
           {
             description: {
               contains: query,
-              mode: "insensitive",
             },
           },
           {
             category: {
               name: {
                 contains: query,
-                mode: "insensitive",
               },
             },
           },

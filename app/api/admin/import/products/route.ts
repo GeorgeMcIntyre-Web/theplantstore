@@ -54,7 +54,6 @@ export async function POST(req: NextRequest) {
           where: {
             name: {
               equals: categoryName,
-              mode: 'insensitive',
             },
           },
         });

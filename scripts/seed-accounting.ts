@@ -101,21 +101,9 @@ async function main() {
   // Create sample expenses
   const sampleExpenses = [
     {
-      description: 'Google Ads Campaign - Q1 2025',
-      amount: 2500.00,
-      expenseDate: new Date('2025-01-15'),
-      categoryId: marketingCategory.id,
-      vendorName: 'Google LLC',
-      notes: 'Q1 marketing campaign for plant store promotion',
-      vatAmount: 326.09,
-      vatRate: 15,
-      status: ExpenseStatus.APPROVED,
-      requestedById: financialUser.id,
-    },
-    {
       description: 'Office Supplies - January 2025',
       amount: 450.00,
-      expenseDate: new Date('2025-01-20'),
+      expenseDate: new Date('2025-01-15'),
       categoryId: officeCategory.id,
       vendorName: 'Staples South Africa',
       notes: 'Monthly office supplies including paper, pens, and printer cartridges',
@@ -123,6 +111,7 @@ async function main() {
       vatRate: 15,
       status: ExpenseStatus.APPROVED,
       requestedById: financialUser.id,
+      userId: financialUser.id,
     },
     {
       description: 'Internet & Phone Services - January 2025',
@@ -135,6 +124,7 @@ async function main() {
       vatRate: 15,
       status: ExpenseStatus.PAID,
       requestedById: financialUser.id,
+      userId: financialUser.id,
     },
     {
       description: 'Social Media Advertising - February 2025',
@@ -147,6 +137,7 @@ async function main() {
       vatRate: 15,
       status: ExpenseStatus.PENDING_APPROVAL,
       requestedById: financialUser.id,
+      userId: financialUser.id,
     },
     {
       description: 'Electricity Bill - January 2025',
@@ -159,6 +150,7 @@ async function main() {
       vatRate: 15,
       status: ExpenseStatus.APPROVED,
       requestedById: financialUser.id,
+      userId: financialUser.id,
     }
   ];
 

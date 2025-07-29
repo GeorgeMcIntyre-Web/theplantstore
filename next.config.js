@@ -3,7 +3,8 @@ const path = require("path");
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   distDir: process.env.NEXT_DIST_DIR || ".next",
-  output: process.env.NEXT_OUTPUT_MODE,
+  output: process.env.NEXT_OUTPUT_MODE || "standalone",
+  trailingSlash: true,
   experimental: {
     outputFileTracingRoot: path.join(__dirname, "../"),
   },
@@ -17,8 +18,10 @@ const nextConfig = {
     unoptimized: true,
     domains: [
       "localhost", 
-      "your-domain.com", // Replace with your actual domain
-      "www.your-domain.com" // Replace with your actual domain
+      "thehouseplantstore.com",
+      "www.thehouseplantstore.com",
+      "thehouseplantstore.co.za",
+      "www.thehouseplantstore.co.za"
     ],
   },
   compress: true,

@@ -146,7 +146,7 @@ export async function createExpenseJournalEntry(
     let expenseAccount = await client.chartOfAccounts.findFirst({
       where: { 
         accountType: 'EXPENSE',
-        accountName: { contains: expense.category.name, mode: 'insensitive' }
+        accountName: { contains: expense.category.name }
       }
     });
     
@@ -168,7 +168,7 @@ export async function createExpenseJournalEntry(
     const vatAccount = await client.chartOfAccounts.findFirst({
       where: { 
         accountType: 'LIABILITY',
-        accountName: { contains: 'VAT', mode: 'insensitive' }
+        accountName: { contains: 'VAT' }
       }
     });
     
@@ -180,7 +180,7 @@ export async function createExpenseJournalEntry(
     const bankAccount = await client.chartOfAccounts.findFirst({
       where: { 
         accountType: 'ASSET',
-        accountName: { contains: 'Bank', mode: 'insensitive' }
+        accountName: { contains: 'Bank' }
       }
     });
     
@@ -236,35 +236,35 @@ export async function createSalesJournalEntry(
     const salesAccount = await client.chartOfAccounts.findFirst({
       where: { 
         accountType: 'REVENUE',
-        accountName: { contains: 'Sales', mode: 'insensitive' }
+        accountName: { contains: 'Sales' }
       }
     });
     
     const vatAccount = await client.chartOfAccounts.findFirst({
       where: { 
         accountType: 'LIABILITY',
-        accountName: { contains: 'VAT', mode: 'insensitive' }
+        accountName: { contains: 'VAT' }
       }
     });
     
     const bankAccount = await client.chartOfAccounts.findFirst({
       where: { 
         accountType: 'ASSET',
-        accountName: { contains: 'Bank', mode: 'insensitive' }
+        accountName: { contains: 'Bank' }
       }
     });
     
     const costOfSalesAccount = await client.chartOfAccounts.findFirst({
       where: { 
         accountType: 'EXPENSE',
-        accountName: { contains: 'Cost of Sales', mode: 'insensitive' }
+        accountName: { contains: 'Cost of Sales' }
       }
     });
     
     const inventoryAccount = await client.chartOfAccounts.findFirst({
       where: { 
         accountType: 'ASSET',
-        accountName: { contains: 'Inventory', mode: 'insensitive' }
+        accountName: { contains: 'Inventory' }
       }
     });
     

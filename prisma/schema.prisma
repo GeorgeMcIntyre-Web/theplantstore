@@ -507,7 +507,7 @@ model BankTransaction {
 model ReconciliationSuggestion {
   id                  String          @id @default(cuid())
   bankTransactionId   String
-  suggestedExpenseIds String[]
+  suggestedExpenseIds Json
   confidence          Float
   createdAt           DateTime        @default(now())
   bankTransaction     BankTransaction @relation(fields: [bankTransactionId], references: [id], onDelete: Cascade)

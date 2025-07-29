@@ -55,10 +55,8 @@ class BankFeedService {
       create: {
         accountNumber: config.accountNumber,
         bankName: config.bankName,
-        accountType: 'CHECKING', // Default account type
         autoReconcile: config.autoReconcile,
         categories: config.categories as any,
-        userId: 'default-user-id', // This should be passed from the session
         createdAt: new Date(),
         updatedAt: new Date()
       }
@@ -140,14 +138,12 @@ class BankFeedService {
         OR: [
           {
             vendorName: {
-              contains: searchTerms.vendor,
-              mode: 'insensitive'
+              contains: searchTerms.vendor
             }
           },
           {
             notes: {
-              contains: searchTerms.description,
-              mode: 'insensitive'
+              contains: searchTerms.description
             }
           },
           {
@@ -158,9 +154,7 @@ class BankFeedService {
           }
         ],
         status: 'DRAFT',
-        bankTransactions: {
-          none: {} // Not already reconciled
-        }
+        bankTransactions: null // Not already reconciled
       },
       orderBy: {
         expenseDate: 'desc'
@@ -242,6 +236,7 @@ class BankFeedService {
         vatRate: 15,
         status: "PENDING_APPROVAL",
         requestedById: session.user.id,
+        userId: session.user.id,
         createdAt: new Date()
       }
     });

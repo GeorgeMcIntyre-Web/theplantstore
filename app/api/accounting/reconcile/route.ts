@@ -61,11 +61,11 @@ export async function POST(request: NextRequest) {
       }
 
       // Check if amounts match (within tolerance)
-      const transactionAmount = typeof transaction.amount === 'object' && 'toNumber' in transaction.amount 
-        ? transaction.amount.toNumber() 
+      const transactionAmount = typeof transaction.amount === 'object' && transaction.amount !== null && 'toNumber' in transaction.amount 
+        ? (transaction.amount as any).toNumber() 
         : Number(transaction.amount);
-      const expenseAmount = typeof expense.amount === 'object' && 'toNumber' in expense.amount 
-        ? expense.amount.toNumber() 
+      const expenseAmount = typeof expense.amount === 'object' && expense.amount !== null && 'toNumber' in expense.amount 
+        ? (expense.amount as any).toNumber() 
         : Number(expense.amount);
       
       const amountDiff = Math.abs(transactionAmount - expenseAmount);
@@ -131,9 +131,7 @@ export async function POST(request: NextRequest) {
       const unreconciledExpenses = await prisma.expense.findMany({
         where: {
           status: 'APPROVED',
-          bankTransactions: {
-            none: {}
-          }
+          bankTransactions: null
         },
         include: {
           category: true
@@ -147,11 +145,11 @@ export async function POST(request: NextRequest) {
       // Auto-reconcile based on amount and date proximity
       for (const transaction of unreconciledTransactions) {
         const matchingExpense = unreconciledExpenses.find(expense => {
-          const transactionAmount = typeof transaction.amount === 'object' && 'toNumber' in transaction.amount 
-            ? transaction.amount.toNumber() 
+          const transactionAmount = typeof transaction.amount === 'object' && transaction.amount !== null && 'toNumber' in transaction.amount 
+            ? (transaction.amount as any).toNumber() 
             : Number(transaction.amount);
-          const expenseAmount = typeof expense.amount === 'object' && 'toNumber' in expense.amount 
-            ? expense.amount.toNumber() 
+          const expenseAmount = typeof expense.amount === 'object' && expense.amount !== null && 'toNumber' in expense.amount 
+            ? (expense.amount as any).toNumber() 
             : Number(expense.amount);
           
           const amountMatch = Math.abs(transactionAmount - expenseAmount) < 0.01;
@@ -176,8 +174,8 @@ export async function POST(request: NextRequest) {
           results.push({
             transactionId: transaction.id,
             expenseId: matchingExpense.id,
-            amount: typeof transaction.amount === 'object' && 'toNumber' in transaction.amount 
-              ? transaction.amount.toNumber() 
+            amount: typeof transaction.amount === 'object' && transaction.amount !== null && 'toNumber' in transaction.amount 
+              ? (transaction.amount as any).toNumber() 
               : Number(transaction.amount),
             date: transaction.transactionDate
           });

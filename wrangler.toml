@@ -1,0 +1,17 @@
+name = "thehouseplantstore"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Pages configuration for Next.js
+pages_build_output_dir = ".next/standalone/theplantstore"
+
+# Environment variables will be set via wrangler secret commands
+# DATABASE_URL
+# NEXTAUTH_SECRET
+# NEXTAUTH_URL
+# SENDGRID_API_KEY
+# CLOUDINARY_URL
+# PAYSTACK_SECRET_KEY
+# YOCO_SECRET_KEY
+# GOOGLE_CLIENT_ID
+# GOOGLE_CLIENT_SECRET
