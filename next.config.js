@@ -24,6 +24,10 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
   generateEtags: false,
+  // Increase body size limit for file uploads
+  experimental: {
+    serverComponentsExternalPackages: ['sharp'],
+  },
   async headers() {
     return [
       {

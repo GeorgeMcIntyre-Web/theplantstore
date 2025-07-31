@@ -54,7 +54,7 @@ export default function AdminProductsPage() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch("/api/admin/products");
+      const response = await fetch("/api/admin/products?limit=100");
       if (response.ok) {
         const data = await response.json();
         setProducts(Array.isArray(data) ? data : data.products || []);
@@ -280,7 +280,7 @@ export default function AdminProductsPage() {
                           <div className="text-sm text-muted-foreground">{product.slug}</div>
                         </div>
                       </TableCell>
-                      <TableCell>{product.category.name}</TableCell>
+                      <TableCell>{product.category?.name || 'Uncategorized'}</TableCell>
                       <TableCell className="font-medium">{formatPrice(product.price)}</TableCell>
                       <TableCell>
                         <Badge variant={product.stockQuantity > 0 ? "default" : "destructive"}>

@@ -156,6 +156,62 @@ export default function ProductImportPage() {
     setImporting(true);
     setImportResult(null);
     try {
+      // Check total file size before upload
+      let totalSize = 0;
+      if (csvFile) totalSize += csvFile.size;
+      previewData.forEach((row) => {
+        if (row.imageFile) totalSize += row.imageFile.size;
+      });
+      
+      const totalSizeMB = Math.round(totalSize / (1024 * 1024));
+      console.log(`Total upload size: ${totalSizeMB}MB`);
+      
+      // If images are included and total size is too large, import CSV only first
+      if (totalSizeMB > 10) {
+        const proceed = confirm(
+          `Total upload size is ${totalSizeMB}MB. To avoid timeout, we'll import CSV data first, then handle images separately. Continue?`
+        );
+        if (!proceed) {
+          setImporting(false);
+          return;
+        }
+        
+        // Import CSV only
+        const csvFormData = new FormData();
+        if (csvFile) {
+          csvFormData.append("file", csvFile);
+        }
+        
+        const res = await fetch("/api/admin/import/products", {
+          method: "POST",
+          body: csvFormData,
+        });
+        
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+          throw new Error(errorData.error || `HTTP ${res.status}: ${res.statusText}`);
+        }
+        
+        const data = await res.json();
+        setImportResult({
+          success: true,
+          created: data.created,
+          updated: data.updated,
+          failed: data.failed,
+          errors: data.errors || [],
+          note: data.note || 'CSV import completed. Images will need to be uploaded separately.',
+        });
+        
+        // Clear preview and files after success
+        setCsvFile(null); 
+        setImageFiles([]); 
+        setPreviewData([]); 
+        setManualImageMap({});
+        setImporting(false);
+        return;
+      }
+
+      // For smaller uploads, proceed with full import
       const formData = new FormData();
       if (csvFile) {
         formData.append("file", csvFile);
@@ -168,12 +224,18 @@ export default function ProductImportPage() {
           added.add(row.imageFile.name);
         }
       });
+      
       const res = await fetch("/api/admin/import/products", {
         method: "POST",
         body: formData,
       });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `HTTP ${res.status}: ${res.statusText}`);
+      }
+      
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Import failed");
       setImportResult({
         success: true,
         created: data.created,
@@ -185,7 +247,11 @@ export default function ProductImportPage() {
       // Clear preview and files after success
       setCsvFile(null); setImageFiles([]); setPreviewData([]); setManualImageMap({});
     } catch (err: any) {
-      setImportResult({ success: false, error: err.message });
+      console.error('Import error:', err);
+      setImportResult({ 
+        success: false, 
+        error: err.message || 'Import failed' 
+      });
     }
     setImporting(false);
   };
@@ -289,6 +355,12 @@ export default function ProductImportPage() {
               <span className="font-semibold"> Updated:</span> {importResult.updated} &nbsp;|
               <span className="font-semibold"> Failed:</span> {importResult.failed}
             </div>
+            {importResult.note && (
+              <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-2">
+                <div className="font-semibold mb-1">Note:</div>
+                <p>{importResult.note}</p>
+              </div>
+            )}
             {importResult.updateNotes && importResult.updateNotes.length > 0 && (
               <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded mb-2">
                 <div className="font-semibold mb-1">Update Notes:</div>
