@@ -3,8 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { UserRole, CareLevel, LightRequirement, WateringFrequency, PlantSize, GrowthRate } from '@prisma/client';
 import Papa from 'papaparse';
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
+
 
 export const maxDuration = 300; // 5 minutes timeout
 export const dynamic = 'force-dynamic';
@@ -156,16 +155,15 @@ export async function POST(request: NextRequest) {
         });
         if (matchingImage) {
           try {
-            // Save image to public/products directory
-            const bytes = await matchingImage.arrayBuffer();
-            const imagePath = join(process.cwd(), 'public', 'products', matchingImage.name);
-            await writeFile(imagePath, new Uint8Array(bytes));
+            // On Vercel, we can't write files to the filesystem
+            // Instead, we'll create the ProductImage record pointing to the existing optimized images
+            // The images should already be in the public/products/optimized/ directory
             
-            // Create ProductImage record
+            // Create ProductImage record pointing to the optimized image
             await prisma.productImage.create({
               data: {
                 productId: createdProduct.id,
-                url: `/products/${matchingImage.name}`,
+                url: `/products/optimized/${matchingImage.name}`,
                 altText: product.name,
                 isPrimary: true,
                 sortOrder: 1,
