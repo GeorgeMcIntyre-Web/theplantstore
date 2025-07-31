@@ -96,6 +96,10 @@ export async function POST(request: NextRequest) {
     const updated = [];
     const imagesProcessed = [];
 
+    // Get all existing categories for mapping
+    const existingCategories = await prisma.category.findMany();
+    console.log('Available categories:', existingCategories.map(c => `${c.name} (ID: ${c.id})`));
+
     // Process all products
     for (const product of products) {
       try {
@@ -105,6 +109,20 @@ export async function POST(request: NextRequest) {
         const existingProduct = await prisma.product.findUnique({
           where: { sku: product.sku }
         });
+
+        // Find category by name
+        let categoryId = null;
+        if (product.category) {
+          const matchingCategory = existingCategories.find(cat => 
+            cat.name.toLowerCase() === product.category.toLowerCase()
+          );
+          if (matchingCategory) {
+            categoryId = matchingCategory.id;
+            console.log(`Mapped category "${product.category}" to ID: ${categoryId}`);
+          } else {
+            console.log(`Category "${product.category}" not found, will create as Uncategorized`);
+          }
+        }
 
         const productData = {
           name: product.name,
@@ -124,7 +142,7 @@ export async function POST(request: NextRequest) {
           plantSize: mapEnumValue(product.plantSize, PlantSize),
           growthRate: mapEnumValue(product.growthRate, GrowthRate),
           careInstructions: product.careInstructions || '',
-          categoryId: null, // You might want to handle category mapping
+          categoryId: categoryId, // Now properly mapped
           supplierId: null, // You might want to handle supplier mapping
         };
 
